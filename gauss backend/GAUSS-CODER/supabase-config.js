@@ -12,5 +12,5 @@
    5. Guardá este archivo. Listo, no hay que tocar nada más.
    ============================================================ */
 
-const SUPABASE_URL = "https://pivkrvlckrvapsclfsrs.supabase.co/rest/v1/";
-const SUPABASE_ANON_KEY = "sb_publishable_GeCzo3CkVWzE_p27ehKxdA_dGzEDMDI";
+const SUPABASE_URL = "https://pivkrvlckrvapsclfsrs.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpdmtydmxja3J2YXBzY2xmc3JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDc1MTIsImV4cCI6MjEwMjkyMzUxMn0.sIk4WzNko9qdZ3msDG4FR9D7F4RSoWuYLQoPMVX6_fc";
