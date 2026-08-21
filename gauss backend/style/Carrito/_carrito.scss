@@ -1,0 +1,527 @@
+/* --- BOTÓN DE CARRITO EN EL HEADER --- */
+.btn-carrito-gauss {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: $color-principal;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+
+    &:hover {
+        color: $color-acento;
+    }
+}
+
+.badge-carrito {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background-color: $color-acento;
+    color: $color-blanco;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
+
+    &.badge-carrito-oculta {
+        opacity: 0.45;
+    }
+}
+
+/* --- FONDO OSCURO DETRÁS DEL PANEL --- */
+.overlay-carrito {
+    position: fixed;
+    inset: 0;
+    background: rgba(51, 51, 51, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    z-index: 1040;
+
+    &.activo {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+/* --- PANEL LATERAL DEL CARRITO --- */
+.panel-carrito {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: min(400px, 100%);
+    background: $color-blanco;
+    box-shadow: -6px 0 24px rgba(0, 0, 0, 0.12);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+
+    &.activo {
+        transform: translateX(0);
+    }
+}
+
+.panel-carrito-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid $color-gris-borde;
+    flex-shrink: 0;
+
+    h2 {
+        font-size: 18px;
+        color: $color-principal;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+}
+
+.btn-cerrar-carrito {
+    background: none;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    color: $color-gris-texto;
+    cursor: pointer;
+    padding: 4px;
+
+    &:hover {
+        color: $color-acento;
+    }
+}
+
+.panel-carrito-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 20px;
+}
+
+.panel-carrito-body {
+    padding: 6px 0;
+}
+
+.panel-carrito-resumen {
+    padding: 10px 0 16px;
+    border-top: 1px solid $color-gris-borde;
+}
+
+.panel-carrito-acciones {
+    flex-shrink: 0;
+    background: $color-blanco;
+    border-top: 1px solid $color-gris-borde;
+    padding: 16px 20px 20px;
+}
+
+/* --- ÍTEM DENTRO DEL CARRITO --- */
+.item-carrito {
+    display: flex;
+    gap: 12px;
+    padding: 16px 0;
+    border-bottom: 1px solid $color-gris-borde;
+
+    img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 6px;
+        background: #f5f7f9;
+        flex-shrink: 0;
+    }
+}
+
+.item-carrito-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-carrito-nombre {
+    font-size: 14px;
+    font-weight: bold;
+    color: $color-negro;
+    margin-bottom: 2px;
+}
+
+.item-carrito-detalle {
+    font-size: 12px;
+    color: $color-gris-texto;
+    margin-bottom: 2px;
+}
+
+.item-carrito-precio {
+    font-size: 13px;
+    color: $color-gris-texto;
+}
+
+.item-carrito-acciones {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.selector-cantidad {
+    display: flex;
+    align-items: center;
+    border: 1px solid $color-gris-borde;
+    border-radius: 6px;
+    overflow: hidden;
+
+    button {
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: #f5f7f9;
+        color: $color-principal;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover {
+            background: #eef1f3;
+        }
+    }
+
+    span {
+        width: 26px;
+        text-align: center;
+        font-size: 13px;
+    }
+}
+
+.btn-quitar-item {
+    background: none;
+    border: none;
+    color: $color-gris-texto;
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover {
+        color: $color-acento;
+    }
+}
+
+/* --- ESTADO VACÍO --- */
+.carrito-vacio {
+    text-align: center;
+    padding: 70px 20px;
+    color: $color-gris-texto;
+
+    svg {
+        color: $color-principal;
+        opacity: 0.4;
+        margin-bottom: 16px;
+    }
+
+    p {
+        margin-bottom: 18px;
+    }
+}
+
+.btn-ver-productos {
+    display: inline-block;
+    background-color: $color-principal;
+    color: $color-blanco;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: #5f7788;
+        color: $color-blanco;
+    }
+}
+
+.fila-total-carrito {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 16px;
+    font-weight: bold;
+    color: $color-negro;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    span:last-child {
+        color: $color-acento;
+        font-size: 20px;
+        text-transform: none;
+        letter-spacing: normal;
+    }
+}
+
+.btn-finalizar-carrito {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background-color: $color-acento;
+    color: $color-blanco;
+    padding: 13px;
+    font-weight: bold;
+    font-size: 15px;
+    text-decoration: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(208, 79, 94, 0.2);
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        background-color: $color-acento-hover;
+        color: $color-blanco;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(208, 79, 94, 0.3);
+    }
+
+    &.deshabilitado {
+        opacity: 0.7;
+        cursor: wait;
+        pointer-events: none;
+        transform: none;
+    }
+}
+
+.aviso-carrito {
+    font-size: 11.5px;
+    color: $color-gris-texto;
+    text-align: center;
+    margin-top: 10px;
+    line-height: 1.4;
+}
+
+.btn-vaciar-carrito {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: none;
+    border: none;
+    color: $color-gris-texto;
+    font-size: 12.5px;
+    margin-top: 10px;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover {
+        color: $color-acento;
+    }
+}
+
+/* --- PRECIO Y BOTÓN "AGREGAR" EN LA PÁGINA DE PRODUCTO --- */
+.bloque-compra {
+    display: block;
+}
+
+.precio-producto {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+    color: $color-acento;
+    margin-bottom: 16px;
+}
+
+.unidad-precio {
+    font-size: 14px;
+    font-weight: normal;
+    color: $color-gris-texto;
+}
+
+/* --- SELECTOR VENTA / ALQUILER EN LA PÁGINA DE PRODUCTO --- */
+.selector-modalidad {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+/* En mobile la columna de producto se centra (text-center de Bootstrap);
+   estos elementos son flex y no heredan ese centrado, así que lo replicamos
+   para que quede todo alineado con el título y el precio. A partir de "md"
+   la columna pasa a alinearse a la izquierda (text-md-start). */
+@media (max-width: 767.98px) {
+    .selector-modalidad,
+    .acciones-producto {
+        justify-content: center;
+    }
+}
+
+.opcion-modalidad {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid $color-gris-borde;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: $color-gris-texto;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    input[type="radio"] {
+        accent-color: $color-principal;
+        margin: 0;
+    }
+
+    &:has(input:checked) {
+        border-color: $color-principal;
+        color: $color-principal;
+        font-weight: bold;
+        background-color: rgba(115, 138, 155, 0.08);
+    }
+}
+
+/* --- DATOS DEL CLIENTE PARA EL ALQUILER (dentro del carrito) --- */
+.datos-alquiler {
+    border: 1px solid $color-gris-borde;
+    border-radius: 10px;
+    padding: 14px 14px 6px;
+    margin-bottom: 16px;
+    background-color: #f8f9fa;
+}
+
+.titulo-datos-alquiler {
+    font-size: 14px;
+    font-weight: bold;
+    color: $color-principal;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin: 0 0 4px;
+}
+
+.texto-datos-alquiler {
+    font-size: 12px;
+    color: $color-gris-texto;
+    margin-bottom: 12px;
+}
+
+.etiqueta-campo-alquiler {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: $color-negro;
+    margin-bottom: 4px;
+}
+
+.campo-alquiler {
+    font-size: 13px;
+
+    &:focus {
+        border-color: $color-principal;
+        box-shadow: 0 0 0 0.2rem rgba(115, 138, 155, 0.2);
+    }
+
+    &.campo-invalido {
+        border-color: $color-acento;
+
+        &:focus {
+            box-shadow: 0 0 0 0.2rem rgba(208, 79, 94, 0.2);
+        }
+    }
+}
+
+.aviso-datos-alquiler {
+    font-size: 12px;
+    color: $color-acento;
+    text-align: center;
+    margin: 8px 0 0;
+}
+
+.acciones-producto {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.btn-agregar-carrito {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: $color-principal;
+    color: $color-blanco;
+    padding: 12px 24px;
+    font-weight: bold;
+    font-size: 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        background-color: #5f7788;
+        transform: translateY(-2px);
+    }
+
+    &.agregado {
+        background-color: #3d8b57;
+    }
+}
+
+/* Estilo base que faltaba para el botón de WhatsApp de las páginas de producto */
+.btn-gauss-whatsapp {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #25d366;
+    color: $color-blanco;
+    padding: 12px 24px;
+    font-weight: bold;
+    font-size: 15px;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        background-color: #1da851;
+        color: $color-blanco;
+        transform: translateY(-2px);
+    }
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 480px) {
+    .panel-carrito-header h2 {
+        font-size: 16px;
+    }
+    .precio-producto {
+        font-size: 21px;
+    }
+    .btn-agregar-carrito,
+    .btn-gauss-whatsapp {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel-carrito,
+    .overlay-carrito,
+    .btn-agregar-carrito,
+    .btn-finalizar-carrito,
+    .btn-gauss-whatsapp {
+        transition: none;
+    }
+    .btn-agregar-carrito:hover,
+    .btn-finalizar-carrito:hover,
+    .btn-gauss-whatsapp:hover {
+        transform: none;
+    }
+}
