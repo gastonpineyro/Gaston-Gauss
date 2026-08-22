@@ -1,0 +1,244 @@
+/* --- SECCIÓN PRINCIPAL DE PRODUCTOS --- */
+.contenido-principal {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.titulo-seccion {
+    color: $color-principal;
+    font-size: 28px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+.bajada-seccion {
+    color: #666666;
+    font-size: 16px;
+    margin-bottom: 50px;
+}
+
+.contenedor-fila {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+/* --- TARJETAS --- */
+.tarjeta-producto {
+    flex: 1;
+    position: relative;
+    height: 400px;
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 25px rgba(115, 138, 155, 0.2);
+
+        img {
+            transform: scale(1.05);
+        }
+
+        .capa-oscura h3 {
+            border-color: $color-acento;
+        }
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+}
+
+.capa-oscura {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(115, 138, 155, 0.85) 10%, rgba(0, 0, 0, 0.1) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 35px;
+
+    h3 {
+        color: $color-blanco;
+        font-size: 20px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom: 2px solid transparent;
+        transition: border-color 0.3s ease;
+        margin: 0;
+    }
+}
+
+/* --- UTILIDADES Y PÁGINA DE PRODUCTO --- */
+.titulo-caracteristicas {
+    font-size: 14px;
+    color: $color-principal;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.etiqueta-negrita {
+    font-weight: bold;
+}
+
+.lista-detalles {
+    font-size: 15px;
+    color: $color-gris-texto;
+}
+
+.titulo-seccion-producto {
+    color: $color-principal;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.lista-beneficios {
+    li {
+        margin-bottom: 10px;
+        list-style-type: none;
+        position: relative;
+        padding-left: 25px;
+        text-align: justify;
+
+        &::before {
+            content: "✓";
+            color: $color-acento;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            text-align: justify;
+        }
+    }
+}
+
+.badge-categoria {
+    background-color: $color-fondo-badges;
+    color: $color-acento;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.titulo-paso-proceso {
+    color: $color-principal;
+    font-weight: 700;
+}
+
+.contenedor-mapa {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 8px;
+
+    iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+}
+
+/* --- PÁGINA DE CONTACTO --- */
+.column-max-width {
+    max-width: 600px;
+}
+
+.tarjeta-contacto {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.titulo-seccion-contacto {
+    color: $color-principal;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.icono-contacto-destacado {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.link-contacto-cuerpo {
+    font-size: 16px;
+    transition: color 0.2s ease;
+
+    &:hover {
+        color: $color-acento;
+    }
+}
+
+.horario-pagina-contacto {
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.linea-separadora {
+    border-top: 1px solid $color-gris-borde;
+    opacity: 0.7;
+}
+
+.titulo-redes-contacto {
+    color: $color-principal;
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tarjeta-whatsapp-contacto {
+    background-color: $color-blanco;
+    border: 2px dashed $color-principal;
+}
+
+.emisor-icono-wp {
+    font-size: 45px;
+}
+
+.instruccion-wp {
+    font-size: 15px;
+    line-height: 1.5;
+    max-width: 340px;
+}
+
+.btn-gauss-whatsapp-contacto {
+    background-color: $color-acento;
+    color: $color-blanco;
+    padding: 12px 28px;
+    font-weight: bold;
+    font-size: 16px;
+    text-decoration: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(208, 79, 94, 0.2);
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        background-color: $color-acento-hover;
+        color: $color-blanco;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(208, 79, 94, 0.3);
+    }
+}

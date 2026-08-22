@@ -1,0 +1,48 @@
+/* --- FOOTER, COLORES Y REDES --- */
+.footer-gauss {
+    .logo-gauss {
+        color: $color-acento;
+        font-size: 26px;
+        font-weight: bold;
+        line-height: 1.1;
+        text-transform: uppercase;
+        display: block;
+
+        .sub-logo-gauss {
+            color: $color-principal;
+            font-size: 14px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: normal;
+        }
+    }
+}
+
+.horario-footer {
+    color: $color-gris-texto;
+    line-height: 1.5;
+}
+
+.enlace-instagram {
+    gap: 8px;
+    font-weight: 500;
+    color: $color-principal;
+    transition: color 0.2s ease-in-out;
+
+    &:hover {
+        color: $color-acento;
+
+        .usuario-instagram {
+            color: $color-acento;
+        }
+    }
+}
+
+.icono-instagram {
+    color: $color-acento;
+}
+
+.usuario-instagram {
+    color: $color-principal;
+}

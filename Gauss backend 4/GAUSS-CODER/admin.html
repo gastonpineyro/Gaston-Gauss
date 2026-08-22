@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Panel de administración - Gauss Ortopedia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="_main.css">
+</head>
+<body>
+
+    <!-- Pantalla de login -->
+    <div class="pantalla-login-admin" id="pantallaLogin">
+        <div class="tarjeta-login-admin">
+            <div class="logo-gauss mb-1 text-center">
+                GAUSS <span class="sub-logo-gauss">Ortopedia</span>
+            </div>
+            <p class="text-center text-secondary mb-4" style="font-size:13px;">Panel de administración</p>
+
+            <div class="alert alert-warning d-none" id="avisoSinConfigurar" style="font-size:13px;">
+                Todavía no configuraste la conexión con la base de datos. Completá
+                <code>supabase-config.js</code> con tu URL y clave de Supabase (mirá
+                <code>LEEME-BACKEND.md</code>) y volvé a cargar esta página.
+            </div>
+
+            <form id="formLogin">
+                <div class="mb-3">
+                    <label class="etiqueta-campo-alquiler" for="campoEmailLogin">Email</label>
+                    <input type="email" class="form-control campo-alquiler" id="campoEmailLogin" required>
+                </div>
+                <div class="mb-3">
+                    <label class="etiqueta-campo-alquiler" for="campoPasswordLogin">Contraseña</label>
+                    <input type="password" class="form-control campo-alquiler" id="campoPasswordLogin" required>
+                </div>
+                <div class="alert alert-danger d-none" id="errorLogin" style="font-size:13px;"></div>
+                <button type="submit" class="btn-finalizar-carrito w-100">Ingresar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Panel con los pedidos -->
+    <div class="d-none" id="pantallaPanel">
+        <div class="franja-admin">
+            <div class="logo-gauss" style="color:#fff;">
+                GAUSS <span class="sub-logo-gauss" style="color:rgba(255,255,255,.75);">Ortopedia · Admin</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span id="emailUsuarioLogueado" style="font-size:13px;"></span>
+                <button type="button" class="btn-logout-admin" id="btnLogout">Cerrar sesión</button>
+            </div>
+        </div>
+
+        <div class="container-fluid py-4 px-4">
+            <div class="tabs-admin mb-4">
+                <button type="button" class="tab-admin activo" data-tab="pedidos">Pedidos</button>
+                <button type="button" class="tab-admin" data-tab="vencimientos">
+                    Vencimientos próximos <span class="badge-tab" id="contadorVencimientos">0</span>
+                </button>
+                <button type="button" class="tab-admin" data-tab="comprobantes">
+                    Comprobantes por revisar <span class="badge-tab" id="contadorComprobantes">0</span>
+                </button>
+            </div>
+
+            <!-- PEDIDOS -->
+            <div class="panel-tab-admin" id="tabPedidos">
+                <div class="d-flex flex-wrap gap-3 align-items-end mb-3">
+                    <div>
+                        <label class="etiqueta-campo-alquiler" for="filtroEstado">Estado</label>
+                        <select class="form-select form-select-sm campo-alquiler" id="filtroEstado">
+                            <option value="todos">Todos</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="confirmado">Confirmado</option>
+                            <option value="activo">Activo</option>
+                            <option value="devuelto">Devuelto</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="etiqueta-campo-alquiler" for="filtroTipo">Tipo</label>
+                        <select class="form-select form-select-sm campo-alquiler" id="filtroTipo">
+                            <option value="todos">Todos</option>
+                            <option value="venta">Venta</option>
+                            <option value="alquiler">Alquiler</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered bg-white tabla-pedidos-admin">
+                        <thead>
+                            <tr>
+                                <th>Fecha del pedido</th>
+                                <th>Tipo</th>
+                                <th>Producto</th>
+                                <th>Período (alquiler)</th>
+                                <th>Cliente</th>
+                                <th>Teléfono</th>
+                                <th>Dirección / Lesión</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaPedidos">
+                            <tr><td colspan="10" class="text-center py-4">Iniciá sesión para ver los pedidos.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VENCIMIENTOS PRÓXIMOS -->
+            <div class="panel-tab-admin d-none" id="tabVencimientos">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Alquileres confirmados que vencen dentro de los próximos 3 días (o ya vencidos). Al tocar
+                    "Enviar recordatorio" se abre WhatsApp con el mensaje listo para mandarle al cliente.
+                </p>
+                <div id="listaVencimientos"></div>
+            </div>
+
+            <!-- COMPROBANTES POR REVISAR -->
+            <div class="panel-tab-admin d-none" id="tabComprobantes">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Comprobantes que subieron los clientes desde el link de renovación. Revisalos y confirmá para
+                    extender el alquiler automáticamente por la misma duración.
+                </p>
+                <div id="listaComprobantes"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="db.js"></script>
+    <script src="admin.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

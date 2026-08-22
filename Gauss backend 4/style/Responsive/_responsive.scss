@@ -1,0 +1,60 @@
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    html { overflow-x: hidden; }
+    body { overflow-x: hidden; }
+
+    .navbar-nav .enlace-gauss {
+        border-bottom: none;
+        padding: 10px 8px;
+
+        &.active {
+            border-bottom: none;
+            color: $color-acento;
+        }
+    }
+
+    .contenido-principal { padding: 40px 16px; }
+    .titulo-seccion { font-size: 22px; }
+    .bajada-seccion { font-size: 15px; margin-bottom: 32px; }
+    .contenedor-fila { flex-direction: column; gap: 16px; }
+    .tarjeta-producto { width: 100%; height: 260px; }
+    .column-max-width { max-width: 100%; }
+    .instruccion-wp { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+    html { overflow-x: hidden; }
+    body { overflow-x: hidden; }
+
+    .header-gauss .navbar-brand .logo-gauss { font-size: 20px; }
+    .contenido-principal { padding: 28px 12px; }
+    .titulo-seccion { font-size: 18px; letter-spacing: 0.5px; }
+    .bajada-seccion { font-size: 14px; margin-bottom: 24px; }
+    .tarjeta-producto { height: 220px; }
+    .capa-oscura h3 { font-size: 16px; letter-spacing: 0.5px; }
+    .capa-oscura { padding-bottom: 24px; }
+    .titulo-seccion-contacto { font-size: 17px; }
+    .link-contacto-cuerpo { font-size: 14px; }
+    .horario-pagina-contacto { font-size: 13.5px; }
+    .emisor-icono-wp { font-size: 36px; }
+    .instruccion-wp { font-size: 14px; }
+    .btn-gauss-whatsapp-contacto { font-size: 15px; padding: 11px 20px; width: 100%; text-align: center; display: block; }
+    .footer-gauss .logo-gauss { font-size: 20px; }
+    .horario-footer { font-size: 13px; }
+    iframe { max-width: 380px; padding-left: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tarjeta-producto,
+    .tarjeta-producto img,
+    .capa-oscura h3,
+    .enlace-gauss,
+    .btn-gauss-whatsapp-contacto,
+    .enlace-instagram {
+        transition: none;
+    }
+
+    .tarjeta-producto:hover { transform: none; }
+    .tarjeta-producto:hover img { transform: none; }
+    .btn-gauss-whatsapp-contacto:hover { transform: none; }
+}
