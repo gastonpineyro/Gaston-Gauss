@@ -54,8 +54,14 @@
         <div class="container-fluid py-4 px-4">
             <div class="tabs-admin mb-4">
                 <button type="button" class="tab-admin activo" data-tab="pedidos">Pedidos</button>
-                <button type="button" class="tab-admin" data-tab="vencimientos">
-                    Vencimientos próximos <span class="badge-tab" id="contadorVencimientos">0</span>
+                <button type="button" class="tab-admin" data-tab="activos">
+                    Activos <span class="badge-tab" id="contadorActivos">0</span>
+                </button>
+                <button type="button" class="tab-admin" data-tab="porvencer">
+                    Por vencer <span class="badge-tab" id="contadorPorvencer">0</span>
+                </button>
+                <button type="button" class="tab-admin" data-tab="vencidos">
+                    Vencidos <span class="badge-tab" id="contadorVencidos">0</span>
                 </button>
                 <button type="button" class="tab-admin" data-tab="comprobantes">
                     Comprobantes por revisar <span class="badge-tab" id="contadorComprobantes">0</span>
@@ -109,13 +115,30 @@
                 </div>
             </div>
 
-            <!-- VENCIMIENTOS PRÓXIMOS -->
-            <div class="panel-tab-admin d-none" id="tabVencimientos">
+            <!-- ACTIVOS -->
+            <div class="panel-tab-admin d-none" id="tabActivos">
                 <p class="text-secondary mb-3" style="font-size:13px;">
-                    Alquileres confirmados que vencen dentro de los próximos 3 días (o ya vencidos). Al tocar
-                    "Enviar recordatorio" se abre WhatsApp con el mensaje listo para mandarle al cliente.
+                    Todos los alquileres que están actualmente en la calle (ya retirados, sin devolver todavía),
+                    de cualquier producto, ordenados por fecha de devolución.
                 </p>
-                <div id="listaVencimientos"></div>
+                <div id="listaActivos"></div>
+            </div>
+
+            <!-- POR VENCER -->
+            <div class="panel-tab-admin d-none" id="tabPorvencer">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Alquileres activos o confirmados que vencen dentro de los próximos 3 días (todavía no vencidos).
+                    Al tocar "Enviar recordatorio" se abre WhatsApp con el mensaje listo para mandarle al cliente.
+                </p>
+                <div id="listaPorvencer"></div>
+            </div>
+
+            <!-- VENCIDOS -->
+            <div class="panel-tab-admin d-none" id="tabVencidos">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Alquileres que ya pasaron su fecha de devolución y todavía no se marcaron como devueltos.
+                </p>
+                <div id="listaVencidos"></div>
             </div>
 
             <!-- COMPROBANTES POR REVISAR -->

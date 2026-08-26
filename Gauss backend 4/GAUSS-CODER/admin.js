@@ -66,9 +66,13 @@
     var selectFiltroTipo = document.getElementById("filtroTipo");
     var btnLogout = document.getElementById("btnLogout");
     var emailUsuario = document.getElementById("emailUsuarioLogueado");
-    var listaVencimientos = document.getElementById("listaVencimientos");
+    var listaActivos = document.getElementById("listaActivos");
+    var listaPorvencer = document.getElementById("listaPorvencer");
+    var listaVencidos = document.getElementById("listaVencidos");
     var listaComprobantes = document.getElementById("listaComprobantes");
-    var contadorVencimientos = document.getElementById("contadorVencimientos");
+    var contadorActivos = document.getElementById("contadorActivos");
+    var contadorPorvencer = document.getElementById("contadorPorvencer");
+    var contadorVencidos = document.getElementById("contadorVencidos");
     var contadorComprobantes = document.getElementById("contadorComprobantes");
 
     if (!GaussDB.configurado()) {
@@ -127,7 +131,9 @@
       }
       pedidosCache = resultado.data;
       renderizarTabla();
-      renderizarVencimientos();
+      renderizarActivos();
+      renderizarPorVencer();
+      renderizarVencidos();
       renderizarComprobantes();
     }
 
@@ -198,53 +204,86 @@
         .join("");
     }
 
-    /* ---------------------- Vencimientos próximos ---------------------- */
+    /* ---------------------- Listas de alquileres (Activos / Por vencer / Vencidos) ---------------------- */
 
-    function renderizarVencimientos() {
-      var proximos = pedidosCache.filter(function (p) {
+    function textoDiasRestantes(fechaHasta) {
+      var dias = diasHasta(fechaHasta);
+      if (dias < 0) return "Venció hace " + Math.abs(dias) + " día" + (Math.abs(dias) === 1 ? "" : "s");
+      if (dias === 0) return "Vence hoy";
+      return "Vence en " + dias + " día" + (dias === 1 ? "" : "s");
+    }
+
+    function tarjetaAlquiler(p) {
+      var dias = diasHasta(p.fecha_hasta);
+      var badgeEstado =
+        '<span class="badge-estado-pedido badge-estado-' + p.estado + '">' + p.estado + "</span>";
+
+      return (
+        '<div class="tarjeta-vencimiento' + (dias <= 0 ? " vencido" : "") + '">' +
+        '<div class="info-vencimiento">' +
+        "<h4>" + p.producto_nombre + " — " + [p.nombre, p.apellido].filter(Boolean).join(" ") + " " + badgeEstado + "</h4>" +
+        "<p>" + textoDiasRestantes(p.fecha_hasta) + " (" + formatearFecha(p.fecha_hasta) + ") · Tel: " + (p.telefono || "sin cargar") + "</p>" +
+        "</div>" +
+        '<div class="acciones-vencimiento">' +
+        '<button type="button" class="btn-accion-admin recordatorio btn-enviar-recordatorio" data-id="' + p.id + '">🔔 Enviar recordatorio</button>' +
+        (p.estado === "activo"
+          ? '<button type="button" class="btn-accion-admin baja btn-dar-de-baja" data-id="' + p.id + '">↩️ Dar de baja</button>'
+          : "") +
+        "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderizarListaAlquileres(contenedor, contador, lista, textoVacio) {
+      contador.textContent = lista.length;
+      contador.classList.toggle("badge-tab-vacio", lista.length === 0);
+
+      if (lista.length === 0) {
+        contenedor.innerHTML = '<p class="texto-vacio-admin">' + textoVacio + "</p>";
+        return;
+      }
+
+      contenedor.innerHTML = lista
+        .slice()
+        .sort(function (a, b) {
+          return (a.fecha_hasta || "").localeCompare(b.fecha_hasta || "");
+        })
+        .map(tarjetaAlquiler)
+        .join("");
+    }
+
+    function renderizarActivos() {
+      var activos = pedidosCache.filter(function (p) {
+        return p.tipo === "alquiler" && p.estado === "activo";
+      });
+      renderizarListaAlquileres(listaActivos, contadorActivos, activos, "No hay alquileres activos en este momento.");
+    }
+
+    function renderizarPorVencer() {
+      var porVencer = pedidosCache.filter(function (p) {
         return (
           p.tipo === "alquiler" &&
           (p.estado === "confirmado" || p.estado === "activo") &&
           !p.pago_pendiente_revision &&
           p.fecha_hasta &&
+          diasHasta(p.fecha_hasta) >= 0 &&
           diasHasta(p.fecha_hasta) <= DIAS_ANTES_DE_AVISAR
         );
       });
+      renderizarListaAlquileres(listaPorvencer, contadorPorvencer, porVencer, "No hay alquileres por vencer en los próximos " + DIAS_ANTES_DE_AVISAR + " días.");
+    }
 
-      contadorVencimientos.textContent = proximos.length;
-      contadorVencimientos.classList.toggle("badge-tab-vacio", proximos.length === 0);
-
-      if (proximos.length === 0) {
-        listaVencimientos.innerHTML =
-          '<p class="texto-vacio-admin">No hay alquileres por vencer en los próximos ' +
-          DIAS_ANTES_DE_AVISAR +
-          " días.</p>";
-        return;
-      }
-
-      listaVencimientos.innerHTML = proximos
-        .map(function (p) {
-          var dias = diasHasta(p.fecha_hasta);
-          var textoDias =
-            dias < 0
-              ? "Venció hace " + Math.abs(dias) + " día" + (Math.abs(dias) === 1 ? "" : "s")
-              : dias === 0
-              ? "Vence hoy"
-              : "Vence en " + dias + " día" + (dias === 1 ? "" : "s");
-
-          return (
-            '<div class="tarjeta-vencimiento' + (dias <= 0 ? " vencido" : "") + '">' +
-            '<div class="info-vencimiento">' +
-            "<h4>" + p.producto_nombre + " — " + [p.nombre, p.apellido].filter(Boolean).join(" ") + "</h4>" +
-            "<p>" + textoDias + " (" + formatearFecha(p.fecha_hasta) + ") · Tel: " + (p.telefono || "sin cargar") + "</p>" +
-            "</div>" +
-            '<div class="acciones-vencimiento">' +
-            '<button type="button" class="btn-accion-admin recordatorio btn-enviar-recordatorio" data-id="' + p.id + '">🔔 Enviar recordatorio</button>' +
-            "</div>" +
-            "</div>"
-          );
-        })
-        .join("");
+    function renderizarVencidos() {
+      var vencidos = pedidosCache.filter(function (p) {
+        return (
+          p.tipo === "alquiler" &&
+          (p.estado === "confirmado" || p.estado === "activo") &&
+          !p.pago_pendiente_revision &&
+          p.fecha_hasta &&
+          diasHasta(p.fecha_hasta) < 0
+        );
+      });
+      renderizarListaAlquileres(listaVencidos, contadorVencidos, vencidos, "No hay alquileres vencidos sin devolver. 🎉");
     }
 
     /* ---------------------- Comprobantes por revisar ---------------------- */
@@ -363,6 +402,12 @@
       cargarPedidos();
     }
 
+    function refrescarListasAlquiler() {
+      renderizarActivos();
+      renderizarPorVencer();
+      renderizarVencidos();
+    }
+
     async function activarAlquiler(id) {
       var resultado = await db.from("pedidos").update({ estado: "activo" }).eq("id", id);
       if (resultado.error) {
@@ -374,7 +419,7 @@
       });
       if (pedido) pedido.estado = "activo";
       renderizarTabla();
-      renderizarVencimientos();
+      refrescarListasAlquiler();
     }
 
     async function darDeBaja(id) {
@@ -388,7 +433,7 @@
       });
       if (pedido) pedido.estado = "devuelto";
       renderizarTabla();
-      renderizarVencimientos();
+      refrescarListasAlquiler();
     }
 
     /* ---------------------- Eventos ---------------------- */
@@ -437,13 +482,16 @@
       });
       if (pedido) pedido.estado = nuevoEstado;
       renderizarTabla();
-      renderizarVencimientos();
+      refrescarListasAlquiler();
     });
 
-    listaVencimientos.addEventListener("click", function (evento) {
-      var id = evento.target.getAttribute("data-id");
-      if (!id) return;
-      if (evento.target.classList.contains("btn-enviar-recordatorio")) enviarRecordatorio(id);
+    [listaActivos, listaPorvencer, listaVencidos].forEach(function (contenedor) {
+      contenedor.addEventListener("click", function (evento) {
+        var id = evento.target.getAttribute("data-id");
+        if (!id) return;
+        if (evento.target.classList.contains("btn-enviar-recordatorio")) enviarRecordatorio(id);
+        if (evento.target.classList.contains("btn-dar-de-baja")) darDeBaja(id);
+      });
     });
 
     listaComprobantes.addEventListener("click", function (evento) {
