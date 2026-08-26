@@ -70,6 +70,7 @@
     var listaPorvencer = document.getElementById("listaPorvencer");
     var listaVencidos = document.getElementById("listaVencidos");
     var listaComprobantes = document.getElementById("listaComprobantes");
+    var listaStock = document.getElementById("listaStock");
     var contadorActivos = document.getElementById("contadorActivos");
     var contadorPorvencer = document.getElementById("contadorPorvencer");
     var contadorVencidos = document.getElementById("contadorVencidos");
@@ -83,6 +84,7 @@
 
     var db = GaussDB.obtenerCliente();
     var pedidosCache = [];
+    var variantesCache = [];
 
     /* ---------------------- Pantallas ---------------------- */
 
@@ -135,6 +137,62 @@
       renderizarPorVencer();
       renderizarVencidos();
       renderizarComprobantes();
+      cargarStock();
+    }
+
+    async function cargarStock() {
+      var resultado = await GaussDB.listarVariantes();
+      if (!resultado.ok) {
+        listaStock.innerHTML = '<p class="texto-vacio-admin">No se pudo cargar el stock: ' + resultado.motivo + "</p>";
+        return;
+      }
+      variantesCache = resultado.variantes;
+      renderizarStock();
+    }
+
+    function renderizarStock() {
+      if (variantesCache.length === 0) {
+        listaStock.innerHTML = '<p class="texto-vacio-admin">Todavía no cargaste el stock (correspondería correr de nuevo supabase-schema.sql).</p>';
+        return;
+      }
+
+      var grupos = {};
+      variantesCache.forEach(function (v) {
+        if (!grupos[v.producto_nombre]) grupos[v.producto_nombre] = [];
+        grupos[v.producto_nombre].push(v);
+      });
+
+      listaStock.innerHTML = Object.keys(grupos)
+        .map(function (nombreProducto) {
+          var filas = grupos[nombreProducto]
+            .map(function (v) {
+              var ocupadas = pedidosCache.filter(function (p) {
+                return p.producto_id === v.id && p.estado === "activo";
+              }).length;
+
+              return (
+                '<div class="tarjeta-stock">' +
+                '<div class="info-stock">' +
+                "<h4>" + v.variante + "</h4>" +
+                "<p>" + ocupadas + " ocupada" + (ocupadas === 1 ? "" : "s") + " ahora mismo</p>" +
+                "</div>" +
+                '<div class="controles-stock">' +
+                '<input type="number" min="0" class="form-control form-control-sm campo-alquiler input-stock" data-id="' + v.id + '" value="' + v.stock + '">' +
+                '<button type="button" class="btn-accion-admin activar btn-guardar-stock" data-id="' + v.id + '">Guardar</button>' +
+                "</div>" +
+                "</div>"
+              );
+            })
+            .join("");
+
+          return (
+            '<div class="grupo-stock">' +
+            '<h3 class="titulo-grupo-stock">' + nombreProducto + "</h3>" +
+            filas +
+            "</div>"
+          );
+        })
+        .join("");
     }
 
     /* ---------------------- Tabla de pedidos ---------------------- */
@@ -499,6 +557,38 @@
       if (!id) return;
       if (evento.target.classList.contains("btn-confirmar-renovacion")) confirmarRenovacion(id);
       if (evento.target.classList.contains("btn-rechazar-comprobante")) rechazarComprobante(id);
+    });
+
+    listaStock.addEventListener("click", async function (evento) {
+      if (!evento.target.classList.contains("btn-guardar-stock")) return;
+      var id = evento.target.getAttribute("data-id");
+      var input = listaStock.querySelector('.input-stock[data-id="' + id + '"]');
+      var nuevoStock = parseInt(input.value, 10);
+      if (isNaN(nuevoStock) || nuevoStock < 0) {
+        alert("Ingresá un número válido.");
+        return;
+      }
+
+      var textoOriginal = evento.target.textContent;
+      evento.target.textContent = "Guardando...";
+      evento.target.classList.add("deshabilitado");
+
+      var resultado = await GaussDB.actualizarStock(id, nuevoStock);
+
+      evento.target.textContent = resultado.ok ? "Guardado ✓" : textoOriginal;
+      evento.target.classList.remove("deshabilitado");
+
+      if (resultado.ok) {
+        var variante = variantesCache.find(function (v) {
+          return v.id === id;
+        });
+        if (variante) variante.stock = nuevoStock;
+        window.setTimeout(function () {
+          evento.target.textContent = textoOriginal;
+        }, 1500);
+      } else {
+        alert("No se pudo guardar: " + resultado.motivo);
+      }
     });
 
     // Si ya había una sesión activa (recargó la página), la retomamos.
