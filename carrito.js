@@ -371,6 +371,8 @@
     var detalle = boton.getAttribute("data-detalle") || "";
     var alquiler = boton.getAttribute("data-alquiler") === "1";
     var dias = boton.getAttribute("data-dias") ? parseInt(boton.getAttribute("data-dias"), 10) : null;
+    var varianteId = boton.getAttribute("data-id");
+    var talleLabel = "";
 
     var modalidadName = boton.getAttribute("data-modalidad-name");
     if (modalidadName) {
@@ -386,17 +388,29 @@
       }
     }
 
+    var talleName = boton.getAttribute("data-talle-name");
+    if (talleName) {
+      var talleSeleccionado = document.querySelector('input[name="' + talleName + '"]:checked');
+      if (talleSeleccionado) {
+        talleLabel = talleSeleccionado.value;
+        varianteId = talleSeleccionado.getAttribute("data-variante") || varianteId;
+      }
+    }
+
+    var detalleFinal = [talleLabel, detalle].filter(Boolean).join(" · ");
+
     var idBase = boton.getAttribute("data-id");
-    var idCarrito = modalidadName
-      ? idBase + "-" + (alquiler ? "alquiler-" + dias : "venta")
+    var idCarrito = modalidadName || talleName
+      ? varianteId + "-" + (alquiler ? "alquiler-" + dias : "venta")
       : idBase;
 
     var producto = {
       id: idCarrito,
+      varianteId: varianteId,
       nombre: boton.getAttribute("data-nombre"),
       precio: parseFloat(boton.getAttribute("data-precio")),
       imagen: boton.getAttribute("data-imagen") || "",
-      detalle: detalle,
+      detalle: detalleFinal,
       alquiler: alquiler,
       dias: alquiler ? dias : null,
     };
@@ -446,7 +460,7 @@
         var item = carrito[i];
         if (!item.alquiler) continue;
         var resultado = await GaussDB.chequearDisponibilidad(
-          idProductoBase(item.id),
+          item.varianteId || idProductoBase(item.id),
           datos.campoFechaDesde,
           calcularFechaHasta(datos.campoFechaDesde, item.dias)
         );
@@ -467,7 +481,7 @@
         var linea = carrito[j];
         await GaussDB.crearPedido({
           tipo: linea.alquiler ? "alquiler" : "venta",
-          productoId: idProductoBase(linea.id),
+          productoId: linea.varianteId || idProductoBase(linea.id),
           productoNombre: linea.nombre,
           cantidad: linea.cantidad,
           precioUnitario: linea.precio,
@@ -492,7 +506,7 @@
         var lineaVenta = carrito[k];
         await GaussDB.crearPedido({
           tipo: "venta",
-          productoId: idProductoBase(lineaVenta.id),
+          productoId: lineaVenta.varianteId || idProductoBase(lineaVenta.id),
           productoNombre: lineaVenta.nombre,
           cantidad: lineaVenta.cantidad,
           precioUnitario: lineaVenta.precio,
