@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alquileres - Gauss Ortopedia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="_main.css">
+</head>
+<body>
+
+    <header class="border-bottom bg-white header-gauss sticky-top">
+        <nav class="navbar navbar-expand-md navbar-light container-fluid px-4 py-3">
+            <div class="container-fluid p-0">
+
+                <a class="navbar-brand p-0 m-0" href="index.html">
+                    <div class="logo-gauss">
+                        GAUSS <span class="sub-logo-gauss">Ortopedia</span>
+                    </div>
+                </a>
+
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavGauss">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNavGauss">
+                    <ul class="navbar-nav gap-2 mt-3 mt-md-0 text-center text-md-start">
+                        <li class="nav-item">
+                            <a class="nav-link enlace-gauss" href="index.html">Inicio</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle enlace-gauss" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Productos
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm text-center text-md-start">
+                                <li><a class="dropdown-item sub-enlace-gauss" href="Plantillas.html">Plantillas</a></li>
+                                <li><a class="dropdown-item sub-enlace-gauss" href="Magneto.html">Magneto</a></li>
+                                <li><a class="dropdown-item sub-enlace-gauss" href="Bota-walker.html">Bota Walker</a></li>
+                                <li><a class="dropdown-item sub-enlace-gauss" href="Muletas.html">Muletas</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link enlace-gauss active" href="alquileres.html">Alquileres</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link enlace-gauss" href="Contacto.html">Contacto</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <button type="button" class="btn-carrito-gauss ms-2 ms-md-3" id="btnAbrirCarrito" aria-label="Ver carrito de compras" aria-expanded="false" aria-controls="panelCarrito">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" class="bi bi-cart3">
+                        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                    </svg>
+                    <span class="badge-carrito" id="badgeCarrito">0</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- HERO -->
+    <section class="hero-reservas">
+        <span class="badge-categoria">Alquileres online</span>
+        <h1 class="titulo-hero-reservas">Reservá el equipo que necesitás, sin salir de casa</h1>
+        <p class="bajada-hero-reservas">
+            Elegí el producto, las fechas de retiro y devolución, y coordinamos todo por WhatsApp con la
+            atención personalizada de siempre.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
+            <a href="#formulario-reserva" class="btn-gauss-whatsapp-contacto">Reservar ahora</a>
+            <a href="#equipos-disponibles" class="btn-outline-reservas">Ver equipos disponibles</a>
+        </div>
+    </section>
+
+    <!-- FRANJA DE BENEFICIOS -->
+    <section class="franja-beneficios">
+        <div class="container">
+            <div class="row g-4 text-center">
+                <div class="col-6 col-md-3">
+                    <div class="icono-beneficio">✅</div>
+                    <p class="texto-beneficio">Confirmamos disponibilidad al instante</p>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="icono-beneficio">🚚</div>
+                    <p class="texto-beneficio">Entrega inmediata en Rosario</p>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="icono-beneficio">💬</div>
+                    <p class="texto-beneficio">Atención personalizada por WhatsApp</p>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="icono-beneficio">🔄</div>
+                    <p class="texto-beneficio">Devolución flexible, sin vueltas</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FORMULARIO DE RESERVA -->
+    <section class="seccion-reserva" id="formulario-reserva">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="titulo-seccion-producto">Armá tu reserva</h2>
+                <p class="text-secondary">Completá los datos y te confirmamos todo por WhatsApp.</p>
+            </div>
+
+            <div class="row g-4 justify-content-center">
+                <div class="col-12 col-lg-7">
+                    <div class="tarjeta-formulario-reserva">
+                        <div class="mb-3">
+                            <label class="etiqueta-campo-alquiler" for="selectEquipo">Equipo</label>
+                            <select class="form-select form-select-sm campo-alquiler campo-reserva" id="selectEquipo">
+                                <!-- Las opciones se completan con reservas.js -->
+                            </select>
+                        </div>
+
+                        <div class="fila-fechas-reserva mb-3">
+                            <div>
+                                <label class="etiqueta-campo-alquiler" for="fechaDesdeReserva">Fecha de retiro</label>
+                                <input type="date" class="form-control form-control-sm campo-alquiler campo-reserva" id="fechaDesdeReserva">
+                            </div>
+                            <div>
+                                <label class="etiqueta-campo-alquiler" for="selectDuracion">Duración</label>
+                                <select class="form-select form-select-sm campo-alquiler campo-reserva" id="selectDuracion">
+                                    <!-- Las opciones se completan con reservas.js según el equipo elegido -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="etiqueta-campo-alquiler" for="campoNombreReserva">Nombre</label>
+                            <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoNombreReserva" placeholder="Ej: Juan">
+                        </div>
+                        <div class="mb-2">
+                            <label class="etiqueta-campo-alquiler" for="campoApellidoReserva">Apellido</label>
+                            <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoApellidoReserva" placeholder="Ej: Pérez">
+                        </div>
+                        <div class="mb-2">
+                            <label class="etiqueta-campo-alquiler" for="campoTelefonoReserva">Teléfono / WhatsApp</label>
+                            <input type="tel" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoTelefonoReserva" placeholder="Ej: 341 5551234">
+                        </div>
+                        <div class="mb-2">
+                            <label class="etiqueta-campo-alquiler" for="campoDniReserva">DNI</label>
+                            <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoDniReserva" placeholder="Ej: 30123456">
+                        </div>
+                        <div class="mb-2">
+                            <label class="etiqueta-campo-alquiler" for="campoDireccionReserva">Dirección</label>
+                            <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoDireccionReserva" placeholder="Calle, número, ciudad">
+                        </div>
+                        <div class="mb-3">
+                            <label class="etiqueta-campo-alquiler" for="campoLesionReserva">Lesión / motivo de uso</label>
+                            <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoLesionReserva" placeholder="Ej: Esguince de tobillo">
+                        </div>
+
+                        <button type="button" class="btn-finalizar-carrito w-100" id="btnReservarWhatsApp">Reservar por WhatsApp</button>
+                        <p class="aviso-datos-reserva d-none" id="avisoDatosReserva">Completá nombre, apellido, DNI, dirección y lesión para continuar.</p>
+                        <p class="aviso-datos-reserva d-none" id="avisoDisponibilidadReserva"></p>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-4">
+                    <div class="tarjeta-resumen-reserva">
+                        <img src="" alt="" class="resumen-imagen" id="resumenImagen">
+                        <div class="resumen-nombre-equipo" id="resumenNombreEquipo">-</div>
+
+                        <div class="resumen-fila">
+                            <span>Tarifa</span>
+                            <span id="resumenPrecioMes">-</span>
+                        </div>
+                        <div class="resumen-fila">
+                            <span>Duración</span>
+                            <span id="resumenDias">-</span>
+                        </div>
+                        <div class="resumen-fila">
+                            <span>Devolución</span>
+                            <span id="resumenFechaHasta">-</span>
+                        </div>
+
+                        <div class="resumen-total">
+                            <span>Total</span>
+                            <span id="resumenTotalReserva">$0</span>
+                        </div>
+
+                        <p class="resumen-aviso-reserva">
+                            Confirmamos disponibilidad y forma de pago por WhatsApp.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CATÁLOGO DE EQUIPOS -->
+    <section class="seccion-reserva pt-0" id="equipos-disponibles">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="titulo-seccion-producto">Equipos disponibles para alquilar</h2>
+                <p class="text-secondary">Elegí un equipo y lo pre-cargamos en el formulario de reserva.</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-12 col-md-4">
+                    <div class="tarjeta-equipo-reserva">
+                        <img src="Muletas.webp" alt="Muletas de Aluminio Regulables">
+                        <div class="cuerpo-tarjeta-equipo">
+                            <h3>Muletas de Aluminio Regulables</h3>
+                            <p class="precio-equipo-reserva">$18.000 <span>/ mes</span></p>
+                            <button type="button" class="btn-reservar-equipo" data-equipo="muletas">Reservar este equipo</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="tarjeta-equipo-reserva">
+                        <img src="Bota-walker.webp" alt="Bota Walker Inmovilizadora">
+                        <div class="cuerpo-tarjeta-equipo">
+                            <h3>Bota Walker Inmovilizadora</h3>
+                            <p class="precio-equipo-reserva">$16.000 <span>/ mes</span></p>
+                            <button type="button" class="btn-reservar-equipo" data-equipo="bota-walker">Reservar este equipo</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="tarjeta-equipo-reserva">
+                        <img src="magneto.png" alt="Equipo de Magnetoterapia">
+                        <div class="cuerpo-tarjeta-equipo">
+                            <h3>Equipo de Magnetoterapia</h3>
+                            <p class="precio-equipo-reserva">$25.000 <span>/ 15 días</span></p>
+                            <button type="button" class="btn-reservar-equipo" data-equipo="magneto">Reservar este equipo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CÓMO FUNCIONA -->
+    <section class="my-5 p-4 bg-light rounded container">
+        <h3 class="titulo-seccion-producto mb-4 text-center">Cómo funciona</h3>
+        <div class="row g-4">
+            <div class="col-12 col-md-4 text-center">
+                <h5 class="titulo-paso-proceso">1. Elegís el equipo</h5>
+                <p>Seleccioná el producto y las fechas en las que lo vas a necesitar.</p>
+            </div>
+            <div class="col-12 col-md-4 text-center">
+                <h5 class="titulo-paso-proceso">2. Reservás con tus datos</h5>
+                <p>Completás tus datos y te enviamos la reserva por WhatsApp en un clic.</p>
+            </div>
+            <div class="col-12 col-md-4 text-center">
+                <h5 class="titulo-paso-proceso">3. Coordinamos la entrega</h5>
+                <p>Confirmamos disponibilidad, forma de pago y coordinamos retiro o envío.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <div class="container mb-5">
+        <div class="tarjeta-whatsapp-contacto p-4 rounded text-center mx-auto column-max-width">
+            <div class="emisor-icono-wp mb-2">💬</div>
+            <h4 class="titulo-redes-contacto mb-2">¿Tenés dudas antes de reservar?</h4>
+            <p class="instruccion-wp mx-auto">
+                Escribinos y te ayudamos a elegir el equipo adecuado para tu recuperación.
+            </p>
+            <a href="https://wa.me/543415641488?text=Hola!%20Tengo%20una%20consulta%20sobre%20alquileres" target="_blank" class="btn-gauss-whatsapp-contacto">
+                Consultar por WhatsApp
+            </a>
+        </div>
+    </div>
+
+    <footer class="footer-gauss py-5 border-top bg-light">
+        <div class="container">
+            <div class="row g-4 align-items-center">
+                <div class="col-12 col-md-5 text-center text-md-start">
+                    <div class="logo-gauss mb-3">
+                        GAUSS <span class="sub-logo-gauss">Ortopedia</span>
+                    </div>
+                    <ul class="list-unstyled datos-footer m-0">
+                        <li class="mb-2">
+                            <span class="etiqueta-negrita">📍 Dirección:</span>
+                            <a href="https://maps.google.com/?q=27+de+febrero+1724,+Rosario" target="_blank" class="text-decoration-none text-secondary">
+                                27 de febrero 1724, Rosario
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <span class="etiqueta-negrita">📞 Teléfono:</span>
+                            <a href="tel:+543415641488" class="text-decoration-none text-secondary">
+                                +54 341 5641488
+                            </a>
+                        </li>
+                        <li class="mb-3 horario-footer">
+                            <span class="etiqueta-negrita">⏰ Horarios:</span><br>
+                            Lunes a Viernes de 9:30 a 13 hs. y de 15 a 18 hs.<br>
+                            Sábados 9:30 a 13 hs.
+                        </li>
+                    </ul>
+
+                    <div class="contenedor-instagram mt-3">
+                        <a href="https://instagram.com/gaussortopedia" target="_blank" class="d-inline-flex align-items-center text-decoration-none enlace-instagram">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-instagram icono-instagram" viewBox="0 0 16 16">
+                                <path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.9 3.9 0 0 0-1.417.923A3.9 3.9 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.9 3.9 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.9 3.9 0 0 0-.923-1.417A3.9 3.9 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599s.453.546.598.92c.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.5 2.5 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.5 2.5 0 0 1-.92-.598 2.5 2.5 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233s.008-2.388.046-3.231c.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92m-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217m0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334"/>
+                            </svg>
+                            <span class="usuario-instagram">@gaussortopedia</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-7">
+                    <div class="contenedor-mapa shadow-sm">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6694.872842955325!2d-60.652105!3d-32.965885899999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b7aba4f33a665b%3A0x3d4e80ba06075eab!2sOrtopedia%20Gauss!5e0!3m2!1ses-419!2sar!4v1781306139757!5m2!1ses-419!2sar" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4 pt-3 border-top text-center">
+                <div class="col-12">
+                    <p class="copyright-text m-0">© 2026 Gauss Ortopedia. Todos los derechos reservados. · <a href="admin.html" class="text-secondary" style="font-size:12px;">Panel</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div class="overlay-carrito" id="overlayCarrito"></div>
+
+    <aside class="panel-carrito" id="panelCarrito" aria-hidden="true">
+        <div class="panel-carrito-header">
+            <h2>Tu Carrito</h2>
+            <button type="button" class="btn-cerrar-carrito" id="btnCerrarCarrito" aria-label="Cerrar carrito">&times;</button>
+        </div>
+
+        <div class="panel-carrito-scroll">
+            <div class="panel-carrito-body" id="cuerpoCarrito"></div>
+
+            <div class="panel-carrito-resumen d-none" id="pieCarrito">
+                <div class="fila-total-carrito">
+                    <span>Total</span>
+                    <span id="totalCarrito">$0</span>
+                </div>
+
+                <div class="datos-alquiler d-none" id="datosAlquiler">
+                    <h3 class="titulo-datos-alquiler">Datos para el alquiler</h3>
+                    <p class="texto-datos-alquiler">Completá estos datos para poder reservar el equipo.</p>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoFechaDesde">Fecha de retiro</label>
+                        <input type="date" class="form-control form-control-sm campo-alquiler" id="campoFechaDesde">
+                        <small class="texto-datos-alquiler d-block mt-1">La devolución se calcula sola según la duración elegida.</small>
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoNombre">Nombre</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler" id="campoNombre" placeholder="Ej: Juan">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoApellido">Apellido</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler" id="campoApellido" placeholder="Ej: Pérez">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoTelefono">Teléfono / WhatsApp</label>
+                        <input type="tel" class="form-control form-control-sm campo-alquiler" id="campoTelefono" placeholder="Ej: 341 5551234">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoDni">DNI</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler" id="campoDni" placeholder="Ej: 30123456">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoDireccion">Dirección</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler" id="campoDireccion" placeholder="Calle, número, ciudad">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoLesion">Lesión / motivo de uso</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler" id="campoLesion" placeholder="Ej: Esguince de tobillo">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-carrito-acciones d-none" id="accionesCarrito">
+            <a href="#" target="_blank" class="btn-finalizar-carrito" id="btnFinalizarCarrito">Finalizar por WhatsApp</a>
+            <p class="aviso-datos-alquiler d-none" id="avisoDatosAlquiler">Completá la fecha de retiro, nombre, apellido, DNI, dirección y lesión para continuar.</p>
+            <p class="aviso-datos-alquiler d-none" id="avisoDisponibilidad"></p>
+            <p class="aviso-carrito">Te confirmamos disponibilidad, talles y forma de pago por WhatsApp.</p>
+            <button type="button" class="btn-vaciar-carrito" id="btnVaciarCarrito">Vaciar carrito</button>
+        </div>
+    </aside>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="db.js"></script>
+    <script src="carrito.js" defer></script>
+    <script src="reservas.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

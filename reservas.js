@@ -1,0 +1,308 @@
+/* ============================================================
+   RESERVAS.JS — Página de Alquileres de Gauss Ortopedia
+   Independiente de carrito.js: esta página no agrega productos
+   al carrito, arma una reserva y la envía por WhatsApp.
+
+   Cada equipo tiene duraciones fijas (no fechas libres). Para
+   modificar precios o duraciones, editá el array EQUIPOS de abajo.
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  var NUMERO_WHATSAPP = "543415641488";
+
+  var EQUIPOS = [
+    {
+      id: "muletas",
+      nombre: "Muletas de Aluminio Regulables (par)",
+      imagen: "Muletas.webp",
+      duraciones: [{ dias: 30, precio: 18000 }],
+    },
+    {
+      id: "bota-walker",
+      nombre: "Bota Walker Inmovilizadora",
+      imagen: "Bota-walker.webp",
+      duraciones: [{ dias: 30, precio: 16000 }],
+    },
+    {
+      id: "magneto",
+      nombre: "Equipo de Magnetoterapia",
+      imagen: "magneto.png",
+      duraciones: [
+        { dias: 15, precio: 25000 },
+        { dias: 30, precio: 46000 },
+      ],
+    },
+  ];
+
+  var CAMPOS_RESERVA = [
+    { id: "campoNombreReserva", etiqueta: "Nombre" },
+    { id: "campoApellidoReserva", etiqueta: "Apellido" },
+    { id: "campoTelefonoReserva", etiqueta: "Teléfono" },
+    { id: "campoDniReserva", etiqueta: "DNI" },
+    { id: "campoDireccionReserva", etiqueta: "Dirección" },
+    { id: "campoLesionReserva", etiqueta: "Lesión / motivo de uso" },
+  ];
+
+  function formatearPrecio(numero) {
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      maximumFractionDigits: 0,
+    }).format(numero);
+  }
+
+  function formatearFecha(fechaISO) {
+    if (!fechaISO) return "-";
+    var partes = fechaISO.split("-");
+    return partes[2] + "/" + partes[1] + "/" + partes[0];
+  }
+
+  function hoyISO(offsetDias) {
+    var fecha = new Date();
+    fecha.setDate(fecha.getDate() + (offsetDias || 0));
+    return fecha.toISOString().slice(0, 10);
+  }
+
+  function calcularFechaHasta(fechaDesdeStr, dias) {
+    var fecha = new Date(fechaDesdeStr + "T00:00:00");
+    fecha.setDate(fecha.getDate() + (dias - 1));
+    return fecha.toISOString().slice(0, 10);
+  }
+
+  function equipoPorId(id) {
+    for (var i = 0; i < EQUIPOS.length; i++) {
+      if (EQUIPOS[i].id === id) return EQUIPOS[i];
+    }
+    return EQUIPOS[0];
+  }
+
+  function duracionElegida(equipo, dias) {
+    var encontrada = null;
+    equipo.duraciones.forEach(function (d) {
+      if (d.dias === dias) encontrada = d;
+    });
+    return encontrada || equipo.duraciones[0];
+  }
+
+  function poblarSelect() {
+    var select = document.getElementById("selectEquipo");
+    if (!select) return;
+    EQUIPOS.forEach(function (equipo) {
+      var opcion = document.createElement("option");
+      opcion.value = equipo.id;
+      opcion.textContent = equipo.nombre;
+      select.appendChild(opcion);
+    });
+  }
+
+  function poblarDuraciones() {
+    var selectEquipo = document.getElementById("selectEquipo");
+    var selectDuracion = document.getElementById("selectDuracion");
+    if (!selectEquipo || !selectDuracion) return;
+
+    var equipo = equipoPorId(selectEquipo.value);
+    selectDuracion.innerHTML = "";
+    equipo.duraciones.forEach(function (d) {
+      var opcion = document.createElement("option");
+      opcion.value = d.dias;
+      opcion.textContent = d.dias + " días — " + formatearPrecio(d.precio);
+      selectDuracion.appendChild(opcion);
+    });
+  }
+
+  function actualizarResumen() {
+    var select = document.getElementById("selectEquipo");
+    var selectDuracion = document.getElementById("selectDuracion");
+    var fechaDesde = document.getElementById("fechaDesdeReserva");
+    if (!select || !selectDuracion || !fechaDesde) return;
+
+    var equipo = equipoPorId(select.value);
+    var dias = parseInt(selectDuracion.value, 10) || equipo.duraciones[0].dias;
+    var duracion = duracionElegida(equipo, dias);
+    var desde = fechaDesde.value || hoyISO();
+    var hasta = calcularFechaHasta(desde, duracion.dias);
+
+    var imagenEl = document.getElementById("resumenImagen");
+    var nombreEl = document.getElementById("resumenNombreEquipo");
+    var precioEl = document.getElementById("resumenPrecioMes");
+    var diasEl = document.getElementById("resumenDias");
+    var hastaEl = document.getElementById("resumenFechaHasta");
+    var totalEl = document.getElementById("resumenTotalReserva");
+
+    if (imagenEl) {
+      imagenEl.src = equipo.imagen;
+      imagenEl.alt = equipo.nombre;
+    }
+    if (nombreEl) nombreEl.textContent = equipo.nombre;
+    if (precioEl) precioEl.textContent = formatearPrecio(duracion.precio);
+    if (diasEl) diasEl.textContent = duracion.dias + " días";
+    if (hastaEl) hastaEl.textContent = formatearFecha(hasta);
+    if (totalEl) totalEl.textContent = formatearPrecio(duracion.precio);
+  }
+
+  function validarDatosReserva() {
+    var faltante = null;
+    CAMPOS_RESERVA.forEach(function (campo) {
+      var el = document.getElementById(campo.id);
+      if (!el) return;
+      if (!el.value.trim()) {
+        el.classList.add("campo-invalido");
+        if (!faltante) faltante = el;
+      } else {
+        el.classList.remove("campo-invalido");
+      }
+    });
+
+    var fechaDesde = document.getElementById("fechaDesdeReserva");
+    if (fechaDesde && !fechaDesde.value) {
+      fechaDesde.classList.add("campo-invalido");
+      if (!faltante) faltante = fechaDesde;
+    }
+
+    return faltante;
+  }
+
+  function construirMensajeReserva() {
+    var select = document.getElementById("selectEquipo");
+    var selectDuracion = document.getElementById("selectDuracion");
+    var fechaDesde = document.getElementById("fechaDesdeReserva");
+    var equipo = equipoPorId(select.value);
+    var dias = parseInt(selectDuracion.value, 10) || equipo.duraciones[0].dias;
+    var duracion = duracionElegida(equipo, dias);
+    var hasta = calcularFechaHasta(fechaDesde.value, duracion.dias);
+
+    var mensaje =
+      "Hola! Quiero reservar un alquiler en Gauss Ortopedia:\n" +
+      "Equipo: " +
+      equipo.nombre +
+      "\n" +
+      "Duración: " +
+      duracion.dias +
+      " días\n" +
+      "Retiro: " +
+      formatearFecha(fechaDesde.value) +
+      "\n" +
+      "Devolución: " +
+      formatearFecha(hasta) +
+      "\n" +
+      "Total: " +
+      formatearPrecio(duracion.precio) +
+      "\n\nDatos del cliente:";
+
+    CAMPOS_RESERVA.forEach(function (campo) {
+      var el = document.getElementById(campo.id);
+      mensaje += "\n" + campo.etiqueta + ": " + (el ? el.value : "-");
+    });
+
+    return "https://wa.me/" + NUMERO_WHATSAPP + "?text=" + encodeURIComponent(mensaje);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var select = document.getElementById("selectEquipo");
+    var selectDuracion = document.getElementById("selectDuracion");
+    var fechaDesde = document.getElementById("fechaDesdeReserva");
+    var btnReservar = document.getElementById("btnReservarWhatsApp");
+    var aviso = document.getElementById("avisoDatosReserva");
+
+    if (!select) return; // esta página no tiene el formulario, no hacemos nada
+
+    poblarSelect();
+    poblarDuraciones();
+
+    if (fechaDesde) {
+      var hoy = hoyISO();
+      fechaDesde.min = hoy;
+      fechaDesde.value = hoy;
+    }
+
+    actualizarResumen();
+
+    select.addEventListener("change", function () {
+      poblarDuraciones();
+      actualizarResumen();
+    });
+    if (selectDuracion) selectDuracion.addEventListener("change", actualizarResumen);
+    if (fechaDesde) fechaDesde.addEventListener("change", actualizarResumen);
+
+    document.querySelectorAll(".campo-reserva").forEach(function (el) {
+      el.addEventListener("input", function () {
+        if (el.value.trim()) el.classList.remove("campo-invalido");
+      });
+    });
+
+    document.querySelectorAll(".btn-reservar-equipo").forEach(function (boton) {
+      boton.addEventListener("click", function () {
+        select.value = boton.getAttribute("data-equipo");
+        poblarDuraciones();
+        actualizarResumen();
+        var destino = document.getElementById("formulario-reserva");
+        if (destino) destino.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    if (btnReservar) {
+      btnReservar.addEventListener("click", async function () {
+        var faltante = validarDatosReserva();
+        if (faltante) {
+          if (aviso) aviso.classList.remove("d-none");
+          faltante.focus();
+          return;
+        }
+        if (aviso) aviso.classList.add("d-none");
+
+        var equipo = equipoPorId(select.value);
+        var dias = parseInt(selectDuracion.value, 10) || equipo.duraciones[0].dias;
+        var duracion = duracionElegida(equipo, dias);
+        var hasta = calcularFechaHasta(fechaDesde.value, duracion.dias);
+
+        var textoOriginal = btnReservar.textContent;
+        var avisoDisp = document.getElementById("avisoDisponibilidadReserva");
+        if (avisoDisp) avisoDisp.classList.add("d-none");
+
+        if (window.GaussDB) {
+          btnReservar.textContent = "Verificando disponibilidad...";
+          btnReservar.classList.add("deshabilitado");
+
+          var resultado = await GaussDB.chequearDisponibilidad(equipo.id, fechaDesde.value, hasta);
+
+          if (resultado.disponible === false) {
+            btnReservar.textContent = textoOriginal;
+            btnReservar.classList.remove("deshabilitado");
+            if (avisoDisp) {
+              avisoDisp.textContent =
+                '"' + equipo.nombre + '" ya está reservado en esas fechas. Probá con otro rango.';
+              avisoDisp.classList.remove("d-none");
+            }
+            return;
+          }
+
+          btnReservar.textContent = "Guardando reserva...";
+          await GaussDB.crearPedido({
+            tipo: "alquiler",
+            productoId: equipo.id,
+            productoNombre: equipo.nombre,
+            cantidad: 1,
+            precioUnitario: duracion.precio,
+            total: duracion.precio,
+            fechaDesde: fechaDesde.value,
+            fechaHasta: hasta,
+            duracionDias: duracion.dias,
+            nombre: document.getElementById("campoNombreReserva").value,
+            apellido: document.getElementById("campoApellidoReserva").value,
+            telefono: document.getElementById("campoTelefonoReserva").value,
+            dni: document.getElementById("campoDniReserva").value,
+            direccion: document.getElementById("campoDireccionReserva").value,
+            lesion: document.getElementById("campoLesionReserva").value,
+          });
+
+          btnReservar.textContent = textoOriginal;
+          btnReservar.classList.remove("deshabilitado");
+        }
+
+        window.open(construirMensajeReserva(), "_blank");
+      });
+    }
+  });
+})();
