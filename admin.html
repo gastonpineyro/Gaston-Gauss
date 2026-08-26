@@ -66,6 +66,7 @@
                 <button type="button" class="tab-admin" data-tab="comprobantes">
                     Comprobantes por revisar <span class="badge-tab" id="contadorComprobantes">0</span>
                 </button>
+                <button type="button" class="tab-admin" data-tab="stock">Stock</button>
             </div>
 
             <!-- PEDIDOS -->
@@ -148,6 +149,15 @@
                     extender el alquiler automáticamente por la misma duración.
                 </p>
                 <div id="listaComprobantes"></div>
+            </div>
+
+            <!-- STOCK -->
+            <div class="panel-tab-admin d-none" id="tabStock">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Cantidad total de unidades por talle/tipo. "Ocupadas ahora" cuenta los alquileres activos o
+                    confirmados de hoy para esa variante. Cambiá el número y tocá "Guardar" para actualizarlo.
+                </p>
+                <div id="listaStock"></div>
             </div>
         </div>
     </div>
