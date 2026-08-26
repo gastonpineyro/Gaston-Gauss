@@ -1258,6 +1258,13 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   margin-top: 4px;
+  background: #dee2e6;
+  color: #6c757d;
+}
+
+.badge-estado-confirmado {
+  background: #fdf1f2;
+  color: #D04F5E;
 }
 
 .badge-estado-activo {
