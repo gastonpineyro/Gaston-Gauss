@@ -70,16 +70,25 @@ var GaussDB = (function () {
   }
 
   /**
-   * Chequea si un producto está disponible entre fechaDesde y fechaHasta.
-   * Devuelve { disponible: true } o { disponible:false, motivo }.
-   * Si Supabase no está configurado, asume disponible (no bloquea al
-   * cliente por un problema de configuración del sitio).
+   * Chequea si una VARIANTE puntual (ej: "muletas-mediana") tiene stock
+   * libre entre fechaDesde y fechaHasta: cuenta cuántas reservas activas
+   * se superponen con esas fechas y lo compara contra el stock cargado
+   * en variantes_producto. Si la variante no está en esa tabla (todavía
+   * no armaste el stock, o no aplica), asume disponible.
    */
   async function chequearDisponibilidad(productoId, fechaDesde, fechaHasta) {
     var db = obtenerCliente();
     if (!db) return { disponible: true, motivo: "sin-configurar" };
 
     try {
+      var stockResultado = await db
+        .from("variantes_producto")
+        .select("stock")
+        .eq("id", productoId)
+        .maybeSingle();
+
+      var stock = stockResultado.data ? stockResultado.data.stock : 1;
+
       var resultado = await db
         .from("disponibilidad_publica")
         .select("id")
@@ -89,9 +98,45 @@ var GaussDB = (function () {
         .gte("fecha_hasta", fechaDesde);
 
       if (resultado.error) return { disponible: true, motivo: resultado.error.message };
-      return { disponible: resultado.data.length === 0 };
+      return { disponible: resultado.data.length < stock, ocupadas: resultado.data.length, stock: stock };
     } catch (e) {
       return { disponible: true, motivo: String(e) };
+    }
+  }
+
+  /**
+   * Trae todas las variantes con su stock, para mostrarlas/editarlas
+   * en el panel de administración.
+   */
+  async function listarVariantes() {
+    var db = obtenerCliente();
+    if (!db) return { ok: false, motivo: "sin-configurar" };
+    try {
+      var resultado = await db
+        .from("variantes_producto")
+        .select("*")
+        .order("producto_id")
+        .order("variante");
+      if (resultado.error) return { ok: false, motivo: resultado.error.message };
+      return { ok: true, variantes: resultado.data };
+    } catch (e) {
+      return { ok: false, motivo: String(e) };
+    }
+  }
+
+  /**
+   * Actualiza la cantidad de stock de una variante. Requiere estar
+   * logueado (lo controla la política de Supabase, no esta función).
+   */
+  async function actualizarStock(id, nuevoStock) {
+    var db = obtenerCliente();
+    if (!db) return { ok: false, motivo: "sin-configurar" };
+    try {
+      var resultado = await db.from("variantes_producto").update({ stock: nuevoStock }).eq("id", id);
+      if (resultado.error) return { ok: false, motivo: resultado.error.message };
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, motivo: String(e) };
     }
   }
 
@@ -161,6 +206,8 @@ var GaussDB = (function () {
     chequearDisponibilidad: chequearDisponibilidad,
     buscarPedido: buscarPedido,
     subirComprobante: subirComprobante,
+    listarVariantes: listarVariantes,
+    actualizarStock: actualizarStock,
     obtenerCliente: obtenerCliente,
   };
 })();
