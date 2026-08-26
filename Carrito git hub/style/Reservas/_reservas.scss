@@ -1,0 +1,500 @@
+/* ============================================================
+   PÁGINA "ALQUILERES" — estilo landing de reservas (tipo Booqable)
+   con la estética de Gauss.
+   ============================================================ */
+
+/* --- HERO --- */
+.hero-reservas {
+    padding: 70px 20px 50px;
+    text-align: center;
+    background: linear-gradient(180deg, #fdf1f2 0%, $color-blanco 100%);
+}
+
+.titulo-hero-reservas {
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+    font-weight: 800;
+    color: $color-negro;
+    max-width: 720px;
+    margin: 18px auto 14px;
+    line-height: 1.25;
+}
+
+.bajada-hero-reservas {
+    color: $color-gris-texto;
+    font-size: 1.05rem;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.btn-outline-reservas {
+    display: inline-block;
+    border: 2px solid $color-principal;
+    color: $color-principal;
+    background: transparent;
+    padding: 11px 26px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        background-color: $color-principal;
+        color: $color-blanco;
+        transform: translateY(-2px);
+    }
+}
+
+/* --- FRANJA DE BENEFICIOS --- */
+.franja-beneficios {
+    padding: 36px 20px;
+    border-top: 1px solid $color-gris-borde;
+    border-bottom: 1px solid $color-gris-borde;
+    background: #fafbfc;
+}
+
+.icono-beneficio {
+    font-size: 26px;
+    margin-bottom: 8px;
+}
+
+.texto-beneficio {
+    font-size: 13.5px;
+    color: $color-gris-texto;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* --- SECCIÓN DE RESERVA (formulario + resumen) --- */
+.seccion-reserva {
+    padding: 70px 20px;
+    scroll-margin-top: 90px;
+}
+
+.tarjeta-formulario-reserva {
+    background: $color-blanco;
+    border: 1px solid $color-gris-borde;
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    height: 100%;
+}
+
+.fila-fechas-reserva {
+    display: flex;
+    gap: 12px;
+
+    > div {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
+.tarjeta-resumen-reserva {
+    background: $color-principal;
+    color: $color-blanco;
+    border-radius: 14px;
+    padding: 28px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.resumen-imagen {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.resumen-nombre-equipo {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+.resumen-fila {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 14px;
+
+    &:last-of-type {
+        border-bottom: none;
+    }
+}
+
+.resumen-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 21px;
+    font-weight: 800;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.resumen-aviso-reserva {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 12px;
+    margin-bottom: 0;
+    line-height: 1.4;
+}
+
+.aviso-datos-reserva {
+    font-size: 12.5px;
+    color: $color-acento;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+/* --- CATÁLOGO DE EQUIPOS PARA RESERVAR --- */
+.tarjeta-equipo-reserva {
+    background: $color-blanco;
+    border: 1px solid $color-gris-borde;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+    &:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 10px 25px rgba(115, 138, 155, 0.18);
+    }
+
+    img {
+        width: 100%;
+        height: 190px;
+        object-fit: cover;
+    }
+}
+
+.cuerpo-tarjeta-equipo {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: $color-negro;
+        margin-bottom: 6px;
+    }
+}
+
+.precio-equipo-reserva {
+    color: $color-acento;
+    font-weight: 800;
+    font-size: 18px;
+    margin-bottom: 16px;
+
+    span {
+        font-size: 12px;
+        font-weight: 400;
+        color: $color-gris-texto;
+    }
+}
+
+.btn-reservar-equipo {
+    margin-top: auto;
+    background-color: $color-principal;
+    color: $color-blanco;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: #5f7788;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .fila-fechas-reserva {
+        flex-direction: column;
+    }
+}
+
+/* --- PANEL DE ADMINISTRACIÓN --- */
+.pantalla-login-admin {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.tarjeta-login-admin {
+    background: $color-blanco;
+    border: 1px solid $color-gris-borde;
+    border-radius: 14px;
+    padding: 36px 32px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.franja-admin {
+    background: $color-principal;
+    color: $color-blanco;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn-logout-admin {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: $color-blanco;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+}
+
+.tabla-pedidos-admin {
+    font-size: 13.5px;
+
+    th {
+        color: $color-principal;
+        text-transform: uppercase;
+        font-size: 11.5px;
+        letter-spacing: 0.4px;
+        white-space: nowrap;
+    }
+
+    td {
+        vertical-align: middle;
+    }
+}
+
+.badge-tipo {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-tipo-alquiler {
+    background: #fce8ea;
+    color: $color-acento;
+}
+
+.badge-tipo-venta {
+    background: #e7ecef;
+    color: $color-principal;
+}
+
+/* --- PESTAÑAS DEL PANEL --- */
+.tabs-admin {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid $color-gris-borde;
+}
+
+.tab-admin {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 10px 6px;
+    font-weight: bold;
+    font-size: 14px;
+    color: $color-gris-texto;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &:hover {
+        color: $color-principal;
+    }
+
+    &.activo {
+        color: $color-acento;
+        border-bottom-color: $color-acento;
+    }
+}
+
+.badge-tab {
+    background: $color-acento;
+    color: $color-blanco;
+    font-size: 11px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &.badge-tab-vacio {
+        background: $color-gris-borde;
+        color: $color-gris-texto;
+    }
+}
+
+/* --- TARJETAS DE VENCIMIENTOS Y COMPROBANTES --- */
+.tarjeta-vencimiento,
+.tarjeta-comprobante {
+    background: $color-blanco;
+    border: 1px solid $color-gris-borde;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tarjeta-vencimiento.vencido {
+    border-color: $color-acento;
+    background: #fdf1f2;
+}
+
+.info-vencimiento h4,
+.info-comprobante h4 {
+    font-size: 15px;
+    font-weight: bold;
+    margin: 0 0 4px;
+    color: $color-negro;
+}
+
+.info-vencimiento p,
+.info-comprobante p {
+    font-size: 13px;
+    color: $color-gris-texto;
+    margin: 0;
+}
+
+.imagen-comprobante {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid $color-gris-borde;
+    flex-shrink: 0;
+}
+
+.acciones-comprobante,
+.acciones-vencimiento,
+.acciones-fila-admin {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-accion-admin {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-accion-admin.recordatorio,
+.btn-accion-admin.retiro {
+    background: $color-principal;
+    color: $color-blanco;
+
+    &:hover {
+        background: #5f7788;
+    }
+}
+
+.btn-accion-admin.confirmar {
+    background: #3d8b57;
+    color: $color-blanco;
+
+    &:hover {
+        background: #2f6c43;
+    }
+}
+
+.btn-accion-admin.activar {
+    background: #3d8b57;
+    color: $color-blanco;
+
+    &:hover {
+        background: #2f6c43;
+    }
+}
+
+.btn-accion-admin.baja {
+    background: $color-blanco;
+    color: $color-principal;
+    border: 1px solid $color-principal;
+
+    &:hover {
+        background: #eef1f3;
+    }
+}
+
+.badge-estado-pedido {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-top: 4px;
+    background: $color-gris-borde;
+    color: $color-gris-texto;
+}
+
+.badge-estado-confirmado {
+    background: #fdf1f2;
+    color: $color-acento;
+}
+
+.badge-estado-activo {
+    background: #e5f3ea;
+    color: #3d8b57;
+}
+
+.badge-estado-devuelto {
+    background: #e7ecef;
+    color: $color-gris-texto;
+}
+
+.btn-accion-admin.rechazar {
+    background: $color-blanco;
+    color: $color-acento;
+    border: 1px solid $color-acento;
+
+    &:hover {
+        background: #fdf1f2;
+    }
+}
+
+.texto-vacio-admin {
+    color: $color-gris-texto;
+    font-size: 14px;
+    text-align: center;
+    padding: 40px 0;
+}
