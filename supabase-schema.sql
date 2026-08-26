@@ -174,3 +174,45 @@ end;
 $$;
 
 grant execute on function subir_comprobante(uuid, text) to anon, authenticated;
+
+-- ============================================================
+-- STOCK POR VARIANTE (talles / tipos)
+-- ============================================================
+
+create table if not exists variantes_producto (
+    id text primary key,              -- ej: 'muletas-chica', 'magneto-tubos'
+    producto_id text not null,        -- ej: 'muletas', 'magneto'
+    producto_nombre text not null,    -- ej: 'Muletas de Aluminio Regulables (par)'
+    variante text not null,           -- ej: 'Chica', 'Con placas'
+    stock integer not null default 0
+);
+
+-- Carga inicial de stock. Si ya existe una fila con ese id, NO la toca
+-- (así no te pisa el stock si ya lo veías modificando desde el panel).
+insert into variantes_producto (id, producto_id, producto_nombre, variante, stock) values
+    ('muletas-chica',        'muletas',     'Muletas de Aluminio Regulables (par)', 'Chica',   10),
+    ('muletas-mediana',      'muletas',     'Muletas de Aluminio Regulables (par)', 'Mediana', 30),
+    ('muletas-grande',       'muletas',     'Muletas de Aluminio Regulables (par)', 'Grande',  10),
+    ('bota-walker-chica',    'bota-walker', 'Bota Walker Inmovilizadora',           'Chica',   15),
+    ('bota-walker-mediana',  'bota-walker', 'Bota Walker Inmovilizadora',           'Mediana', 25),
+    ('bota-walker-grande',   'bota-walker', 'Bota Walker Inmovilizadora',           'Grande',  10),
+    ('magneto-placas',       'magneto',     'Equipo de Magnetoterapia',             'Con placas',     100),
+    ('magneto-tubos',        'magneto',     'Equipo de Magnetoterapia',             'Con tubos',      300),
+    ('magneto-tubo-placas',  'magneto',     'Equipo de Magnetoterapia',             'Tubo y placas',  100)
+on conflict (id) do nothing;
+
+alter table variantes_producto enable row level security;
+
+-- Cualquiera puede leer el stock (para calcular disponibilidad en el sitio).
+drop policy if exists "leer_variantes_publico" on variantes_producto;
+create policy "leer_variantes_publico"
+    on variantes_producto for select
+    to public
+    using (true);
+
+-- Solo vos (logueado) podés cambiar las cantidades desde el panel.
+drop policy if exists "actualizar_variantes_admin" on variantes_producto;
+create policy "actualizar_variantes_admin"
+    on variantes_producto for update
+    to authenticated
+    using (true);
