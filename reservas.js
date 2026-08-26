@@ -17,18 +17,33 @@
       id: "muletas",
       nombre: "Muletas de Aluminio Regulables (par)",
       imagen: "Muletas.webp",
+      variantes: [
+        { id: "muletas-chica", nombre: "Chica" },
+        { id: "muletas-mediana", nombre: "Mediana" },
+        { id: "muletas-grande", nombre: "Grande" },
+      ],
       duraciones: [{ dias: 30, precio: 18000 }],
     },
     {
       id: "bota-walker",
       nombre: "Bota Walker Inmovilizadora",
       imagen: "Bota-walker.webp",
+      variantes: [
+        { id: "bota-walker-chica", nombre: "Chica" },
+        { id: "bota-walker-mediana", nombre: "Mediana" },
+        { id: "bota-walker-grande", nombre: "Grande" },
+      ],
       duraciones: [{ dias: 30, precio: 16000 }],
     },
     {
       id: "magneto",
       nombre: "Equipo de Magnetoterapia",
       imagen: "magneto.png",
+      variantes: [
+        { id: "magneto-placas", nombre: "Con placas" },
+        { id: "magneto-tubos", nombre: "Con tubos" },
+        { id: "magneto-tubo-placas", nombre: "Tubo y placas" },
+      ],
       duraciones: [
         { dias: 15, precio: 25000 },
         { dias: 30, precio: 46000 },
@@ -112,6 +127,32 @@
     });
   }
 
+  function poblarVariantes() {
+    var selectEquipo = document.getElementById("selectEquipo");
+    var selectVariante = document.getElementById("selectVariante");
+    if (!selectEquipo || !selectVariante) return;
+
+    var equipo = equipoPorId(selectEquipo.value);
+    selectVariante.innerHTML = "";
+    (equipo.variantes || []).forEach(function (v) {
+      var opcion = document.createElement("option");
+      opcion.value = v.id;
+      opcion.textContent = v.nombre;
+      selectVariante.appendChild(opcion);
+    });
+  }
+
+  function varianteSeleccionada(equipo) {
+    var selectVariante = document.getElementById("selectVariante");
+    if (!equipo.variantes || !equipo.variantes.length) return null;
+    var id = selectVariante ? selectVariante.value : equipo.variantes[0].id;
+    var encontrada = null;
+    equipo.variantes.forEach(function (v) {
+      if (v.id === id) encontrada = v;
+    });
+    return encontrada || equipo.variantes[0];
+  }
+
   function actualizarResumen() {
     var select = document.getElementById("selectEquipo");
     var selectDuracion = document.getElementById("selectDuracion");
@@ -135,7 +176,7 @@
       imagenEl.src = equipo.imagen;
       imagenEl.alt = equipo.nombre;
     }
-    if (nombreEl) nombreEl.textContent = equipo.nombre;
+    if (nombreEl) nombreEl.textContent = equipo.nombre + (varianteSeleccionada(equipo) ? " — " + varianteSeleccionada(equipo).nombre : "");
     if (precioEl) precioEl.textContent = formatearPrecio(duracion.precio);
     if (diasEl) diasEl.textContent = duracion.dias + " días";
     if (hastaEl) hastaEl.textContent = formatearFecha(hasta);
@@ -177,6 +218,7 @@
       "Hola! Quiero reservar un alquiler en Gauss Ortopedia:\n" +
       "Equipo: " +
       equipo.nombre +
+      (varianteSeleccionada(equipo) ? " (" + varianteSeleccionada(equipo).nombre + ")" : "") +
       "\n" +
       "Duración: " +
       duracion.dias +
@@ -200,6 +242,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    var selectVariante = document.getElementById("selectVariante");
     var select = document.getElementById("selectEquipo");
     var selectDuracion = document.getElementById("selectDuracion");
     var fechaDesde = document.getElementById("fechaDesdeReserva");
@@ -209,6 +252,7 @@
     if (!select) return; // esta página no tiene el formulario, no hacemos nada
 
     poblarSelect();
+    poblarVariantes();
     poblarDuraciones();
 
     if (fechaDesde) {
@@ -220,9 +264,11 @@
     actualizarResumen();
 
     select.addEventListener("change", function () {
+      poblarVariantes();
       poblarDuraciones();
       actualizarResumen();
     });
+    if (selectVariante) selectVariante.addEventListener("change", actualizarResumen);
     if (selectDuracion) selectDuracion.addEventListener("change", actualizarResumen);
     if (fechaDesde) fechaDesde.addEventListener("change", actualizarResumen);
 
@@ -235,6 +281,7 @@
     document.querySelectorAll(".btn-reservar-equipo").forEach(function (boton) {
       boton.addEventListener("click", function () {
         select.value = boton.getAttribute("data-equipo");
+        poblarVariantes();
         poblarDuraciones();
         actualizarResumen();
         var destino = document.getElementById("formulario-reserva");
@@ -253,6 +300,8 @@
         if (aviso) aviso.classList.add("d-none");
 
         var equipo = equipoPorId(select.value);
+        var variante = varianteSeleccionada(equipo);
+        var idParaStock = variante ? variante.id : equipo.id;
         var dias = parseInt(selectDuracion.value, 10) || equipo.duraciones[0].dias;
         var duracion = duracionElegida(equipo, dias);
         var hasta = calcularFechaHasta(fechaDesde.value, duracion.dias);
@@ -265,14 +314,14 @@
           btnReservar.textContent = "Verificando disponibilidad...";
           btnReservar.classList.add("deshabilitado");
 
-          var resultado = await GaussDB.chequearDisponibilidad(equipo.id, fechaDesde.value, hasta);
+          var resultado = await GaussDB.chequearDisponibilidad(idParaStock, fechaDesde.value, hasta);
 
           if (resultado.disponible === false) {
             btnReservar.textContent = textoOriginal;
             btnReservar.classList.remove("deshabilitado");
             if (avisoDisp) {
               avisoDisp.textContent =
-                '"' + equipo.nombre + '" ya está reservado en esas fechas. Probá con otro rango.';
+                '"' + equipo.nombre + (variante ? " (" + variante.nombre + ")" : "") + '" ya está reservado en esas fechas. Probá con otro rango.';
               avisoDisp.classList.remove("d-none");
             }
             return;
@@ -281,8 +330,8 @@
           btnReservar.textContent = "Guardando reserva...";
           await GaussDB.crearPedido({
             tipo: "alquiler",
-            productoId: equipo.id,
-            productoNombre: equipo.nombre,
+            productoId: idParaStock,
+            productoNombre: equipo.nombre + (variante ? " - " + variante.nombre : ""),
             cantidad: 1,
             precioUnitario: duracion.precio,
             total: duracion.precio,
