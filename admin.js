@@ -164,17 +164,32 @@
 
       listaStock.innerHTML = Object.keys(grupos)
         .map(function (nombreProducto) {
-          var filas = grupos[nombreProducto]
+          var variantes = grupos[nombreProducto];
+          var stockTotal = variantes.reduce(function (acc, v) {
+            return acc + v.stock;
+          }, 0);
+          var ocupadasTotal = variantes.reduce(function (acc, v) {
+            return (
+              acc +
+              pedidosCache.filter(function (p) {
+                return p.producto_id === v.id && p.estado === "activo";
+              }).length
+            );
+          }, 0);
+
+          var tarjetas = variantes
             .map(function (v) {
               var ocupadas = pedidosCache.filter(function (p) {
                 return p.producto_id === v.id && p.estado === "activo";
               }).length;
+              var disponibles = v.stock - ocupadas;
 
               return (
-                '<div class="tarjeta-stock">' +
+                '<div class="tarjeta-stock' + (disponibles <= 0 ? " stock-agotado" : "") + '">' +
                 '<div class="info-stock">' +
                 "<h4>" + v.variante + "</h4>" +
-                "<p>" + ocupadas + " ocupada" + (ocupadas === 1 ? "" : "s") + " ahora mismo</p>" +
+                "<p>" + ocupadas + " ocupada" + (ocupadas === 1 ? "" : "s") + " ahora</p>" +
+                '<p class="disponibles-stock">' + Math.max(disponibles, 0) + " disponible" + (disponibles === 1 ? "" : "s") + "</p>" +
                 "</div>" +
                 '<div class="controles-stock">' +
                 '<input type="number" min="0" class="form-control form-control-sm campo-alquiler input-stock" data-id="' + v.id + '" value="' + v.stock + '">' +
@@ -187,8 +202,11 @@
 
           return (
             '<div class="grupo-stock">' +
+            '<div class="encabezado-grupo-stock">' +
             '<h3 class="titulo-grupo-stock">' + nombreProducto + "</h3>" +
-            filas +
+            '<span class="resumen-grupo-stock">' + ocupadasTotal + " ocupadas de " + stockTotal + " en total</span>" +
+            "</div>" +
+            '<div class="grilla-stock">' + tarjetas + "</div>" +
             "</div>"
           );
         })
