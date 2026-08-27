@@ -1293,6 +1293,57 @@ body {
   padding: 40px 0;
 }
 
+/* --- STOCK --- */
+.grupo-stock {
+  margin-bottom: 24px;
+}
+
+.titulo-grupo-stock {
+  font-size: 14px;
+  font-weight: bold;
+  color: #738A9B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 10px;
+}
+
+.tarjeta-stock {
+  background: #FFFFFF;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-stock h4 {
+  font-size: 14px;
+  font-weight: bold;
+  margin: 0 0 2px;
+  color: #333333;
+}
+
+.info-stock p {
+  font-size: 12.5px;
+  color: #6c757d;
+  margin: 0;
+}
+
+.controles-stock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-stock {
+  width: 80px;
+  text-align: center;
+}
+
 /* --- FOOTER, COLORES Y REDES --- */
 .footer-gauss .logo-gauss {
   color: #D04F5E;
