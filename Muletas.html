@@ -98,6 +98,21 @@
                 <div class="bloque-compra">
                 <span class="precio-producto"><span id="precioValor">$28.000</span><small class="unidad-precio d-none" id="precioUnidad"> / mes</small></span>
 
+                <div class="selector-modalidad" role="radiogroup" aria-label="Talle">
+                    <label class="opcion-modalidad">
+                        <input type="radio" name="talle-muletas" value="Chica" data-variante="muletas-chica" checked>
+                        <span>Chica</span>
+                    </label>
+                    <label class="opcion-modalidad">
+                        <input type="radio" name="talle-muletas" value="Mediana" data-variante="muletas-mediana">
+                        <span>Mediana</span>
+                    </label>
+                    <label class="opcion-modalidad">
+                        <input type="radio" name="talle-muletas" value="Grande" data-variante="muletas-grande">
+                        <span>Grande</span>
+                    </label>
+                </div>
+
                 <div class="selector-modalidad" role="radiogroup" aria-label="Modalidad de contratación">
                     <label class="opcion-modalidad">
                         <input type="radio" name="modalidad-muletas" value="Venta" data-alquiler="0" data-precio="28000" checked>
@@ -110,7 +125,7 @@
                 </div>
 
                 <div class="acciones-producto">
-                    <button type="button" class="btn-agregar-carrito" data-id="muletas" data-nombre="Muletas de Aluminio Regulables (par)" data-precio="28000" data-imagen="Muletas.webp" data-modalidad-name="modalidad-muletas">
+                    <button type="button" class="btn-agregar-carrito" data-id="muletas" data-nombre="Muletas de Aluminio Regulables (par)" data-precio="28000" data-imagen="Muletas.webp" data-modalidad-name="modalidad-muletas" data-talle-name="talle-muletas">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/></svg>
                         Agregar al carrito
                     </button>
