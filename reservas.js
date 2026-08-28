@@ -183,12 +183,49 @@
     if (totalEl) totalEl.textContent = formatearPrecio(duracion.precio);
   }
 
+  function soloDigitos(valor) {
+    return (valor || "").replace(/\D/g, "");
+  }
+
+  function dniValido(valor) {
+    var digitos = soloDigitos(valor);
+    return digitos.length >= 7 && digitos.length <= 8;
+  }
+
+  function telefonoValido(valor) {
+    var digitos = soloDigitos(valor);
+    return digitos.length >= 8 && digitos.length <= 13;
+  }
+
+  function direccionValida(valor) {
+    var texto = (valor || "").trim();
+    if (texto.length < 5) return false;
+    return /[a-zA-ZÀ-ÿ]/.test(texto) && /\d/.test(texto);
+  }
+
   function validarDatosReserva() {
     var faltante = null;
+    var mensaje = "Completá nombre, apellido, DNI, dirección y lesión para continuar.";
+
     CAMPOS_RESERVA.forEach(function (campo) {
       var el = document.getElementById(campo.id);
       if (!el) return;
+      var invalido = false;
+
       if (!el.value.trim()) {
+        invalido = true;
+      } else if (campo.id === "campoDniReserva" && !dniValido(el.value)) {
+        invalido = true;
+        if (!faltante) mensaje = "El DNI no parece válido: revisá que tenga 7 u 8 números, sin puntos.";
+      } else if (campo.id === "campoTelefonoReserva" && !telefonoValido(el.value)) {
+        invalido = true;
+        if (!faltante) mensaje = "El teléfono no parece válido: revisá que no le sobren ni falten números.";
+      } else if (campo.id === "campoDireccionReserva" && !direccionValida(el.value)) {
+        invalido = true;
+        if (!faltante) mensaje = "La dirección parece incompleta: necesita calle y número (ej: Mitre 900).";
+      }
+
+      if (invalido) {
         el.classList.add("campo-invalido");
         if (!faltante) faltante = el;
       } else {
@@ -199,10 +236,13 @@
     var fechaDesde = document.getElementById("fechaDesdeReserva");
     if (fechaDesde && !fechaDesde.value) {
       fechaDesde.classList.add("campo-invalido");
-      if (!faltante) faltante = fechaDesde;
+      if (!faltante) {
+        faltante = fechaDesde;
+        mensaje = "Elegí una fecha de retiro para continuar.";
+      }
     }
 
-    return faltante;
+    return { elemento: faltante, mensaje: mensaje };
   }
 
   function construirMensajeReserva() {
@@ -274,7 +314,11 @@
 
     document.querySelectorAll(".campo-reserva").forEach(function (el) {
       el.addEventListener("input", function () {
-        if (el.value.trim()) el.classList.remove("campo-invalido");
+        var valido = el.value.trim() !== "";
+        if (el.id === "campoDniReserva") valido = dniValido(el.value);
+        if (el.id === "campoTelefonoReserva") valido = telefonoValido(el.value);
+        if (el.id === "campoDireccionReserva") valido = direccionValida(el.value);
+        if (valido) el.classList.remove("campo-invalido");
       });
     });
 
@@ -291,10 +335,13 @@
 
     if (btnReservar) {
       btnReservar.addEventListener("click", async function () {
-        var faltante = validarDatosReserva();
-        if (faltante) {
-          if (aviso) aviso.classList.remove("d-none");
-          faltante.focus();
+        var validacion = validarDatosReserva();
+        if (validacion.elemento) {
+          if (aviso) {
+            aviso.textContent = validacion.mensaje;
+            aviso.classList.remove("d-none");
+          }
+          validacion.elemento.focus();
           return;
         }
         if (aviso) aviso.classList.add("d-none");
