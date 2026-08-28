@@ -642,6 +642,22 @@ body {
   color: #6c757d;
 }
 
+.disponibilidad-producto {
+  font-size: 13px;
+  font-weight: 600;
+  margin: -8px 0 14px;
+}
+.disponibilidad-producto.consultando {
+  color: #6c757d;
+  font-weight: 400;
+}
+.disponibilidad-producto.ok {
+  color: #3d8b57;
+}
+.disponibilidad-producto.sin-stock {
+  color: #D04F5E;
+}
+
 /* --- SELECTOR VENTA / ALQUILER EN LA PÁGINA DE PRODUCTO --- */
 .selector-modalidad {
   display: flex;
@@ -1293,6 +1309,85 @@ body {
   padding: 40px 0;
 }
 
+/* --- DASHBOARD / RESUMEN --- */
+.grilla-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.tarjeta-dashboard {
+  background: #FFFFFF;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 18px;
+}
+.tarjeta-dashboard.alerta {
+  border-color: #D04F5E;
+  background: #fdf1f2;
+}
+
+.titulo-tarjeta-dashboard {
+  font-size: 12.5px;
+  color: #6c757d;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.valor-tarjeta-dashboard {
+  font-size: 26px;
+  font-weight: 800;
+  color: #738A9B;
+  margin: 0;
+}
+.alerta .valor-tarjeta-dashboard {
+  color: #D04F5E;
+}
+
+.nota-tarjeta-dashboard {
+  font-size: 12px;
+  color: #6c757d;
+  margin: 4px 0 0;
+}
+
+.fila-ranking {
+  margin-bottom: 14px;
+}
+
+.fila-ranking-encabezado {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  margin-bottom: 5px;
+}
+.fila-ranking-encabezado span:last-child {
+  font-weight: 700;
+  color: #738A9B;
+}
+
+.barra-ranking-fondo {
+  height: 8px;
+  border-radius: 999px;
+  background: #dee2e6;
+  overflow: hidden;
+}
+
+.barra-ranking {
+  height: 100%;
+  background: #738A9B;
+  border-radius: 999px;
+}
+
+.link-historial-cliente {
+  color: #738A9B;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+.link-historial-cliente:hover {
+  color: #D04F5E;
+}
+
 /* --- STOCK --- */
 .grupo-stock {
   margin-bottom: 28px;
@@ -1345,6 +1440,10 @@ body {
   border-color: #D04F5E;
   background: #fdf1f2;
 }
+.tarjeta-stock.stock-bajo {
+  border-color: #d99a2b;
+  background: #fdf6e8;
+}
 
 .info-stock h4 {
   font-size: 14.5px;
@@ -1366,6 +1465,9 @@ body {
 }
 .stock-agotado .disponibles-stock {
   color: #D04F5E;
+}
+.stock-bajo .disponibles-stock {
+  color: #b5790a;
 }
 
 .controles-stock {
