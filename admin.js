@@ -603,6 +603,21 @@
 
     /* ---------------------- Acciones ---------------------- */
 
+    // Update centralizado: si por sesión vencida u otro motivo Supabase
+    // no llega a tocar ninguna fila, acá lo detectamos y avisamos, en vez
+    // de dejar que la interfaz muestre "listo" sin haber guardado nada.
+    async function actualizarPedido(id, cambios) {
+      var resultado = await db.from("pedidos").update(cambios).eq("id", id).select();
+      if (resultado.error) return { ok: false, motivo: resultado.error.message };
+      if (!resultado.data || resultado.data.length === 0) {
+        return {
+          ok: false,
+          motivo: "No se guardó ningún cambio (¿la sesión venció? probá cerrar sesión y volver a entrar).",
+        };
+      }
+      return { ok: true };
+    }
+
     async function avisarRetiro(id) {
       var pedido = pedidosCache.find(function (p) {
         return p.id === id;
@@ -616,7 +631,11 @@
         "Tu alquiler es por " + (pedido.duracion_dias || "-") + " días, hasta el " + formatearFecha(pedido.fecha_hasta) + ". ¡Te esperamos!";
 
       window.open(linkWhatsApp(pedido.telefono, mensaje), "_blank");
-      await db.from("pedidos").update({ aviso_retiro_enviado: true }).eq("id", id);
+      var resultado = await actualizarPedido(id, { aviso_retiro_enviado: true });
+      if (!resultado.ok) {
+        alert("Ojo: " + resultado.motivo);
+        return;
+      }
       pedido.aviso_retiro_enviado = true;
       renderizarTabla();
     }
@@ -653,18 +672,15 @@
       diaSiguiente.setDate(diaSiguiente.getDate() + 1);
       var nuevaFechaHasta = calcularFechaHasta(diaSiguiente.toISOString().slice(0, 10), pedido.duracion_dias);
 
-      var resultado = await db
-        .from("pedidos")
-        .update({
-          fecha_hasta: nuevaFechaHasta,
-          pago_pendiente_revision: false,
-          aviso_retiro_enviado: false,
-          veces_renovado: (pedido.veces_renovado || 0) + 1,
-        })
-        .eq("id", id);
+      var resultado = await actualizarPedido(id, {
+        fecha_hasta: nuevaFechaHasta,
+        pago_pendiente_revision: false,
+        aviso_retiro_enviado: false,
+        veces_renovado: (pedido.veces_renovado || 0) + 1,
+      });
 
-      if (resultado.error) {
-        alert("No se pudo confirmar la renovación: " + resultado.error.message);
+      if (!resultado.ok) {
+        alert("No se pudo confirmar la renovación: " + resultado.motivo);
         return;
       }
 
@@ -672,9 +688,9 @@
     }
 
     async function rechazarComprobante(id) {
-      var resultado = await db.from("pedidos").update({ pago_pendiente_revision: false }).eq("id", id);
-      if (resultado.error) {
-        alert("No se pudo rechazar: " + resultado.error.message);
+      var resultado = await actualizarPedido(id, { pago_pendiente_revision: false });
+      if (!resultado.ok) {
+        alert("No se pudo rechazar: " + resultado.motivo);
         return;
       }
       cargarPedidos();
@@ -687,9 +703,9 @@
     }
 
     async function activarAlquiler(id) {
-      var resultado = await db.from("pedidos").update({ estado: "activo" }).eq("id", id);
-      if (resultado.error) {
-        alert("No se pudo activar el alquiler: " + resultado.error.message);
+      var resultado = await actualizarPedido(id, { estado: "activo" });
+      if (!resultado.ok) {
+        alert("No se pudo activar el alquiler: " + resultado.motivo);
         return;
       }
       var pedido = pedidosCache.find(function (p) {
@@ -701,9 +717,9 @@
     }
 
     async function darDeBaja(id) {
-      var resultado = await db.from("pedidos").update({ estado: "devuelto" }).eq("id", id);
-      if (resultado.error) {
-        alert("No se pudo dar de baja el alquiler: " + resultado.error.message);
+      var resultado = await actualizarPedido(id, { estado: "devuelto" });
+      if (!resultado.ok) {
+        alert("No se pudo dar de baja el alquiler: " + resultado.motivo);
         return;
       }
       var pedido = pedidosCache.find(function (p) {
@@ -768,7 +784,12 @@
       if (!evento.target.classList.contains("selector-estado")) return;
       var id = evento.target.getAttribute("data-id");
       var nuevoEstado = evento.target.value;
-      await db.from("pedidos").update({ estado: nuevoEstado }).eq("id", id);
+      var resultado = await actualizarPedido(id, { estado: nuevoEstado });
+      if (!resultado.ok) {
+        alert("No se pudo cambiar el estado: " + resultado.motivo);
+        cargarPedidos();
+        return;
+      }
       var pedido = pedidosCache.find(function (p) {
         return p.id === id;
       });
