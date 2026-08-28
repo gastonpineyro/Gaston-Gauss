@@ -53,7 +53,8 @@
 
         <div class="container-fluid py-4 px-4">
             <div class="tabs-admin mb-4">
-                <button type="button" class="tab-admin activo" data-tab="pedidos">Pedidos</button>
+                <button type="button" class="tab-admin activo" data-tab="resumen">Resumen</button>
+                <button type="button" class="tab-admin" data-tab="pedidos">Pedidos</button>
                 <button type="button" class="tab-admin" data-tab="activos">
                     Activos <span class="badge-tab" id="contadorActivos">0</span>
                 </button>
@@ -66,12 +67,28 @@
                 <button type="button" class="tab-admin" data-tab="comprobantes">
                     Comprobantes por revisar <span class="badge-tab" id="contadorComprobantes">0</span>
                 </button>
-                <button type="button" class="tab-admin" data-tab="stock">Stock</button>
+                <button type="button" class="tab-admin" data-tab="stock">
+                    Stock <span class="badge-tab badge-tab-vacio" id="contadorStockBajo">0</span>
+                </button>
+            </div>
+
+            <!-- RESUMEN -->
+            <div class="panel-tab-admin" id="tabResumen">
+                <div class="grilla-dashboard mb-4" id="grillaDashboard"></div>
+
+                <div class="alert alert-warning d-none" id="avisoStockBajoResumen"></div>
+
+                <h3 class="titulo-grupo-stock mb-3">Producto más pedido (últimos 30 días)</h3>
+                <div id="rankingProductos"></div>
             </div>
 
             <!-- PEDIDOS -->
-            <div class="panel-tab-admin" id="tabPedidos">
+            <div class="panel-tab-admin d-none" id="tabPedidos">
                 <div class="d-flex flex-wrap gap-3 align-items-end mb-3">
+                    <div>
+                        <label class="etiqueta-campo-alquiler" for="buscadorPedidos">Buscar</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler" id="buscadorPedidos" placeholder="Nombre, DNI o teléfono..." style="min-width:220px;">
+                    </div>
                     <div>
                         <label class="etiqueta-campo-alquiler" for="filtroEstado">Estado</label>
                         <select class="form-select form-select-sm campo-alquiler" id="filtroEstado">
@@ -90,6 +107,9 @@
                             <option value="venta">Venta</option>
                             <option value="alquiler">Alquiler</option>
                         </select>
+                    </div>
+                    <div class="ms-auto">
+                        <button type="button" class="btn-accion-admin activar" id="btnExportarCsv">⬇️ Exportar CSV</button>
                     </div>
                 </div>
 
