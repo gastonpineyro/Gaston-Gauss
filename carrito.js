@@ -306,15 +306,59 @@
     var datos = leerDatosAlquiler();
     datos[el.id] = el.value;
     guardarDatosAlquiler(datos);
-    if (el.value.trim()) el.classList.remove("campo-invalido");
+
+    var valido = el.value.trim() !== "";
+    if (el.id === "campoDni") valido = dniValido(el.value);
+    if (el.id === "campoTelefono") valido = telefonoValido(el.value);
+    if (el.id === "campoDireccion") valido = direccionValida(el.value);
+    if (valido) el.classList.remove("campo-invalido");
+  }
+
+  /* ---------------------- Validadores de formato ---------------------- */
+
+  function soloDigitos(valor) {
+    return (valor || "").replace(/\D/g, "");
+  }
+
+  function dniValido(valor) {
+    var digitos = soloDigitos(valor);
+    return digitos.length >= 7 && digitos.length <= 8;
+  }
+
+  function telefonoValido(valor) {
+    var digitos = soloDigitos(valor);
+    return digitos.length >= 8 && digitos.length <= 13;
+  }
+
+  function direccionValida(valor) {
+    var texto = (valor || "").trim();
+    if (texto.length < 5) return false;
+    return /[a-zA-ZÀ-ÿ]/.test(texto) && /\d/.test(texto);
   }
 
   function validarDatosAlquiler() {
     var faltante = null;
+    var mensaje = "Completá la fecha de retiro, nombre, apellido, DNI, dirección y lesión para continuar.";
+
     CAMPOS_ALQUILER.forEach(function (campo) {
       var el = document.getElementById(campo.id);
       if (!el) return;
+      var invalido = false;
+
       if (!el.value.trim()) {
+        invalido = true;
+      } else if (campo.id === "campoDni" && !dniValido(el.value)) {
+        invalido = true;
+        if (!faltante) mensaje = "El DNI no parece válido: revisá que tenga 7 u 8 números, sin puntos.";
+      } else if (campo.id === "campoTelefono" && !telefonoValido(el.value)) {
+        invalido = true;
+        if (!faltante) mensaje = "El teléfono no parece válido: revisá que no le sobren ni falten números.";
+      } else if (campo.id === "campoDireccion" && !direccionValida(el.value)) {
+        invalido = true;
+        if (!faltante) mensaje = "La dirección parece incompleta: necesita calle y número (ej: Mitre 900).";
+      }
+
+      if (invalido) {
         el.classList.add("campo-invalido");
         if (!faltante) faltante = el;
       } else {
@@ -322,7 +366,7 @@
       }
     });
 
-    return faltante;
+    return { elemento: faltante, mensaje: mensaje };
   }
 
   /* ---------------------- Precio dinámico según modalidad ---------------------- */
@@ -480,10 +524,13 @@
     if (avisoDisp) avisoDisp.classList.add("d-none");
 
     if (hayAlquilerEnCarrito(carrito)) {
-      var faltante = validarDatosAlquiler();
-      if (faltante) {
-        if (avisoDatos) avisoDatos.classList.remove("d-none");
-        faltante.focus();
+      var validacion = validarDatosAlquiler();
+      if (validacion.elemento) {
+        if (avisoDatos) {
+          avisoDatos.textContent = validacion.mensaje;
+          avisoDatos.classList.remove("d-none");
+        }
+        validacion.elemento.focus();
         return;
       }
       if (avisoDatos) avisoDatos.classList.add("d-none");
