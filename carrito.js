@@ -346,6 +346,47 @@
     if (boton) boton.setAttribute("data-precio", precio);
   }
 
+  /* ---------------------- Disponibilidad en la ficha del producto ---------------------- */
+
+  async function actualizarDisponibilidadProducto() {
+    var contenedor = document.getElementById("disponibilidadProducto");
+    if (!contenedor) return;
+    if (!window.GaussDB || !GaussDB.configurado()) {
+      contenedor.classList.add("d-none");
+      return;
+    }
+
+    var radioVariante = document.querySelector("[data-variante]:checked");
+    if (!radioVariante) {
+      contenedor.classList.add("d-none");
+      return;
+    }
+
+    var varianteId = radioVariante.getAttribute("data-variante");
+    var hoy = new Date().toISOString().slice(0, 10);
+
+    contenedor.classList.remove("d-none");
+    contenedor.className = "disponibilidad-producto consultando";
+    contenedor.textContent = "Consultando disponibilidad...";
+
+    var resultado = await GaussDB.chequearDisponibilidad(varianteId, hoy, hoy);
+
+    if (resultado.motivo === "sin-configurar") {
+      contenedor.classList.add("d-none");
+      return;
+    }
+
+    if (resultado.disponible) {
+      contenedor.className = "disponibilidad-producto ok";
+      contenedor.textContent =
+        "✓ Disponible ahora" +
+        (typeof resultado.stock === "number" ? " (" + Math.max(resultado.stock - (resultado.ocupadas || 0), 0) + " unidades)" : "");
+    } else {
+      contenedor.className = "disponibilidad-producto sin-stock";
+      contenedor.textContent = "Sin stock disponible en este momento. Consultanos por WhatsApp para ver cuándo se libera.";
+    }
+  }
+
   /* ---------------------- Eventos ---------------------- */
 
   function manejarClickEnCuerpo(evento) {
@@ -557,8 +598,11 @@
       .forEach(function (radio) {
         radio.addEventListener("change", function () {
           actualizarPrecioSegunModalidad(radio);
+          if (radio.hasAttribute("data-variante")) actualizarDisponibilidadProducto();
         });
         if (radio.checked) actualizarPrecioSegunModalidad(radio);
       });
+
+    actualizarDisponibilidadProducto();
   });
 })();
