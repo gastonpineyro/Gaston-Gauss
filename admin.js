@@ -62,6 +62,8 @@
     var errorLogin = document.getElementById("errorLogin");
     var avisoSinConfigurar = document.getElementById("avisoSinConfigurar");
     var tablaCuerpo = document.getElementById("cuerpoTablaPedidos");
+    var buscadorPedidos = document.getElementById("buscadorPedidos");
+    var btnExportarCsv = document.getElementById("btnExportarCsv");
     var selectFiltroEstado = document.getElementById("filtroEstado");
     var selectFiltroTipo = document.getElementById("filtroTipo");
     var btnLogout = document.getElementById("btnLogout");
@@ -71,10 +73,14 @@
     var listaVencidos = document.getElementById("listaVencidos");
     var listaComprobantes = document.getElementById("listaComprobantes");
     var listaStock = document.getElementById("listaStock");
+    var grillaDashboard = document.getElementById("grillaDashboard");
+    var avisoStockBajoResumen = document.getElementById("avisoStockBajoResumen");
+    var rankingProductos = document.getElementById("rankingProductos");
     var contadorActivos = document.getElementById("contadorActivos");
     var contadorPorvencer = document.getElementById("contadorPorvencer");
     var contadorVencidos = document.getElementById("contadorVencidos");
     var contadorComprobantes = document.getElementById("contadorComprobantes");
+    var contadorStockBajo = document.getElementById("contadorStockBajo");
 
     if (!GaussDB.configurado()) {
       if (avisoSinConfigurar) avisoSinConfigurar.classList.remove("d-none");
@@ -137,6 +143,7 @@
       renderizarPorVencer();
       renderizarVencidos();
       renderizarComprobantes();
+      renderizarResumen();
       cargarStock();
     }
 
@@ -150,10 +157,39 @@
       renderizarStock();
     }
 
+    var UMBRAL_STOCK_BAJO = 0.15; // menos del 15% disponible = alerta
+
+    function esStockBajo(v, ocupadas) {
+      var disponibles = v.stock - ocupadas;
+      if (v.stock <= 0) return false;
+      return disponibles <= Math.max(3, Math.round(v.stock * UMBRAL_STOCK_BAJO));
+    }
+
     function renderizarStock() {
       if (variantesCache.length === 0) {
         listaStock.innerHTML = '<p class="texto-vacio-admin">Todavía no cargaste el stock (correspondería correr de nuevo supabase-schema.sql).</p>';
         return;
+      }
+
+      var bajos = variantesCache.filter(function (v) {
+        var ocupadas = pedidosCache.filter(function (p) {
+          return p.producto_id === v.id && p.estado === "activo";
+        }).length;
+        return esStockBajo(v, ocupadas);
+      });
+      contadorStockBajo.textContent = bajos.length;
+      contadorStockBajo.classList.toggle("badge-tab-vacio", bajos.length === 0);
+
+      if (avisoStockBajoResumen) {
+        if (bajos.length === 0) {
+          avisoStockBajoResumen.classList.add("d-none");
+        } else {
+          avisoStockBajoResumen.classList.remove("d-none");
+          avisoStockBajoResumen.innerHTML =
+            "⚠️ Quedan pocas unidades de: <strong>" +
+            bajos.map(function (v) { return v.producto_nombre + " (" + v.variante + ")"; }).join(", ") +
+            "</strong>. Revisá la pestaña Stock.";
+        }
       }
 
       var grupos = {};
@@ -183,9 +219,10 @@
                 return p.producto_id === v.id && p.estado === "activo";
               }).length;
               var disponibles = v.stock - ocupadas;
+              var claseAlerta = disponibles <= 0 ? " stock-agotado" : esStockBajo(v, ocupadas) ? " stock-bajo" : "";
 
               return (
-                '<div class="tarjeta-stock' + (disponibles <= 0 ? " stock-agotado" : "") + '">' +
+                '<div class="tarjeta-stock' + claseAlerta + '">' +
                 '<div class="info-stock">' +
                 "<h4>" + v.variante + "</h4>" +
                 "<p>" + ocupadas + " ocupada" + (ocupadas === 1 ? "" : "s") + " ahora</p>" +
@@ -213,15 +250,112 @@
         .join("");
     }
 
+    /* ---------------------- Resumen (dashboard) ---------------------- */
+
+    function renderizarResumen() {
+      var hoy = new Date();
+      var inicioMes = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0") + "-01";
+      var hace30Dias = new Date(hoy.getTime() - 30 * 86400000).toISOString();
+
+      var pedidosDelMes = pedidosCache.filter(function (p) {
+        return p.creado_en >= inicioMes;
+      });
+      var totalFacturadoMes = pedidosDelMes.reduce(function (acc, p) {
+        return acc + (p.total || 0);
+      }, 0);
+      var ventasMes = pedidosDelMes.filter(function (p) {
+        return p.tipo === "venta";
+      }).length;
+      var alquileresMes = pedidosDelMes.filter(function (p) {
+        return p.tipo === "alquiler";
+      }).length;
+      var activosAhora = pedidosCache.filter(function (p) {
+        return p.estado === "activo";
+      }).length;
+      var pendientesRevision = pedidosCache.filter(function (p) {
+        return p.pago_pendiente_revision;
+      }).length;
+      var vencidosSinDevolver = pedidosCache.filter(function (p) {
+        return (
+          p.tipo === "alquiler" &&
+          (p.estado === "confirmado" || p.estado === "activo") &&
+          p.fecha_hasta &&
+          diasHasta(p.fecha_hasta) < 0
+        );
+      }).length;
+
+      var tarjetas = [
+        { titulo: "Pedidos este mes", valor: pedidosDelMes.length, nota: ventasMes + " ventas · " + alquileresMes + " alquileres" },
+        { titulo: "Facturado este mes", valor: formatearPrecio(totalFacturadoMes), nota: "suma de todos los pedidos del mes" },
+        { titulo: "Alquileres activos", valor: activosAhora, nota: "en la calle ahora mismo" },
+        { titulo: "Vencidos sin devolver", valor: vencidosSinDevolver, nota: "necesitan seguimiento", alerta: vencidosSinDevolver > 0 },
+        { titulo: "Comprobantes pendientes", valor: pendientesRevision, nota: "esperando tu revisión", alerta: pendientesRevision > 0 },
+      ];
+
+      grillaDashboard.innerHTML = tarjetas
+        .map(function (t) {
+          return (
+            '<div class="tarjeta-dashboard' + (t.alerta ? " alerta" : "") + '">' +
+            '<p class="titulo-tarjeta-dashboard">' + t.titulo + "</p>" +
+            '<p class="valor-tarjeta-dashboard">' + t.valor + "</p>" +
+            '<p class="nota-tarjeta-dashboard">' + t.nota + "</p>" +
+            "</div>"
+          );
+        })
+        .join("");
+
+      // Producto más pedido en los últimos 30 días
+      var pedidosRecientes = pedidosCache.filter(function (p) {
+        return p.creado_en >= hace30Dias;
+      });
+      var conteo = {};
+      pedidosRecientes.forEach(function (p) {
+        conteo[p.producto_nombre] = (conteo[p.producto_nombre] || 0) + (p.cantidad || 1);
+      });
+      var ranking = Object.keys(conteo)
+        .map(function (nombre) {
+          return { nombre: nombre, cantidad: conteo[nombre] };
+        })
+        .sort(function (a, b) {
+          return b.cantidad - a.cantidad;
+        })
+        .slice(0, 5);
+
+      if (ranking.length === 0) {
+        rankingProductos.innerHTML = '<p class="texto-vacio-admin">Todavía no hay pedidos en los últimos 30 días.</p>';
+      } else {
+        var maximo = ranking[0].cantidad;
+        rankingProductos.innerHTML = ranking
+          .map(function (r) {
+            var porcentaje = Math.round((r.cantidad / maximo) * 100);
+            return (
+              '<div class="fila-ranking">' +
+              '<div class="fila-ranking-encabezado">' +
+              '<span>' + r.nombre + "</span>" +
+              '<span>' + r.cantidad + "</span>" +
+              "</div>" +
+              '<div class="barra-ranking-fondo"><div class="barra-ranking" style="width:' + porcentaje + '%"></div></div>' +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+    }
+
     /* ---------------------- Tabla de pedidos ---------------------- */
 
     function renderizarTabla() {
       var estadoFiltro = selectFiltroEstado.value;
       var tipoFiltro = selectFiltroTipo.value;
+      var busqueda = (buscadorPedidos.value || "").trim().toLowerCase();
 
       var filas = pedidosCache.filter(function (p) {
         if (estadoFiltro !== "todos" && p.estado !== estadoFiltro) return false;
         if (tipoFiltro !== "todos" && p.tipo !== tipoFiltro) return false;
+        if (busqueda) {
+          var texto = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+          if (texto.indexOf(busqueda) === -1) return false;
+        }
         return true;
       });
 
@@ -256,13 +390,17 @@
             acciones.push('<button type="button" class="btn-accion-admin baja btn-dar-de-baja" data-id="' + p.id + '">↩️ Dar de baja</button>');
           }
 
+          var clienteHtml = p.dni
+            ? '<a href="#" class="link-historial-cliente" data-dni="' + p.dni + '">' + cliente + " (DNI " + p.dni + ")</a>"
+            : cliente;
+
           return (
             "<tr>" +
             "<td>" + fecha + "</td>" +
             '<td><span class="badge-tipo ' + badgeTipo + '">' + p.tipo + "</span></td>" +
             "<td>" + p.producto_nombre + " x" + p.cantidad + "</td>" +
             "<td>" + periodo + "</td>" +
-            "<td>" + cliente + (p.dni ? " (DNI " + p.dni + ")" : "") + "</td>" +
+            "<td>" + clienteHtml + "</td>" +
             "<td>" + (p.telefono || "-") + "</td>" +
             "<td>" + (p.direccion || "-") + (p.lesion ? "<br><small class='text-muted'>" + p.lesion + "</small>" : "") + "</td>" +
             "<td>" + formatearPrecio(p.total) + "</td>" +
@@ -278,6 +416,70 @@
           );
         })
         .join("");
+    }
+
+    function exportarCsv() {
+      var estadoFiltro = selectFiltroEstado.value;
+      var tipoFiltro = selectFiltroTipo.value;
+      var busqueda = (buscadorPedidos.value || "").trim().toLowerCase();
+
+      var filas = pedidosCache.filter(function (p) {
+        if (estadoFiltro !== "todos" && p.estado !== estadoFiltro) return false;
+        if (tipoFiltro !== "todos" && p.tipo !== tipoFiltro) return false;
+        if (busqueda) {
+          var texto = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+          if (texto.indexOf(busqueda) === -1) return false;
+        }
+        return true;
+      });
+
+      var encabezados = [
+        "Fecha", "Tipo", "Producto", "Cantidad", "Fecha desde", "Fecha hasta",
+        "Nombre", "Apellido", "Telefono", "DNI", "Direccion", "Lesion", "Total", "Estado",
+      ];
+
+      function escaparCsv(valor) {
+        var texto = valor === null || valor === undefined ? "" : String(valor);
+        if (texto.indexOf(",") !== -1 || texto.indexOf('"') !== -1 || texto.indexOf("\n") !== -1) {
+          texto = '"' + texto.replace(/"/g, '""') + '"';
+        }
+        return texto;
+      }
+
+      var lineas = [encabezados.join(",")];
+      filas.forEach(function (p) {
+        lineas.push(
+          [
+            new Date(p.creado_en).toLocaleString("es-AR"),
+            p.tipo,
+            p.producto_nombre,
+            p.cantidad,
+            formatearFecha(p.fecha_desde),
+            formatearFecha(p.fecha_hasta),
+            p.nombre,
+            p.apellido,
+            p.telefono,
+            p.dni,
+            p.direccion,
+            p.lesion,
+            p.total,
+            p.estado,
+          ]
+            .map(escaparCsv)
+            .join(",")
+        );
+      });
+
+      var contenido = "\uFEFF" + lineas.join("\n");
+      var blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = "pedidos-gauss-" + hoyISO() + ".csv";
+      document.body.appendChild(enlace);
+      enlace.click();
+      document.body.removeChild(enlace);
+      URL.revokeObjectURL(url);
     }
 
     /* ---------------------- Listas de alquileres (Activos / Por vencer / Vencidos) ---------------------- */
@@ -540,7 +742,21 @@
       el.addEventListener("change", renderizarTabla);
     });
 
+    if (buscadorPedidos) {
+      buscadorPedidos.addEventListener("input", renderizarTabla);
+    }
+
+    if (btnExportarCsv) {
+      btnExportarCsv.addEventListener("click", exportarCsv);
+    }
+
     tablaCuerpo.addEventListener("click", function (evento) {
+      if (evento.target.classList.contains("link-historial-cliente")) {
+        evento.preventDefault();
+        buscadorPedidos.value = evento.target.getAttribute("data-dni");
+        renderizarTabla();
+        return;
+      }
       var id = evento.target.getAttribute("data-id");
       if (!id) return;
       if (evento.target.classList.contains("btn-avisar-retiro")) avisarRetiro(id);
