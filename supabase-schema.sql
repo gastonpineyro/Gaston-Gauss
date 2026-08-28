@@ -113,7 +113,8 @@ drop policy if exists "actualizar_pedidos_admin" on pedidos;
 create policy "actualizar_pedidos_admin"
     on pedidos for update
     to authenticated
-    using (true);
+    using (true)
+    with check (true);
 
 drop policy if exists "borrar_pedidos_admin" on pedidos;
 create policy "borrar_pedidos_admin"
@@ -215,4 +216,5 @@ drop policy if exists "actualizar_variantes_admin" on variantes_producto;
 create policy "actualizar_variantes_admin"
     on variantes_producto for update
     to authenticated
-    using (true);
+    using (true)
+    with check (true);
