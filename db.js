@@ -132,8 +132,19 @@ var GaussDB = (function () {
     var db = obtenerCliente();
     if (!db) return { ok: false, motivo: "sin-configurar" };
     try {
-      var resultado = await db.from("variantes_producto").update({ stock: nuevoStock }).eq("id", id);
+      var resultado = await db
+        .from("variantes_producto")
+        .update({ stock: nuevoStock })
+        .eq("id", id)
+        .select();
       if (resultado.error) return { ok: false, motivo: resultado.error.message };
+      if (!resultado.data || resultado.data.length === 0) {
+        return {
+          ok: false,
+          motivo:
+            "No se actualizó ninguna fila (¿la sesión venció? probá cerrar sesión y volver a entrar, o revisá que hayas corrido supabase-schema.sql).",
+        };
+      }
       return { ok: true };
     } catch (e) {
       return { ok: false, motivo: String(e) };
