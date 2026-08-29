@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido de alquiler - Gauss Ortopedia</title>
+    <meta name="description" content="Completá tus datos y reservá tu equipo ortopédico en alquiler.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="_main.css">
+</head>
+<body>
+
+    <header class="text-center py-4 border-bottom bg-white">
+        <a href="index.html" class="navbar-brand text-decoration-none p-0 m-0">
+            <div class="logo-gauss d-inline-block">
+                GAUSS <span class="sub-logo-gauss">Ortopedia</span>
+            </div>
+        </a>
+        <p class="text-secondary mb-0 mt-1" style="font-size:13px;">Formulario rápido de alquiler</p>
+    </header>
+
+    <main class="container my-5" style="max-width: 920px;">
+        <div class="text-center mb-4">
+            <h1 class="titulo-seccion-producto" style="font-size:22px;">Completá tu pedido</h1>
+            <p class="text-secondary" style="font-size:14px;">Elegí el equipo y tus datos. Te confirmamos todo por WhatsApp.</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-12 col-lg-7">
+                <div class="tarjeta-formulario-reserva">
+                    <div class="mb-3">
+                        <label class="etiqueta-campo-alquiler" for="selectEquipo">Equipo</label>
+                        <select class="form-select form-select-sm campo-alquiler campo-reserva" id="selectEquipo">
+                            <!-- Las opciones se completan con reservas.js -->
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="etiqueta-campo-alquiler" for="selectVariante">Talle / Tipo</label>
+                        <select class="form-select form-select-sm campo-alquiler campo-reserva" id="selectVariante">
+                            <!-- Las opciones se completan con reservas.js según el equipo elegido -->
+                        </select>
+                    </div>
+
+                    <div class="fila-fechas-reserva mb-3">
+                        <div>
+                            <label class="etiqueta-campo-alquiler" for="fechaDesdeReserva">Fecha de retiro</label>
+                            <input type="date" class="form-control form-control-sm campo-alquiler campo-reserva" id="fechaDesdeReserva">
+                        </div>
+                        <div>
+                            <label class="etiqueta-campo-alquiler" for="selectDuracion">Duración</label>
+                            <select class="form-select form-select-sm campo-alquiler campo-reserva" id="selectDuracion">
+                                <!-- Las opciones se completan con reservas.js según el equipo elegido -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoNombreReserva">Nombre</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoNombreReserva" placeholder="Ej: Juan">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoApellidoReserva">Apellido</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoApellidoReserva" placeholder="Ej: Pérez">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoTelefonoReserva">Teléfono / WhatsApp</label>
+                        <input type="tel" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoTelefonoReserva" placeholder="Ej: 341 5551234">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoDniReserva">DNI</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoDniReserva" placeholder="Ej: 30123456">
+                    </div>
+                    <div class="mb-2">
+                        <label class="etiqueta-campo-alquiler" for="campoDireccionReserva">Dirección</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoDireccionReserva" placeholder="Calle, número, ciudad">
+                    </div>
+                    <div class="mb-3">
+                        <label class="etiqueta-campo-alquiler" for="campoLesionReserva">Lesión / motivo de uso</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler campo-reserva" id="campoLesionReserva" placeholder="Ej: Esguince de tobillo">
+                    </div>
+
+                    <button type="button" class="btn-finalizar-carrito w-100" id="btnReservarWhatsApp">Reservar por WhatsApp</button>
+                    <p class="aviso-datos-reserva d-none" id="avisoDatosReserva">Completá nombre, apellido, DNI, dirección y lesión para continuar.</p>
+                    <p class="aviso-datos-reserva d-none" id="avisoDisponibilidadReserva"></p>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4">
+                <div class="tarjeta-resumen-reserva">
+                    <img src="" alt="" class="resumen-imagen" id="resumenImagen">
+                    <div class="resumen-nombre-equipo" id="resumenNombreEquipo">-</div>
+
+                    <div class="resumen-fila">
+                        <span>Tarifa</span>
+                        <span id="resumenPrecioMes">-</span>
+                    </div>
+                    <div class="resumen-fila">
+                        <span>Duración</span>
+                        <span id="resumenDias">-</span>
+                    </div>
+                    <div class="resumen-fila">
+                        <span>Devolución</span>
+                        <span id="resumenFechaHasta">-</span>
+                    </div>
+
+                    <div class="resumen-total">
+                        <span>Total</span>
+                        <span id="resumenTotalReserva">$0</span>
+                    </div>
+
+                    <p class="resumen-aviso-reserva">
+                        Confirmamos disponibilidad y forma de pago por WhatsApp.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Este id lo usa reservas.js para hacer scroll al elegir un equipo desde un catálogo;
+             acá no hay catálogo, así que nunca se dispara, pero lo dejamos para no duplicar código. -->
+        <div id="formulario-reserva"></div>
+    </main>
+
+    <footer class="text-center py-4 text-secondary border-top" style="font-size:13px;">
+        Gauss Ortopedia · 27 de febrero 1724, Rosario · <a href="tel:+543415641488" class="text-secondary">+54 341 5641488</a> · <a href="admin.html" class="text-secondary">Panel</a>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="db.js"></script>
+    <script src="reservas.js" defer></script>
+</body>
+</html>
