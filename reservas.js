@@ -292,6 +292,18 @@
     if (!select) return; // esta página no tiene el formulario, no hacemos nada
 
     poblarSelect();
+
+    // Si el link trae ?equipo=magneto (por ejemplo, el que le pasás a
+    // alguien que te escribió por WhatsApp), lo dejamos preseleccionado.
+    var equipoDesdeUrl = new URLSearchParams(window.location.search).get("equipo");
+    if (equipoDesdeUrl && EQUIPOS.some(function (e) { return e.id === equipoDesdeUrl; })) {
+      select.value = equipoDesdeUrl;
+      window.setTimeout(function () {
+        var destino = document.getElementById("formulario-reserva");
+        if (destino) destino.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+
     poblarVariantes();
     poblarDuraciones();
 
@@ -330,6 +342,29 @@
         actualizarResumen();
         var destino = document.getElementById("formulario-reserva");
         if (destino) destino.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    document.querySelectorAll(".btn-copiar-link-equipo").forEach(function (boton) {
+      boton.addEventListener("click", async function () {
+        var siteUrl = typeof SITE_URL !== "undefined" ? SITE_URL.replace(/\/$/, "") : "";
+        var link =
+          (siteUrl || window.location.origin + window.location.pathname.replace(/[^/]*$/, "")) +
+          "/alquileres.html?equipo=" +
+          boton.getAttribute("data-equipo");
+
+        var textoOriginal = boton.textContent;
+        try {
+          await navigator.clipboard.writeText(link);
+          boton.textContent = "✓ Copiado";
+          boton.classList.add("copiado");
+        } catch (e) {
+          window.prompt("Copiá este link manualmente:", link);
+        }
+        window.setTimeout(function () {
+          boton.textContent = textoOriginal;
+          boton.classList.remove("copiado");
+        }, 1800);
       });
     });
 
