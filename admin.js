@@ -496,11 +496,16 @@
       var badgeEstado =
         '<span class="badge-estado-pedido badge-estado-' + p.estado + '">' + p.estado + "</span>";
 
+      var textoAuto = p.recordatorio_vencimiento_enviado_en
+        ? "<br>🤖 Recordatorio automático enviado el " +
+          new Date(p.recordatorio_vencimiento_enviado_en).toLocaleString("es-AR")
+        : "";
+
       return (
         '<div class="tarjeta-vencimiento' + (dias <= 0 ? " vencido" : "") + '">' +
         '<div class="info-vencimiento">' +
         "<h4>" + p.producto_nombre + " — " + [p.nombre, p.apellido].filter(Boolean).join(" ") + " " + badgeEstado + "</h4>" +
-        "<p>" + textoDiasRestantes(p.fecha_hasta) + " (" + formatearFecha(p.fecha_hasta) + ") · Tel: " + (p.telefono || "sin cargar") + "</p>" +
+        "<p>" + textoDiasRestantes(p.fecha_hasta) + " (" + formatearFecha(p.fecha_hasta) + ") · Tel: " + (p.telefono || "sin cargar") + textoAuto + "</p>" +
         "</div>" +
         '<div class="acciones-vencimiento">' +
         '<button type="button" class="btn-accion-admin recordatorio btn-enviar-recordatorio" data-id="' + p.id + '">🔔 Enviar recordatorio</button>' +
