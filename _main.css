@@ -79,6 +79,29 @@ body {
   color: #D04F5E;
 }
 
+/* --- FOTO PRINCIPAL DE LA FICHA DE PRODUCTO ---
+   Mismo tamaño de marco para todas, sin importar la proporción real
+   de cada foto: se centran y se ven completas, nunca recortadas ni
+   estiradas. */
+.contenedor-foto-producto {
+  background: #f5f7f9;
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 4/5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+}
+
+.src-producto {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  image-rendering: -webkit-optimize-contrast;
+}
+
 /* --- SECCIÓN PRINCIPAL DE PRODUCTOS --- */
 .contenido-principal {
   max-width: 1200px;
@@ -448,7 +471,10 @@ body {
 .item-carrito img {
   width: 60px;
   height: 60px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  background: #f5f7f9;
+  padding: 4px;
   border-radius: 6px;
   background: #f5f7f9;
   flex-shrink: 0;
@@ -930,10 +956,12 @@ body {
 .resumen-imagen {
   width: 100%;
   height: 160px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   border-radius: 10px;
   margin-bottom: 18px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 10px;
 }
 
 .resumen-nombre-equipo {
@@ -997,7 +1025,10 @@ body {
 .tarjeta-equipo-reserva img {
   width: 100%;
   height: 190px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  background: #f5f7f9;
+  padding: 14px;
 }
 
 .cuerpo-tarjeta-equipo {
