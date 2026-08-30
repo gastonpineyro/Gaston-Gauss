@@ -40,6 +40,7 @@ create table if not exists pedidos (
     pago_pendiente_revision boolean not null default false,
     veces_renovado integer not null default 0,
     aviso_retiro_enviado boolean not null default false,
+    recordatorio_vencimiento_enviado_en timestamptz,
 
     -- pendiente -> recién llegado por WhatsApp
     -- confirmado -> vos ya lo confirmaste, pero todavía no lo retiró
@@ -57,6 +58,7 @@ alter table pedidos add column if not exists comprobante_subido_en timestamptz;
 alter table pedidos add column if not exists pago_pendiente_revision boolean not null default false;
 alter table pedidos add column if not exists veces_renovado integer not null default 0;
 alter table pedidos add column if not exists aviso_retiro_enviado boolean not null default false;
+alter table pedidos add column if not exists recordatorio_vencimiento_enviado_en timestamptz;
 
 -- Ampliamos los estados permitidos a pendiente/confirmado/activo/devuelto/cancelado
 -- (sin importar cómo se llame el check constraint existente, si lo hubiera).
