@@ -40,9 +40,9 @@
       nombre: "Equipo de Magnetoterapia",
       imagen: "magneto.png",
       variantes: [
-        { id: "magneto-placas", nombre: "Con placas" },
-        { id: "magneto-tubos", nombre: "Con tubos" },
-        { id: "magneto-tubo-placas", nombre: "Tubo y placas" },
+        { id: "magneto-placas", nombre: "Con placas", imagen: "magneto-placas.jpg" },
+        { id: "magneto-tubos", nombre: "Con tubos", imagen: "magneto.png" },
+        { id: "magneto-tubo-placas", nombre: "Tubo y placas", imagen: "magneto-tubo-placas.webp" },
       ],
       duraciones: [
         { dias: 15, precio: 25000 },
@@ -173,7 +173,8 @@
     var totalEl = document.getElementById("resumenTotalReserva");
 
     if (imagenEl) {
-      imagenEl.src = equipo.imagen;
+      var variante = varianteSeleccionada(equipo);
+      imagenEl.src = (variante && variante.imagen) || equipo.imagen;
       imagenEl.alt = equipo.nombre;
     }
     if (nombreEl) nombreEl.textContent = equipo.nombre + (varianteSeleccionada(equipo) ? " — " + varianteSeleccionada(equipo).nombre : "");
