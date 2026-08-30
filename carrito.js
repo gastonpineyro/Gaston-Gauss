@@ -390,6 +390,19 @@
     if (boton) boton.setAttribute("data-precio", precio);
   }
 
+  function actualizarImagenSegunSeleccion(radio) {
+    var imagen = radio.getAttribute("data-imagen");
+    if (!imagen) return;
+
+    var contenedor = radio.closest(".bloque-compra") || document;
+
+    var imagenProducto = document.getElementById("imagenProducto");
+    if (imagenProducto) imagenProducto.src = imagen;
+
+    var boton = contenedor.querySelector(".btn-agregar-carrito");
+    if (boton) boton.setAttribute("data-imagen", imagen);
+  }
+
   /* ---------------------- Disponibilidad en la ficha del producto ---------------------- */
 
   async function actualizarDisponibilidadProducto() {
@@ -645,11 +658,15 @@
       .forEach(function (radio) {
         radio.addEventListener("change", function () {
           actualizarPrecioSegunModalidad(radio);
+          actualizarImagenSegunSeleccion(radio);
           if (radio.hasAttribute("data-variante")) actualizarDisponibilidadProducto();
         });
-        if (radio.checked) actualizarPrecioSegunModalidad(radio);
+        if (radio.checked) {
+          actualizarPrecioSegunModalidad(radio);
+          actualizarImagenSegunSeleccion(radio);
+        }
       });
 
-    actualizarDisponibilidadProducto();
-  });
+      actualizarDisponibilidadProducto();
+    });
 })();
