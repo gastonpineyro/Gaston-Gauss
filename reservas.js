@@ -40,7 +40,7 @@
       nombre: "Equipo de Magnetoterapia",
       imagen: "magneto.png",
       variantes: [
-        { id: "magneto-placas", nombre: "Con placas", imagen: "magneto-placas.png" },
+        { id: "magneto-placas", nombre: "Con placas", imagen: "magneto-placas.jpg" },
         { id: "magneto-tubos", nombre: "Con tubos", imagen: "magneto.png" },
         { id: "magneto-tubo-placas", nombre: "Tubo y placas", imagen: "magneto-tubo-placas.webp" },
       ],
