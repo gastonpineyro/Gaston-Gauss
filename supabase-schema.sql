@@ -220,3 +220,10 @@ create policy "actualizar_variantes_admin"
     to authenticated
     using (true)
     with check (true);
+
+-- ============================================================
+-- FACTURACIÓN (Facturitas, carga manual por Excel)
+-- ============================================================
+
+alter table pedidos add column if not exists pendiente_facturacion boolean not null default false;
+alter table pedidos add column if not exists facturado_en timestamptz;
