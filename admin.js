@@ -73,6 +73,10 @@
     var listaVencidos = document.getElementById("listaVencidos");
     var listaComprobantes = document.getElementById("listaComprobantes");
     var listaStock = document.getElementById("listaStock");
+    var listaParaFacturar = document.getElementById("listaParaFacturar");
+    var listaUltimosFacturados = document.getElementById("listaUltimosFacturados");
+    var btnExportarFacturitas = document.getElementById("btnExportarFacturitas");
+    var btnConfirmarFacturados = document.getElementById("btnConfirmarFacturados");
     var grillaDashboard = document.getElementById("grillaDashboard");
     var avisoStockBajoResumen = document.getElementById("avisoStockBajoResumen");
     var rankingProductos = document.getElementById("rankingProductos");
@@ -81,6 +85,7 @@
     var contadorVencidos = document.getElementById("contadorVencidos");
     var contadorComprobantes = document.getElementById("contadorComprobantes");
     var contadorStockBajo = document.getElementById("contadorStockBajo");
+    var contadorFacturar = document.getElementById("contadorFacturar");
 
     if (!GaussDB.configurado()) {
       if (avisoSinConfigurar) avisoSinConfigurar.classList.remove("d-none");
@@ -127,12 +132,12 @@
     /* ---------------------- Carga de datos ---------------------- */
 
     async function cargarPedidos() {
-      tablaCuerpo.innerHTML = '<tr><td colspan="10" class="text-center py-4">Cargando pedidos...</td></tr>';
+      tablaCuerpo.innerHTML = '<tr><td colspan="11" class="text-center py-4">Cargando pedidos...</td></tr>';
       var resultado = await db.from("pedidos").select("*").order("creado_en", { ascending: false });
 
       if (resultado.error) {
         tablaCuerpo.innerHTML =
-          '<tr><td colspan="10" class="text-center py-4 text-danger">Error al cargar: ' +
+          '<tr><td colspan="11" class="text-center py-4 text-danger">Error al cargar: ' +
           resultado.error.message +
           "</td></tr>";
         return;
@@ -144,6 +149,7 @@
       renderizarVencidos();
       renderizarComprobantes();
       renderizarResumen();
+      renderizarParaFacturar();
       cargarStock();
     }
 
@@ -361,7 +367,7 @@
 
       if (filas.length === 0) {
         tablaCuerpo.innerHTML =
-          '<tr><td colspan="10" class="text-center py-4">No hay pedidos con este filtro.</td></tr>';
+          '<tr><td colspan="11" class="text-center py-4">No hay pedidos con este filtro.</td></tr>';
         return;
       }
 
@@ -394,6 +400,18 @@
             ? '<a href="#" class="link-historial-cliente" data-dni="' + p.dni + '">' + cliente + " (DNI " + p.dni + ")</a>"
             : cliente;
 
+          var facturacionHtml;
+          if (p.facturado_en) {
+            facturacionHtml = "✓ Facturado el " + new Date(p.facturado_en).toLocaleDateString("es-AR");
+          } else if (p.pendiente_facturacion) {
+            facturacionHtml =
+              '<span class="text-secondary" style="font-size:12px;">⏳ Para facturar</span><br>' +
+              '<button type="button" class="btn-accion-admin baja btn-quitar-facturar" data-id="' + p.id + '" style="margin-top:4px;">Quitar</button>';
+          } else {
+            facturacionHtml =
+              '<button type="button" class="btn-accion-admin activar btn-marcar-facturar" data-id="' + p.id + '">🧾 Marcar</button>';
+          }
+
           return (
             "<tr>" +
             "<td>" + fecha + "</td>" +
@@ -411,6 +429,7 @@
               })
               .join("") +
             "</select></td>" +
+            "<td>" + facturacionHtml + "</td>" +
             '<td><div class="acciones-fila-admin">' + acciones.join("") + "</div></td>" +
             "</tr>"
           );
@@ -606,6 +625,179 @@
         .join("");
     }
 
+    /* ---------------------- Para facturar ---------------------- */
+
+    function renderizarParaFacturar() {
+      var pendientes = pedidosCache.filter(function (p) {
+        return p.pendiente_facturacion;
+      });
+
+      contadorFacturar.textContent = pendientes.length;
+      contadorFacturar.classList.toggle("badge-tab-vacio", pendientes.length === 0);
+
+      if (pendientes.length === 0) {
+        listaParaFacturar.innerHTML = '<p class="texto-vacio-admin">No hay pedidos marcados para facturar todavía.</p>';
+      } else {
+        listaParaFacturar.innerHTML = pendientes
+          .map(function (p) {
+            var cliente = [p.nombre, p.apellido].filter(Boolean).join(" ") || "-";
+            return (
+              '<div class="tarjeta-vencimiento">' +
+              '<div class="info-vencimiento">' +
+              "<h4>" + p.producto_nombre + " — " + cliente + "</h4>" +
+              "<p>" + formatearPrecio(p.total) + " · DNI " + (p.dni || "-") + " · " + new Date(p.creado_en).toLocaleDateString("es-AR") + "</p>" +
+              "</div>" +
+              '<div class="acciones-vencimiento">' +
+              '<button type="button" class="btn-accion-admin baja btn-quitar-facturar" data-id="' + p.id + '">Quitar</button>' +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+
+      var facturados = pedidosCache
+        .filter(function (p) {
+          return p.facturado_en;
+        })
+        .sort(function (a, b) {
+          return new Date(b.facturado_en) - new Date(a.facturado_en);
+        })
+        .slice(0, 20);
+
+      if (facturados.length === 0) {
+        listaUltimosFacturados.innerHTML = '<p class="texto-vacio-admin">Todavía no facturaste nada desde acá.</p>';
+      } else {
+        listaUltimosFacturados.innerHTML = facturados
+          .map(function (p) {
+            var cliente = [p.nombre, p.apellido].filter(Boolean).join(" ") || "-";
+            return (
+              '<div class="tarjeta-vencimiento">' +
+              '<div class="info-vencimiento">' +
+              "<h4>" + p.producto_nombre + " — " + cliente + "</h4>" +
+              "<p>" + formatearPrecio(p.total) + " · Facturado el " + new Date(p.facturado_en).toLocaleString("es-AR") + "</p>" +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+    }
+
+    async function marcarParaFacturar(id) {
+      var resultado = await actualizarPedido(id, { pendiente_facturacion: true });
+      if (!resultado.ok) {
+        alert("No se pudo marcar: " + resultado.motivo);
+        return;
+      }
+      var pedido = pedidosCache.find(function (p) {
+        return p.id === id;
+      });
+      if (pedido) pedido.pendiente_facturacion = true;
+      renderizarTabla();
+      renderizarParaFacturar();
+    }
+
+    async function quitarParaFacturar(id) {
+      var resultado = await actualizarPedido(id, { pendiente_facturacion: false });
+      if (!resultado.ok) {
+        alert("No se pudo quitar: " + resultado.motivo);
+        return;
+      }
+      var pedido = pedidosCache.find(function (p) {
+        return p.id === id;
+      });
+      if (pedido) pedido.pendiente_facturacion = false;
+      renderizarTabla();
+      renderizarParaFacturar();
+    }
+
+    function exportarFacturitas() {
+      var pendientes = pedidosCache.filter(function (p) {
+        return p.pendiente_facturacion;
+      });
+
+      if (pendientes.length === 0) {
+        alert('No hay pedidos marcados. Marcá alguno con el botón "🧾 Marcar" en la pestaña Pedidos primero.');
+        return;
+      }
+
+      // ------------------------------------------------------------
+      // TODO: estas columnas son un formato razonable por defecto,
+      // pero hay que ajustarlas a la plantilla EXACTA que pide
+      // Facturitas (web.facturitas.app → Facturación Masiva →
+      // descargar plantilla). Pasame esas columnas y las dejo iguales.
+      // ------------------------------------------------------------
+      var encabezados = [
+        "Fecha", "Cliente", "DNI/CUIT", "Domicilio", "Concepto", "Cantidad", "Precio unitario", "Total",
+      ];
+
+      function escaparCsv(valor) {
+        var texto = valor === null || valor === undefined ? "" : String(valor);
+        if (texto.indexOf(",") !== -1 || texto.indexOf('"') !== -1 || texto.indexOf("\n") !== -1) {
+          texto = '"' + texto.replace(/"/g, '""') + '"';
+        }
+        return texto;
+      }
+
+      var lineas = [encabezados.join(",")];
+      pendientes.forEach(function (p) {
+        lineas.push(
+          [
+            new Date(p.creado_en).toLocaleDateString("es-AR"),
+            [p.nombre, p.apellido].filter(Boolean).join(" "),
+            p.dni,
+            p.direccion,
+            p.producto_nombre + (p.tipo === "alquiler" ? " (alquiler)" : ""),
+            p.cantidad,
+            p.precio_unitario,
+            p.total,
+          ]
+            .map(escaparCsv)
+            .join(",")
+        );
+      });
+
+      var contenido = "\uFEFF" + lineas.join("\n");
+      var blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = "para-facturitas-" + hoyISO() + ".csv";
+      document.body.appendChild(enlace);
+      enlace.click();
+      document.body.removeChild(enlace);
+      URL.revokeObjectURL(url);
+    }
+
+    async function confirmarFacturados() {
+      var pendientes = pedidosCache.filter(function (p) {
+        return p.pendiente_facturacion;
+      });
+
+      if (pendientes.length === 0) {
+        alert("No hay nada pendiente de confirmar.");
+        return;
+      }
+
+      if (!confirm("¿Ya subiste el Excel a Facturitas y se generaron las facturas de estos " + pendientes.length + " pedidos?")) {
+        return;
+      }
+
+      var ahora = new Date().toISOString();
+      for (var i = 0; i < pendientes.length; i++) {
+        var resultado = await actualizarPedido(pendientes[i].id, {
+          pendiente_facturacion: false,
+          facturado_en: ahora,
+        });
+        if (!resultado.ok) {
+          alert("Hubo un problema confirmando el pedido " + pendientes[i].id + ": " + resultado.motivo);
+        }
+      }
+
+      cargarPedidos();
+    }
+
     /* ---------------------- Acciones ---------------------- */
 
     // Update centralizado: si por sesión vencida u otro motivo Supabase
@@ -783,7 +975,18 @@
       if (evento.target.classList.contains("btn-avisar-retiro")) avisarRetiro(id);
       if (evento.target.classList.contains("btn-activar-alquiler")) activarAlquiler(id);
       if (evento.target.classList.contains("btn-dar-de-baja")) darDeBaja(id);
+      if (evento.target.classList.contains("btn-marcar-facturar")) marcarParaFacturar(id);
+      if (evento.target.classList.contains("btn-quitar-facturar")) quitarParaFacturar(id);
     });
+
+    listaParaFacturar.addEventListener("click", function (evento) {
+      var id = evento.target.getAttribute("data-id");
+      if (!id) return;
+      if (evento.target.classList.contains("btn-quitar-facturar")) quitarParaFacturar(id);
+    });
+
+    if (btnExportarFacturitas) btnExportarFacturitas.addEventListener("click", exportarFacturitas);
+    if (btnConfirmarFacturados) btnConfirmarFacturados.addEventListener("click", confirmarFacturados);
 
     tablaCuerpo.addEventListener("change", async function (evento) {
       if (!evento.target.classList.contains("selector-estado")) return;
