@@ -869,16 +869,51 @@
       diaSiguiente.setDate(diaSiguiente.getDate() + 1);
       var nuevaFechaHasta = calcularFechaHasta(diaSiguiente.toISOString().slice(0, 10), pedido.duracion_dias);
 
+      // La renovación es un pedido (y un cobro) nuevo, con su propia
+      // fila: como ya se confirmó el pago (comprobante revisado), lo
+      // marcamos directo como "pendiente_facturacion" para que aparezca
+      // ya listo en la pestaña "Para facturar", sin un paso manual extra.
+      // El historial de facturación del período anterior no se pisa: el
+      // pedido viejo se cierra como "devuelto" (ese período ya terminó),
+      // pero el equipo en sí sigue figurando activo bajo el pedido nuevo,
+      // sin afectar el conteo de "Activos".
+      var resultadoNuevo = await db
+        .from("pedidos")
+        .insert({
+          tipo: "alquiler",
+          producto_id: pedido.producto_id,
+          producto_nombre: pedido.producto_nombre,
+          cantidad: pedido.cantidad,
+          precio_unitario: pedido.precio_unitario,
+          total: pedido.precio_unitario * pedido.cantidad,
+          fecha_desde: diaSiguiente.toISOString().slice(0, 10),
+          fecha_hasta: nuevaFechaHasta,
+          duracion_dias: pedido.duracion_dias,
+          nombre: pedido.nombre,
+          apellido: pedido.apellido,
+          telefono: pedido.telefono,
+          dni: pedido.dni,
+          direccion: pedido.direccion,
+          lesion: pedido.lesion,
+          estado: "activo",
+          aviso_retiro_enviado: true,
+          veces_renovado: (pedido.veces_renovado || 0) + 1,
+          pendiente_facturacion: true,
+        })
+        .select();
+
+      if (resultadoNuevo.error) {
+        alert("No se pudo crear el pedido de la renovación: " + resultadoNuevo.error.message);
+        return;
+      }
+
       var resultado = await actualizarPedido(id, {
-        fecha_hasta: nuevaFechaHasta,
+        estado: "devuelto",
         pago_pendiente_revision: false,
-        aviso_retiro_enviado: false,
-        veces_renovado: (pedido.veces_renovado || 0) + 1,
       });
 
       if (!resultado.ok) {
-        alert("No se pudo confirmar la renovación: " + resultado.motivo);
-        return;
+        alert("El pedido nuevo se creó, pero no se pudo cerrar el anterior: " + resultado.motivo);
       }
 
       cargarPedidos();
