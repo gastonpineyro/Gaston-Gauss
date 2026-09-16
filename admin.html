@@ -70,6 +70,9 @@
                 <button type="button" class="tab-admin" data-tab="stock">
                     Stock <span class="badge-tab badge-tab-vacio" id="contadorStockBajo">0</span>
                 </button>
+                <button type="button" class="tab-admin" data-tab="facturar">
+                    Para facturar <span class="badge-tab" id="contadorFacturar">0</span>
+                </button>
             </div>
 
             <!-- RESUMEN -->
@@ -126,11 +129,12 @@
                                 <th>Dirección / Lesión</th>
                                 <th>Total</th>
                                 <th>Estado</th>
+                                <th>Facturación</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoTablaPedidos">
-                            <tr><td colspan="10" class="text-center py-4">Iniciá sesión para ver los pedidos.</td></tr>
+                            <tr><td colspan="11" class="text-center py-4">Iniciá sesión para ver los pedidos.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -178,6 +182,23 @@
                     confirmados de hoy para esa variante. Cambiá el número y tocá "Guardar" para actualizarlo.
                 </p>
                 <div id="listaStock"></div>
+            </div>
+
+            <!-- PARA FACTURAR -->
+            <div class="panel-tab-admin d-none" id="tabFacturar">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Marcá "Para facturar" en cada pedido de la pestaña Pedidos para que aparezca acá. Cuando tengas
+                    los que quieras, exportá el Excel, subilo a Facturitas (Facturación Masiva) y volvé a confirmar
+                    para que quede registrado que ya se facturaron (así no se repiten la próxima vez).
+                </p>
+                <div class="d-flex flex-wrap gap-3 mb-3">
+                    <button type="button" class="btn-accion-admin activar" id="btnExportarFacturitas">⬇️ Exportar Excel para Facturitas</button>
+                    <button type="button" class="btn-accion-admin confirmar" id="btnConfirmarFacturados">✅ Ya los subí a Facturitas</button>
+                </div>
+                <div id="listaParaFacturar"></div>
+
+                <h3 class="titulo-grupo-stock mt-5 mb-3">Últimos facturados</h3>
+                <div id="listaUltimosFacturados"></div>
             </div>
         </div>
     </div>
