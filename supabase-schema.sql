@@ -161,7 +161,19 @@ create policy "leer_comprobantes_publico"
 -- Función segura: permite que un visitante SIN login marque su propio
 -- pedido con un comprobante subido, sin darle permiso para tocar
 -- ninguna otra columna del pedido (precio, estado, etc.).
-create or replace function subir_comprobante(pedido_id uuid, url text)
+-- Columnas para guardar la duración y el monto que el cliente elige al
+-- renovar (puede ser distinto al período anterior, ej: pasar de 15 a 30
+-- días de Magneto). Si quedan en null, el panel usa los valores del
+-- período anterior como antes.
+alter table pedidos add column if not exists renovacion_duracion_dias integer;
+alter table pedidos add column if not exists renovacion_monto integer;
+
+create or replace function subir_comprobante(
+    pedido_id uuid,
+    url text,
+    duracion_elegida integer default null,
+    monto_elegido integer default null
+)
 returns void
 language plpgsql
 security definer
@@ -171,12 +183,14 @@ begin
     update pedidos
     set comprobante_url = url,
         comprobante_subido_en = now(),
-        pago_pendiente_revision = true
+        pago_pendiente_revision = true,
+        renovacion_duracion_dias = duracion_elegida,
+        renovacion_monto = monto_elegido
     where id = pedido_id;
 end;
 $$;
 
-grant execute on function subir_comprobante(uuid, text) to anon, authenticated;
+grant execute on function subir_comprobante(uuid, text, integer, integer) to anon, authenticated;
 
 -- ============================================================
 -- STOCK POR VARIANTE (talles / tipos)
