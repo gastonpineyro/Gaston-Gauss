@@ -606,6 +606,8 @@
 
       listaComprobantes.innerHTML = pendientes
         .map(function (p) {
+          var duracionPorDefecto = p.renovacion_duracion_dias || p.duracion_dias;
+          var montoPorDefecto = p.renovacion_monto || p.total;
           return (
             '<div class="tarjeta-comprobante">' +
             (p.comprobante_url
@@ -613,18 +615,20 @@
               : "") +
             '<div class="info-comprobante" style="flex:1;">' +
             "<h4>" + p.producto_nombre + " — " + [p.nombre, p.apellido].filter(Boolean).join(" ") + "</h4>" +
-            "<p>Vencía: " + formatearFecha(p.fecha_hasta) + " · Tel: " + (p.telefono || "sin cargar") + "</p>" +
+            "<p>Vencía: " + formatearFecha(p.fecha_hasta) + " · Tel: " + (p.telefono || "sin cargar") +
+            (p.renovacion_duracion_dias ? " · <strong>El cliente eligió " + p.renovacion_duracion_dias + " días</strong>" : "") +
+            "</p>" +
             '<div class="d-flex flex-wrap gap-2 mt-2">' +
             '<div>' +
             '<label class="etiqueta-campo-alquiler" style="margin-bottom:2px;">Duración a renovar</label><br>' +
             '<select class="form-select form-select-sm campo-alquiler selector-duracion-renovacion" data-id="' + p.id + '" style="width:140px;">' +
-            '<option value="15"' + (p.duracion_dias === 15 ? " selected" : "") + ">15 días</option>" +
-            '<option value="30"' + (p.duracion_dias !== 15 ? " selected" : "") + ">30 días</option>" +
+            '<option value="15"' + (duracionPorDefecto === 15 ? " selected" : "") + ">15 días</option>" +
+            '<option value="30"' + (duracionPorDefecto !== 15 ? " selected" : "") + ">30 días</option>" +
             "</select>" +
             "</div>" +
             '<div>' +
             '<label class="etiqueta-campo-alquiler" style="margin-bottom:2px;">Monto a facturar</label><br>' +
-            '<input type="number" class="form-control form-control-sm campo-alquiler input-monto-renovacion" data-id="' + p.id + '" value="' + p.total + '" style="width:140px;">' +
+            '<input type="number" class="form-control form-control-sm campo-alquiler input-monto-renovacion" data-id="' + p.id + '" value="' + montoPorDefecto + '" style="width:140px;">' +
             "</div>" +
             "</div>" +
             "</div>" +
