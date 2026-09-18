@@ -75,6 +75,7 @@
     var listaStock = document.getElementById("listaStock");
     var listaParaFacturar = document.getElementById("listaParaFacturar");
     var listaUltimosFacturados = document.getElementById("listaUltimosFacturados");
+    var btnEnviarSheets = document.getElementById("btnEnviarSheets");
     var btnExportarFacturitas = document.getElementById("btnExportarFacturitas");
     var btnConfirmarFacturados = document.getElementById("btnConfirmarFacturados");
     var grillaDashboard = document.getElementById("grillaDashboard");
@@ -612,8 +613,20 @@
               : "") +
             '<div class="info-comprobante" style="flex:1;">' +
             "<h4>" + p.producto_nombre + " — " + [p.nombre, p.apellido].filter(Boolean).join(" ") + "</h4>" +
-            "<p>Renovación de " + (p.duracion_dias || "-") + " días · Monto: " + formatearPrecio(p.total) + "</p>" +
             "<p>Vencía: " + formatearFecha(p.fecha_hasta) + " · Tel: " + (p.telefono || "sin cargar") + "</p>" +
+            '<div class="d-flex flex-wrap gap-2 mt-2">' +
+            '<div>' +
+            '<label class="etiqueta-campo-alquiler" style="margin-bottom:2px;">Duración a renovar</label><br>' +
+            '<select class="form-select form-select-sm campo-alquiler selector-duracion-renovacion" data-id="' + p.id + '" style="width:140px;">' +
+            '<option value="15"' + (p.duracion_dias === 15 ? " selected" : "") + ">15 días</option>" +
+            '<option value="30"' + (p.duracion_dias !== 15 ? " selected" : "") + ">30 días</option>" +
+            "</select>" +
+            "</div>" +
+            '<div>' +
+            '<label class="etiqueta-campo-alquiler" style="margin-bottom:2px;">Monto a facturar</label><br>' +
+            '<input type="number" class="form-control form-control-sm campo-alquiler input-monto-renovacion" data-id="' + p.id + '" value="' + p.total + '" style="width:140px;">' +
+            "</div>" +
+            "</div>" +
             "</div>" +
             '<div class="acciones-comprobante">' +
             '<button type="button" class="btn-accion-admin confirmar btn-confirmar-renovacion" data-id="' + p.id + '">✅ Confirmar y renovar</button>' +
@@ -770,6 +783,62 @@
       URL.revokeObjectURL(url);
     }
 
+    async function enviarAGoogleSheets() {
+      var pendientes = pedidosCache.filter(function (p) {
+        return p.pendiente_facturacion;
+      });
+
+      if (pendientes.length === 0) {
+        alert('No hay pedidos marcados. Marcá alguno con el botón "🧾 Marcar" en la pestaña Pedidos primero.');
+        return;
+      }
+
+      if (typeof SUPABASE_URL === "undefined" || typeof SUPABASE_ANON_KEY === "undefined") {
+        alert("Falta configurar Supabase (supabase-config.js).");
+        return;
+      }
+
+      var textoOriginal = btnEnviarSheets.textContent;
+      btnEnviarSheets.textContent = "Enviando...";
+      btnEnviarSheets.classList.add("deshabilitado");
+
+      try {
+        var respuesta = await fetch(SUPABASE_URL + "/functions/v1/exportar-sheets", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + SUPABASE_ANON_KEY,
+            apikey: SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            ids: pendientes.map(function (p) {
+              return p.id;
+            }),
+          }),
+        });
+
+        var resultado = await respuesta.json();
+
+        if (!respuesta.ok || !resultado.ok) {
+          throw new Error(resultado.error || "Error desconocido (" + respuesta.status + ")");
+        }
+
+        // Si llegó bien a la planilla, ya los marcamos como facturados.
+        var ahora = new Date().toISOString();
+        for (var i = 0; i < pendientes.length; i++) {
+          await actualizarPedido(pendientes[i].id, { pendiente_facturacion: false, facturado_en: ahora });
+        }
+
+        alert("Listo, se agregaron " + resultado.filas + " filas a la planilla.");
+        cargarPedidos();
+      } catch (e) {
+        alert("No se pudo enviar a Google Sheets: " + e.message);
+      }
+
+      btnEnviarSheets.textContent = textoOriginal;
+      btnEnviarSheets.classList.remove("deshabilitado");
+    }
+
     async function confirmarFacturados() {
       var pendientes = pedidosCache.filter(function (p) {
         return p.pendiente_facturacion;
@@ -861,13 +930,23 @@
       var pedido = pedidosCache.find(function (p) {
         return p.id === id;
       });
-      if (!pedido || !pedido.duracion_dias) return;
+      if (!pedido) return;
+
+      var selectDuracion = document.querySelector('.selector-duracion-renovacion[data-id="' + id + '"]');
+      var inputMonto = document.querySelector('.input-monto-renovacion[data-id="' + id + '"]');
+      var duracionElegida = selectDuracion ? parseInt(selectDuracion.value, 10) : pedido.duracion_dias;
+      var montoElegido = inputMonto ? parseFloat(inputMonto.value) : pedido.total;
+
+      if (!duracionElegida || isNaN(montoElegido)) {
+        alert("Revisá la duración y el monto antes de confirmar.");
+        return;
+      }
 
       // Arranca el día siguiente al vencimiento anterior y suma la
-      // misma duración del alquiler original.
+      // duración elegida (puede ser distinta a la del período anterior).
       var diaSiguiente = new Date(pedido.fecha_hasta + "T00:00:00");
       diaSiguiente.setDate(diaSiguiente.getDate() + 1);
-      var nuevaFechaHasta = calcularFechaHasta(diaSiguiente.toISOString().slice(0, 10), pedido.duracion_dias);
+      var nuevaFechaHasta = calcularFechaHasta(diaSiguiente.toISOString().slice(0, 10), duracionElegida);
 
       // La renovación es un pedido (y un cobro) nuevo, con su propia
       // fila: como ya se confirmó el pago (comprobante revisado), lo
@@ -884,11 +963,11 @@
           producto_id: pedido.producto_id,
           producto_nombre: pedido.producto_nombre,
           cantidad: pedido.cantidad,
-          precio_unitario: pedido.precio_unitario,
-          total: pedido.precio_unitario * pedido.cantidad,
+          precio_unitario: montoElegido,
+          total: montoElegido,
           fecha_desde: diaSiguiente.toISOString().slice(0, 10),
           fecha_hasta: nuevaFechaHasta,
-          duracion_dias: pedido.duracion_dias,
+          duracion_dias: duracionElegida,
           nombre: pedido.nombre,
           apellido: pedido.apellido,
           telefono: pedido.telefono,
@@ -1020,6 +1099,7 @@
       if (evento.target.classList.contains("btn-quitar-facturar")) quitarParaFacturar(id);
     });
 
+    if (btnEnviarSheets) btnEnviarSheets.addEventListener("click", enviarAGoogleSheets);
     if (btnExportarFacturitas) btnExportarFacturitas.addEventListener("click", exportarFacturitas);
     if (btnConfirmarFacturados) btnConfirmarFacturados.addEventListener("click", confirmarFacturados);
 
