@@ -521,11 +521,31 @@
           new Date(p.recordatorio_vencimiento_enviado_en).toLocaleString("es-AR")
         : "";
 
+      var renovarEnLocalHtml = "";
+      if (p.estado === "activo" || p.estado === "confirmado") {
+        renovarEnLocalHtml =
+          '<div class="d-flex flex-wrap gap-2 align-items-end mt-2">' +
+          '<div>' +
+          '<label class="etiqueta-campo-alquiler" style="margin-bottom:2px;">Duración</label><br>' +
+          '<select class="form-select form-select-sm campo-alquiler selector-duracion-renovacion" data-id="' + p.id + '" style="width:130px;">' +
+          '<option value="15"' + (p.duracion_dias === 15 ? " selected" : "") + ">15 días</option>" +
+          '<option value="30"' + (p.duracion_dias !== 15 ? " selected" : "") + ">30 días</option>" +
+          "</select>" +
+          "</div>" +
+          '<div>' +
+          '<label class="etiqueta-campo-alquiler" style="margin-bottom:2px;">Monto</label><br>' +
+          '<input type="number" class="form-control form-control-sm campo-alquiler input-monto-renovacion" data-id="' + p.id + '" value="' + p.total + '" style="width:130px;">' +
+          "</div>" +
+          '<button type="button" class="btn-accion-admin confirmar btn-renovar-en-local" data-id="' + p.id + '">🏪 Renovar en local</button>' +
+          "</div>";
+      }
+
       return (
         '<div class="tarjeta-vencimiento' + (dias <= 0 ? " vencido" : "") + '">' +
-        '<div class="info-vencimiento">' +
+        '<div class="info-vencimiento" style="flex:1;">' +
         "<h4>" + p.producto_nombre + " — " + [p.nombre, p.apellido].filter(Boolean).join(" ") + " " + badgeEstado + "</h4>" +
         "<p>" + textoDiasRestantes(p.fecha_hasta) + " (" + formatearFecha(p.fecha_hasta) + ") · Tel: " + (p.telefono || "sin cargar") + textoAuto + "</p>" +
+        renovarEnLocalHtml +
         "</div>" +
         '<div class="acciones-vencimiento">' +
         '<button type="button" class="btn-accion-admin recordatorio btn-enviar-recordatorio" data-id="' + p.id + '">🔔 Enviar recordatorio</button>' +
@@ -930,20 +950,13 @@
       window.open(linkWhatsApp(pedido.telefono, mensaje), "_blank");
     }
 
-    async function confirmarRenovacion(id) {
-      var pedido = pedidosCache.find(function (p) {
-        return p.id === id;
-      });
-      if (!pedido) return;
-
-      var selectDuracion = document.querySelector('.selector-duracion-renovacion[data-id="' + id + '"]');
-      var inputMonto = document.querySelector('.input-monto-renovacion[data-id="' + id + '"]');
-      var duracionElegida = selectDuracion ? parseInt(selectDuracion.value, 10) : pedido.duracion_dias;
-      var montoElegido = inputMonto ? parseFloat(inputMonto.value) : pedido.total;
-
+    // Lógica compartida: crea el pedido de la renovación y cierra el
+    // anterior. La usan tanto "Confirmar y renovar" (con comprobante
+    // revisado) como "Renovar en local" (pago en persona, sin comprobante).
+    async function ejecutarRenovacion(pedido, duracionElegida, montoElegido) {
       if (!duracionElegida || isNaN(montoElegido)) {
         alert("Revisá la duración y el monto antes de confirmar.");
-        return;
+        return false;
       }
 
       // Arranca el día siguiente al vencimiento anterior y suma la
@@ -953,13 +966,12 @@
       var nuevaFechaHasta = calcularFechaHasta(diaSiguiente.toISOString().slice(0, 10), duracionElegida);
 
       // La renovación es un pedido (y un cobro) nuevo, con su propia
-      // fila: como ya se confirmó el pago (comprobante revisado), lo
-      // marcamos directo como "pendiente_facturacion" para que aparezca
-      // ya listo en la pestaña "Para facturar", sin un paso manual extra.
-      // El historial de facturación del período anterior no se pisa: el
-      // pedido viejo se cierra como "devuelto" (ese período ya terminó),
-      // pero el equipo en sí sigue figurando activo bajo el pedido nuevo,
-      // sin afectar el conteo de "Activos".
+      // fila: la marcamos directo como "pendiente_facturacion" para que
+      // aparezca ya lista en la pestaña "Para facturar", sin un paso
+      // manual extra. El historial de facturación del período anterior
+      // no se pisa: el pedido viejo se cierra como "devuelto" (ese
+      // período ya terminó), pero el equipo en sí sigue figurando activo
+      // bajo el pedido nuevo, sin afectar el conteo de "Activos".
       var resultadoNuevo = await db
         .from("pedidos")
         .insert({
@@ -987,10 +999,10 @@
 
       if (resultadoNuevo.error) {
         alert("No se pudo crear el pedido de la renovación: " + resultadoNuevo.error.message);
-        return;
+        return false;
       }
 
-      var resultado = await actualizarPedido(id, {
+      var resultado = await actualizarPedido(pedido.id, {
         estado: "devuelto",
         pago_pendiente_revision: false,
       });
@@ -999,7 +1011,53 @@
         alert("El pedido nuevo se creó, pero no se pudo cerrar el anterior: " + resultado.motivo);
       }
 
-      cargarPedidos();
+      return true;
+    }
+
+    async function confirmarRenovacion(id) {
+      var pedido = pedidosCache.find(function (p) {
+        return p.id === id;
+      });
+      if (!pedido) return;
+
+      var selectDuracion = document.querySelector('.selector-duracion-renovacion[data-id="' + id + '"]');
+      var inputMonto = document.querySelector('.input-monto-renovacion[data-id="' + id + '"]');
+      var duracionElegida = selectDuracion ? parseInt(selectDuracion.value, 10) : pedido.duracion_dias;
+      var montoElegido = inputMonto ? parseFloat(inputMonto.value) : pedido.total;
+
+      var ok = await ejecutarRenovacion(pedido, duracionElegida, montoElegido);
+      if (ok) cargarPedidos();
+    }
+
+    async function renovarEnLocal(id) {
+      var pedido = pedidosCache.find(function (p) {
+        return p.id === id;
+      });
+      if (!pedido) return;
+
+      var selectDuracion = document.querySelector(
+        '.selector-duracion-renovacion[data-id="' + id + '"]'
+      );
+      var inputMonto = document.querySelector('.input-monto-renovacion[data-id="' + id + '"]');
+      var duracionElegida = selectDuracion ? parseInt(selectDuracion.value, 10) : pedido.duracion_dias;
+      var montoElegido = inputMonto ? parseFloat(inputMonto.value) : pedido.total;
+
+      if (
+        !confirm(
+          "¿Confirmás la renovación de " +
+            duracionElegida +
+            " días por " +
+            formatearPrecio(montoElegido) +
+            " para " +
+            [pedido.nombre, pedido.apellido].filter(Boolean).join(" ") +
+            "?"
+        )
+      ) {
+        return;
+      }
+
+      var ok = await ejecutarRenovacion(pedido, duracionElegida, montoElegido);
+      if (ok) cargarPedidos();
     }
 
     async function rechazarComprobante(id) {
@@ -1131,6 +1189,7 @@
         if (!id) return;
         if (evento.target.classList.contains("btn-enviar-recordatorio")) enviarRecordatorio(id);
         if (evento.target.classList.contains("btn-dar-de-baja")) darDeBaja(id);
+        if (evento.target.classList.contains("btn-renovar-en-local")) renovarEnLocal(id);
       });
     });
 
