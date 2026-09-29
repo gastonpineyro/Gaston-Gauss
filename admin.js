@@ -64,6 +64,7 @@
     var tablaCuerpo = document.getElementById("cuerpoTablaPedidos");
     var buscadorPedidos = document.getElementById("buscadorPedidos");
     var buscadorActivos = document.getElementById("buscadorActivos");
+    var buscadorVencidos = document.getElementById("buscadorVencidos");
     var btnExportarCsv = document.getElementById("btnExportarCsv");
     var selectFiltroEstado = document.getElementById("filtroEstado");
     var selectFiltroTipo = document.getElementById("filtroTipo");
@@ -605,14 +606,23 @@
     }
 
     function renderizarVencidos() {
+      var busqueda = (buscadorVencidos && buscadorVencidos.value || "").trim().toLowerCase();
+
       var vencidos = pedidosCache.filter(function (p) {
-        return (
-          p.tipo === "alquiler" &&
-          (p.estado === "confirmado" || p.estado === "activo") &&
-          !p.pago_pendiente_revision &&
-          p.fecha_hasta &&
-          diasHasta(p.fecha_hasta) < 0
-        );
+        if (
+          p.tipo !== "alquiler" ||
+          (p.estado !== "confirmado" && p.estado !== "activo") ||
+          p.pago_pendiente_revision ||
+          !p.fecha_hasta ||
+          diasHasta(p.fecha_hasta) >= 0
+        ) {
+          return false;
+        }
+        if (busqueda) {
+          var texto = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+          if (texto.indexOf(busqueda) === -1) return false;
+        }
+        return true;
       });
       renderizarListaAlquileres(listaVencidos, contadorVencidos, vencidos, "No hay alquileres vencidos sin devolver. 🎉");
     }
@@ -1145,6 +1155,10 @@
 
     if (buscadorActivos) {
       buscadorActivos.addEventListener("input", renderizarActivos);
+    }
+
+    if (buscadorVencidos) {
+      buscadorVencidos.addEventListener("input", renderizarVencidos);
     }
 
     if (btnExportarCsv) {
