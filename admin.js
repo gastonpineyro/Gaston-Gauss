@@ -63,6 +63,7 @@
     var avisoSinConfigurar = document.getElementById("avisoSinConfigurar");
     var tablaCuerpo = document.getElementById("cuerpoTablaPedidos");
     var buscadorPedidos = document.getElementById("buscadorPedidos");
+    var buscadorActivos = document.getElementById("buscadorActivos");
     var btnExportarCsv = document.getElementById("btnExportarCsv");
     var selectFiltroEstado = document.getElementById("filtroEstado");
     var selectFiltroTipo = document.getElementById("filtroTipo");
@@ -576,8 +577,15 @@
     }
 
     function renderizarActivos() {
+      var busqueda = (buscadorActivos && buscadorActivos.value || "").trim().toLowerCase();
+
       var activos = pedidosCache.filter(function (p) {
-        return p.tipo === "alquiler" && p.estado === "activo";
+        if (p.tipo !== "alquiler" || p.estado !== "activo") return false;
+        if (busqueda) {
+          var texto = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+          if (texto.indexOf(busqueda) === -1) return false;
+        }
+        return true;
       });
       renderizarListaAlquileres(listaActivos, contadorActivos, activos, "No hay alquileres activos en este momento.");
     }
@@ -1133,6 +1141,10 @@
 
     if (buscadorPedidos) {
       buscadorPedidos.addEventListener("input", renderizarTabla);
+    }
+
+    if (buscadorActivos) {
+      buscadorActivos.addEventListener("input", renderizarActivos);
     }
 
     if (btnExportarCsv) {
