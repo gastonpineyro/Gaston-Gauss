@@ -75,6 +75,19 @@
     var listaVencidos = document.getElementById("listaVencidos");
     var listaComprobantes = document.getElementById("listaComprobantes");
     var listaStock = document.getElementById("listaStock");
+    var listaEquipos = document.getElementById("listaEquipos");
+    var resumenEquipos = document.getElementById("resumenEquipos");
+    var filtroEquipos = document.getElementById("filtroEquipos");
+    var selectVarianteEquipo = document.getElementById("selectVarianteEquipo");
+    var inputCantidadEquipo = document.getElementById("inputCantidadEquipo");
+    var btnCrearEquipos = document.getElementById("btnCrearEquipos");
+    var btnImprimirEtiquetas = document.getElementById("btnImprimirEtiquetas");
+    var btnEscanear = document.getElementById("btnEscanear");
+    var btnDetenerEscaner = document.getElementById("btnDetenerEscaner");
+    var visorEscaner = document.getElementById("visorEscaner");
+    var resultadoEscaneo = document.getElementById("resultadoEscaneo");
+    var inputCodigoManual = document.getElementById("inputCodigoManual");
+    var btnBuscarCodigo = document.getElementById("btnBuscarCodigo");
     var listaParaFacturar = document.getElementById("listaParaFacturar");
     var listaUltimosFacturados = document.getElementById("listaUltimosFacturados");
     var btnEnviarSheets = document.getElementById("btnEnviarSheets");
@@ -99,6 +112,8 @@
     var db = GaussDB.obtenerCliente();
     var pedidosCache = [];
     var variantesCache = [];
+    var equiposCache = [];
+    var codigoPendienteDeLink = new URLSearchParams(window.location.search).get("equipo");
 
     /* ---------------------- Pantallas ---------------------- */
 
@@ -106,7 +121,15 @@
       pantallaLogin.classList.add("d-none");
       pantallaPanel.classList.remove("d-none");
       if (emailUsuario) emailUsuario.textContent = sesion.user.email;
-      cargarPedidos();
+      cargarPedidos().then(function () {
+        // Si entró desde el QR escaneado con la cámara del celu (admin.html?equipo=CODIGO)
+        if (codigoPendienteDeLink) {
+          var codigo = codigoPendienteDeLink;
+          codigoPendienteDeLink = null;
+          irATab("equipos");
+          procesarCodigo(codigo);
+        }
+      });
     }
 
     function mostrarLogin() {
@@ -115,6 +138,11 @@
     }
 
     /* ---------------------- Pestañas ---------------------- */
+
+    function irATab(nombre) {
+      var boton = document.querySelector('.tab-admin[data-tab="' + nombre + '"]');
+      if (boton) boton.click();
+    }
 
     document.querySelectorAll(".tab-admin").forEach(function (boton) {
       boton.addEventListener("click", function () {
@@ -153,7 +181,8 @@
       renderizarComprobantes();
       renderizarResumen();
       renderizarParaFacturar();
-      cargarStock();
+      await cargarStock();
+      await cargarEquipos();
     }
 
     async function cargarStock() {
@@ -164,6 +193,7 @@
       }
       variantesCache = resultado.variantes;
       renderizarStock();
+      renderizarEquipos();
     }
 
     var UMBRAL_STOCK_BAJO = 0.15; // menos del 15% disponible = alerta
@@ -1029,6 +1059,16 @@
         alert("El pedido nuevo se creó, pero no se pudo cerrar el anterior: " + resultado.motivo);
       }
 
+      // Los equipos con QR que tenía el pedido viejo pasan al pedido nuevo
+      // (siguen en la calle con el mismo cliente).
+      if (resultadoNuevo.data && resultadoNuevo.data[0]) {
+        try {
+          await db.from("equipos").update({ pedido_id: resultadoNuevo.data[0].id }).eq("pedido_id", pedido.id);
+        } catch (e) {
+          /* si la tabla equipos todavía no existe, no pasa nada */
+        }
+      }
+
       return true;
     }
 
@@ -1113,12 +1153,425 @@
         alert("No se pudo dar de baja el alquiler: " + resultado.motivo);
         return;
       }
+      await liberarEquiposDePedido(id);
       var pedido = pedidosCache.find(function (p) {
         return p.id === id;
       });
       if (pedido) pedido.estado = "devuelto";
       renderizarTabla();
       refrescarListasAlquiler();
+    }
+
+
+    /* ---------------------- Equipos con QR ---------------------- */
+
+    var escanerQr = null;
+
+    function nombreVariante(varianteId) {
+      var v = variantesCache.find(function (x) {
+        return x.id === varianteId;
+      });
+      return v ? v.producto_nombre + " – " + v.variante : varianteId;
+    }
+
+    function pedidoActivoDeEquipo(e) {
+      if (!e.pedido_id) return null;
+      var p = pedidosCache.find(function (x) {
+        return x.id === e.pedido_id;
+      });
+      return p && (p.estado === "activo" || p.estado === "confirmado") ? p : null;
+    }
+
+    function nombreCliente(p) {
+      return [p.nombre, p.apellido].filter(Boolean).join(" ") || "(sin nombre)";
+    }
+
+    function escaparHtml(texto) {
+      return String(texto == null ? "" : texto)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function cargarEquipos() {
+      var resultado = await db.from("equipos").select("*").order("id");
+      if (resultado.error) {
+        listaEquipos.innerHTML =
+          '<p class="texto-vacio-admin">No se pudieron cargar los equipos: ' +
+          escaparHtml(resultado.error.message) +
+          " (¿ya corriste el SQL nuevo en Supabase?)</p>";
+        return;
+      }
+      equiposCache = resultado.data;
+      renderizarEquipos();
+    }
+
+    function renderizarEquipos() {
+      // Selectores de producto (alta de equipos y filtro de la lista)
+      if (selectVarianteEquipo && variantesCache.length) {
+        var opciones = variantesCache
+          .map(function (v) {
+            return '<option value="' + v.id + '">' + escaparHtml(v.producto_nombre + " – " + v.variante) + "</option>";
+          })
+          .join("");
+        var valorSel = selectVarianteEquipo.value;
+        var valorFil = filtroEquipos.value;
+        selectVarianteEquipo.innerHTML = opciones;
+        filtroEquipos.innerHTML = '<option value="todos">Todos</option>' + opciones;
+        if (valorSel) selectVarianteEquipo.value = valorSel;
+        if (valorFil) filtroEquipos.value = valorFil;
+      }
+
+      var filtro = filtroEquipos.value || "todos";
+      var lista = equiposCache.filter(function (e) {
+        return filtro === "todos" || e.variante_id === filtro;
+      });
+
+      var enCalle = equiposCache.filter(function (e) {
+        return pedidoActivoDeEquipo(e);
+      }).length;
+      resumenEquipos.textContent =
+        "(" + equiposCache.length + " en total · " + enCalle + " alquilados · " + (equiposCache.length - enCalle) + " libres)";
+
+      if (lista.length === 0) {
+        listaEquipos.innerHTML =
+          '<p class="texto-vacio-admin">Todavía no hay equipos cargados. Elegí un producto arriba y tocá "Crear equipos".</p>';
+        return;
+      }
+
+      listaEquipos.innerHTML =
+        '<div class="table-responsive"><table class="table table-bordered bg-white tabla-pedidos-admin">' +
+        "<thead><tr><th>Código</th><th>Producto</th><th>Estado</th><th>Cliente / devuelve</th><th></th></tr></thead><tbody>" +
+        lista
+          .map(function (e) {
+            var p = pedidoActivoDeEquipo(e);
+            var estado = p
+              ? '<span class="estado-equipo-alquilado">Alquilado</span>'
+              : '<span class="estado-equipo-libre">Libre</span>';
+            var cliente = p ? escaparHtml(nombreCliente(p)) + " · hasta " + formatearFecha(p.fecha_hasta) : "-";
+            return (
+              "<tr><td><code>" + escaparHtml(e.id) + "</code></td>" +
+              "<td>" + escaparHtml(nombreVariante(e.variante_id)) + "</td>" +
+              "<td>" + estado + "</td>" +
+              "<td>" + cliente + "</td>" +
+              '<td><button type="button" class="btn-accion-admin retiro btn-etiqueta-equipo" data-equipo="' + escaparHtml(e.id) + '">QR</button> ' +
+              '<button type="button" class="btn-accion-admin baja btn-eliminar-equipo" data-equipo="' + escaparHtml(e.id) + '">Eliminar</button></td></tr>'
+            );
+          })
+          .join("") +
+        "</tbody></table></div>";
+    }
+
+    async function crearEquipos() {
+      var varianteId = selectVarianteEquipo.value;
+      var cantidad = parseInt(inputCantidadEquipo.value, 10);
+      if (!varianteId) {
+        alert("Elegí un producto.");
+        return;
+      }
+      if (isNaN(cantidad) || cantidad < 1 || cantidad > 200) {
+        alert("Ingresá una cantidad entre 1 y 200.");
+        return;
+      }
+
+      var prefijo = varianteId.toUpperCase();
+      var maximo = 0;
+      equiposCache.forEach(function (e) {
+        if (e.variante_id !== varianteId) return;
+        var m = e.id.match(/-(\d+)$/);
+        if (m) maximo = Math.max(maximo, parseInt(m[1], 10));
+      });
+
+      var filas = [];
+      for (var i = 1; i <= cantidad; i++) {
+        filas.push({ id: prefijo + "-" + String(maximo + i).padStart(3, "0"), variante_id: varianteId });
+      }
+
+      var resultado = await db.from("equipos").insert(filas).select();
+      if (resultado.error) {
+        alert("No se pudieron crear los equipos: " + resultado.error.message);
+        return;
+      }
+      await cargarEquipos();
+      if (confirm("Se crearon " + filas.length + " equipos. ¿Querés imprimir sus etiquetas QR ahora?")) {
+        imprimirEtiquetas(filas.map(function (f) { return f.id; }));
+      }
+    }
+
+    async function eliminarEquipo(codigo) {
+      if (!confirm("¿Eliminar el equipo " + codigo + "? Su QR dejará de funcionar.")) return;
+      var resultado = await db.from("equipos").delete().eq("id", codigo).select();
+      if (resultado.error || !resultado.data || resultado.data.length === 0) {
+        alert("No se pudo eliminar" + (resultado.error ? ": " + resultado.error.message : "."));
+        return;
+      }
+      await cargarEquipos();
+    }
+
+    function urlDeEquipo(codigo) {
+      var base = typeof SITE_URL !== "undefined" ? SITE_URL.replace(/\/$/, "") : window.location.origin;
+      return base + "/admin.html?equipo=" + encodeURIComponent(codigo);
+    }
+
+    async function imprimirEtiquetas(codigos) {
+      if (typeof qrcode === "undefined") {
+        alert("No se pudo cargar el generador de QR (revisá tu conexión a internet).");
+        return;
+      }
+      if (!codigos) {
+        var filtro = filtroEquipos.value || "todos";
+        codigos = equiposCache
+          .filter(function (e) {
+            return filtro === "todos" || e.variante_id === filtro;
+          })
+          .map(function (e) {
+            return e.id;
+          });
+      }
+      if (codigos.length === 0) {
+        alert("No hay equipos para imprimir.");
+        return;
+      }
+
+      var ventana = window.open("", "_blank");
+      if (!ventana) {
+        alert("El navegador bloqueó la ventana de impresión. Permití ventanas emergentes para este sitio.");
+        return;
+      }
+
+      var etiquetas = [];
+      for (var i = 0; i < codigos.length; i++) {
+        var codigo = codigos[i];
+        var equipo = equiposCache.find(function (e) {
+          return e.id === codigo;
+        });
+        var qr = qrcode(0, "M");
+        qr.addData(urlDeEquipo(codigo));
+        qr.make();
+        var imagen = qr.createDataURL(6, 2);
+        etiquetas.push(
+          '<div class="et"><img src="' + imagen + '"><div class="cod">' + escaparHtml(codigo) + "</div>" +
+          '<div class="prod">' + escaparHtml(equipo ? nombreVariante(equipo.variante_id) : "") + "</div></div>"
+        );
+      }
+
+      ventana.document.write(
+        "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Etiquetas QR</title><style>" +
+        "body{font-family:Arial,sans-serif;margin:12px}" +
+        ".grid{display:flex;flex-wrap:wrap;gap:10px}" +
+        ".et{width:200px;border:1px dashed #999;padding:8px;text-align:center;page-break-inside:avoid}" +
+        ".et img{width:170px;height:170px}.cod{font-weight:bold;font-size:12px;margin-top:4px}.prod{font-size:11px;color:#444}" +
+        "</style></head><body><div class='grid'>" + etiquetas.join("") + "</div>" +
+        "<script>window.onload=function(){window.print();}<\/script></body></html>"
+      );
+      ventana.document.close();
+    }
+
+    function extraerCodigo(texto) {
+      texto = (texto || "").trim();
+      var m = texto.match(/[?&]equipo=([^&#\s]+)/i);
+      if (m) {
+        try {
+          return decodeURIComponent(m[1]).toUpperCase();
+        } catch (e) {
+          return m[1].toUpperCase();
+        }
+      }
+      return texto.toUpperCase();
+    }
+
+    function pedidosCandidatos(equipo) {
+      return pedidosCache
+        .filter(function (p) {
+          if (p.tipo !== "alquiler" || p.producto_id !== equipo.variante_id) return false;
+          if (p.estado === "confirmado") return true;
+          // Pedido ya activo al que todavía le faltan equipos por entregar (cantidad > 1)
+          if (p.estado === "activo") {
+            var asignados = equiposCache.filter(function (e) {
+              return e.pedido_id === p.id;
+            }).length;
+            return asignados > 0 && asignados < (p.cantidad || 1);
+          }
+          return false;
+        })
+        .sort(function (a, b) {
+          return (a.fecha_desde || "").localeCompare(b.fecha_desde || "");
+        });
+    }
+
+    async function procesarCodigo(textoLeido) {
+      var codigo = extraerCodigo(textoLeido);
+      if (!codigo) return;
+      resultadoEscaneo.innerHTML = '<p class="text-secondary">Buscando ' + escaparHtml(codigo) + "...</p>";
+
+      // Datos frescos (por si otro dispositivo cambió algo hace un rato)
+      await cargarPedidos();
+
+      var equipo = equiposCache.find(function (e) {
+        return e.id === codigo;
+      });
+
+      if (!equipo) {
+        resultadoEscaneo.innerHTML =
+          '<div class="tarjeta-resultado-escaneo error"><strong>No existe ningún equipo con el código</strong> <code>' +
+          escaparHtml(codigo) + "</code>.</div>";
+        return;
+      }
+
+      var pedido = pedidoActivoDeEquipo(equipo);
+
+      if (pedido) {
+        resultadoEscaneo.innerHTML =
+          '<div class="tarjeta-resultado-escaneo alquilado">' +
+          "<div><code>" + escaparHtml(equipo.id) + "</code> · " + escaparHtml(nombreVariante(equipo.variante_id)) + "</div>" +
+          '<div class="estado-equipo-alquilado my-1">Está ALQUILADO</div>' +
+          "<div>Cliente: <strong>" + escaparHtml(nombreCliente(pedido)) + "</strong>" +
+          (pedido.telefono ? " · " + escaparHtml(pedido.telefono) : "") + "</div>" +
+          "<div>Período: " + formatearFecha(pedido.fecha_desde) + " → " + formatearFecha(pedido.fecha_hasta) + "</div>" +
+          '<button type="button" class="btn-accion-admin baja mt-2 btn-baja-equipo" data-equipo="' + escaparHtml(equipo.id) + '">↩️ Dar de baja (devuelto)</button>' +
+          "</div>";
+        return;
+      }
+
+      var candidatos = pedidosCandidatos(equipo);
+      var html =
+        '<div class="tarjeta-resultado-escaneo libre">' +
+        "<div><code>" + escaparHtml(equipo.id) + "</code> · " + escaparHtml(nombreVariante(equipo.variante_id)) + "</div>" +
+        '<div class="estado-equipo-libre my-1">Está LIBRE — ¿a quién se lo entregás?</div>';
+
+      if (candidatos.length === 0) {
+        html +=
+          '<p class="mb-0 text-secondary">No hay pedidos confirmados esperando este producto. ' +
+          'Confirmá el pedido en la pestaña "Pedidos" y volvé a escanear.</p>';
+      } else {
+        html += candidatos
+          .map(function (p) {
+            return (
+              '<div class="fila-candidato"><div><strong>' + escaparHtml(nombreCliente(p)) + "</strong>" +
+              (p.telefono ? " · " + escaparHtml(p.telefono) : "") +
+              "<br><small>" + formatearFecha(p.fecha_desde) + " → " + formatearFecha(p.fecha_hasta) +
+              (p.cantidad > 1 ? " · x" + p.cantidad : "") + "</small></div>" +
+              '<button type="button" class="btn-accion-admin activar btn-alta-equipo" data-equipo="' + escaparHtml(equipo.id) +
+              '" data-pedido="' + p.id + '">▶️ Entregar a este cliente</button></div>'
+            );
+          })
+          .join("");
+      }
+      resultadoEscaneo.innerHTML = html + "</div>";
+    }
+
+    async function altaEquipo(codigo, pedidoId) {
+      var resultado = await db.from("equipos").update({ pedido_id: pedidoId }).eq("id", codigo).select();
+      if (resultado.error || !resultado.data || resultado.data.length === 0) {
+        alert("No se pudo asignar el equipo" + (resultado.error ? ": " + resultado.error.message : "."));
+        return;
+      }
+      var pedido = pedidosCache.find(function (p) {
+        return p.id === pedidoId;
+      });
+      if (pedido && pedido.estado !== "activo") {
+        var r = await actualizarPedido(pedidoId, { estado: "activo" });
+        if (!r.ok) {
+          await db.from("equipos").update({ pedido_id: null }).eq("id", codigo);
+          alert("No se pudo activar el alquiler: " + r.motivo);
+          await cargarPedidos();
+          return;
+        }
+      }
+      await cargarPedidos();
+      resultadoEscaneo.innerHTML =
+        '<div class="tarjeta-resultado-escaneo libre"><strong>✓ Alta hecha.</strong> ' + escaparHtml(codigo) +
+        " quedó activo para " + escaparHtml(pedido ? nombreCliente(pedido) : "el cliente") + ".</div>";
+    }
+
+    async function bajaEquipo(codigo) {
+      var equipo = equiposCache.find(function (e) {
+        return e.id === codigo;
+      });
+      var pedidoId = equipo ? equipo.pedido_id : null;
+      var pedido = pedidoId
+        ? pedidosCache.find(function (p) {
+            return p.id === pedidoId;
+          })
+        : null;
+
+      var resultado = await db.from("equipos").update({ pedido_id: null }).eq("id", codigo).select();
+      if (resultado.error || !resultado.data || resultado.data.length === 0) {
+        alert("No se pudo dar de baja el equipo" + (resultado.error ? ": " + resultado.error.message : "."));
+        return;
+      }
+
+      var mensaje = "✓ Baja hecha. " + codigo + " quedó libre.";
+      if (pedido) {
+        var quedan = equiposCache.filter(function (e) {
+          return e.id !== codigo && e.pedido_id === pedido.id;
+        }).length;
+        if (quedan === 0) {
+          var r = await actualizarPedido(pedido.id, { estado: "devuelto" });
+          mensaje += r.ok
+            ? " El pedido de " + nombreCliente(pedido) + " quedó como devuelto."
+            : " Ojo: no se pudo marcar el pedido como devuelto (" + r.motivo + ").";
+        } else {
+          mensaje += " Al pedido de " + nombreCliente(pedido) + " todavía le quedan " + quedan + " equipo(s) sin devolver.";
+        }
+      }
+      await cargarPedidos();
+      resultadoEscaneo.innerHTML = '<div class="tarjeta-resultado-escaneo libre"><strong>' + escaparHtml(mensaje) + "</strong></div>";
+    }
+
+    async function liberarEquiposDePedido(pedidoId) {
+      try {
+        await db.from("equipos").update({ pedido_id: null }).eq("pedido_id", pedidoId);
+        equiposCache.forEach(function (e) {
+          if (e.pedido_id === pedidoId) e.pedido_id = null;
+        });
+        renderizarEquipos();
+      } catch (e) {
+        /* si la tabla equipos todavía no existe, no pasa nada */
+      }
+    }
+
+    async function detenerEscaner() {
+      if (escanerQr) {
+        try {
+          await escanerQr.stop();
+          await escanerQr.clear();
+        } catch (e) {
+          /* ya estaba detenido */
+        }
+        escanerQr = null;
+      }
+      visorEscaner.classList.add("d-none");
+      btnDetenerEscaner.classList.add("d-none");
+      btnEscanear.classList.remove("d-none");
+    }
+
+    async function iniciarEscaner() {
+      if (typeof Html5Qrcode === "undefined") {
+        alert("No se pudo cargar el escáner (revisá tu conexión a internet).");
+        return;
+      }
+      visorEscaner.classList.remove("d-none");
+      btnEscanear.classList.add("d-none");
+      btnDetenerEscaner.classList.remove("d-none");
+      escanerQr = new Html5Qrcode("visorEscaner");
+      try {
+        await escanerQr.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          function (texto) {
+            detenerEscaner();
+            procesarCodigo(texto);
+          },
+          function () {
+            /* cuadros sin QR: se ignoran */
+          }
+        );
+      } catch (e) {
+        await detenerEscaner();
+        alert("No se pudo abrir la cámara. Permití el acceso a la cámara en el navegador (o escribí el código a mano).");
+      }
     }
 
     /* ---------------------- Eventos ---------------------- */
@@ -1186,6 +1639,41 @@
       if (!id) return;
       if (evento.target.classList.contains("btn-quitar-facturar")) quitarParaFacturar(id);
     });
+
+
+    if (btnEscanear) btnEscanear.addEventListener("click", iniciarEscaner);
+    if (btnDetenerEscaner) btnDetenerEscaner.addEventListener("click", detenerEscaner);
+    if (btnCrearEquipos) btnCrearEquipos.addEventListener("click", crearEquipos);
+    if (btnImprimirEtiquetas) btnImprimirEtiquetas.addEventListener("click", function () { imprimirEtiquetas(); });
+    if (filtroEquipos) filtroEquipos.addEventListener("change", renderizarEquipos);
+    if (btnBuscarCodigo) {
+      btnBuscarCodigo.addEventListener("click", function () {
+        procesarCodigo(inputCodigoManual.value);
+      });
+    }
+    if (inputCodigoManual) {
+      inputCodigoManual.addEventListener("keydown", function (evento) {
+        if (evento.key === "Enter") procesarCodigo(inputCodigoManual.value);
+      });
+    }
+    if (listaEquipos) {
+      listaEquipos.addEventListener("click", function (evento) {
+        var codigo = evento.target.getAttribute("data-equipo");
+        if (!codigo) return;
+        if (evento.target.classList.contains("btn-etiqueta-equipo")) imprimirEtiquetas([codigo]);
+        if (evento.target.classList.contains("btn-eliminar-equipo")) eliminarEquipo(codigo);
+      });
+    }
+    if (resultadoEscaneo) {
+      resultadoEscaneo.addEventListener("click", function (evento) {
+        var codigo = evento.target.getAttribute("data-equipo");
+        if (!codigo) return;
+        if (evento.target.classList.contains("btn-alta-equipo")) {
+          altaEquipo(codigo, evento.target.getAttribute("data-pedido"));
+        }
+        if (evento.target.classList.contains("btn-baja-equipo")) bajaEquipo(codigo);
+      });
+    }
 
     if (btnEnviarSheets) btnEnviarSheets.addEventListener("click", enviarAGoogleSheets);
     if (btnExportarFacturitas) btnExportarFacturitas.addEventListener("click", exportarFacturitas);
