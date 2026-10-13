@@ -70,6 +70,9 @@
                 <button type="button" class="tab-admin" data-tab="stock">
                     Stock <span class="badge-tab badge-tab-vacio" id="contadorStockBajo">0</span>
                 </button>
+                <button type="button" class="tab-admin" data-tab="equipos">
+                    Equipos QR
+                </button>
                 <button type="button" class="tab-admin" data-tab="facturar">
                     Para facturar <span class="badge-tab" id="contadorFacturar">0</span>
                 </button>
@@ -192,6 +195,52 @@
                 <div id="listaStock"></div>
             </div>
 
+            <!-- EQUIPOS QR -->
+            <div class="panel-tab-admin d-none" id="tabEquipos">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Cada equipo físico tiene su QR. Al escanearlo: si está libre, elegís a qué cliente se lo entregás
+                    (queda <strong>activo</strong>); si está alquilado, lo das de <strong>baja</strong> (devuelto).
+                </p>
+
+                <div class="caja-escaner mb-4">
+                    <div class="d-flex flex-wrap gap-2 align-items-end">
+                        <button type="button" class="btn-accion-admin activar" id="btnEscanear">📷 Escanear QR</button>
+                        <button type="button" class="btn-accion-admin baja d-none" id="btnDetenerEscaner">✖ Cerrar cámara</button>
+                        <div class="ms-auto d-flex gap-2 align-items-end">
+                            <div>
+                                <label class="etiqueta-campo-alquiler" for="inputCodigoManual">O escribí el código</label>
+                                <input type="text" class="form-control form-control-sm campo-alquiler" id="inputCodigoManual" placeholder="MAGNETO-PLACAS-001">
+                            </div>
+                            <button type="button" class="btn-accion-admin retiro" id="btnBuscarCodigo">Buscar</button>
+                        </div>
+                    </div>
+                    <div id="visorEscaner" class="visor-escaner d-none"></div>
+                    <div id="resultadoEscaneo" class="mt-3"></div>
+                </div>
+
+                <h6 class="mb-2">Agregar equipos</h6>
+                <div class="d-flex flex-wrap gap-3 align-items-end mb-4">
+                    <div>
+                        <label class="etiqueta-campo-alquiler" for="selectVarianteEquipo">Producto / talle</label>
+                        <select class="form-select form-select-sm campo-alquiler" id="selectVarianteEquipo"></select>
+                    </div>
+                    <div>
+                        <label class="etiqueta-campo-alquiler" for="inputCantidadEquipo">Cantidad</label>
+                        <input type="number" min="1" max="200" value="1" class="form-control form-control-sm campo-alquiler" id="inputCantidadEquipo" style="width:90px;">
+                    </div>
+                    <button type="button" class="btn-accion-admin activar" id="btnCrearEquipos">+ Crear equipos</button>
+                </div>
+
+                <div class="d-flex flex-wrap gap-3 align-items-end mb-3">
+                    <h6 class="mb-0">Todos los equipos <span class="text-secondary" id="resumenEquipos" style="font-size:13px;"></span></h6>
+                    <div class="ms-auto d-flex gap-2 align-items-end">
+                        <select class="form-select form-select-sm campo-alquiler" id="filtroEquipos"></select>
+                        <button type="button" class="btn-accion-admin retiro" id="btnImprimirEtiquetas">🖨️ Imprimir etiquetas QR</button>
+                    </div>
+                </div>
+                <div id="listaEquipos"></div>
+            </div>
+
             <!-- PARA FACTURAR -->
             <div class="panel-tab-admin d-none" id="tabFacturar">
                 <p class="text-secondary mb-3" style="font-size:13px;">
@@ -213,6 +262,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
     <script src="supabase-config.js"></script>
     <script src="db.js"></script>
     <script src="admin.js" defer></script>
