@@ -313,3 +313,15 @@ alter table equipos_historial enable row level security;
 
 drop policy if exists "equipos_historial_admin" on equipos_historial;
 create policy "equipos_historial_admin" on equipos_historial for all to authenticated using (true) with check (true);
+
+
+-- ============================================================
+-- PRODUCTOS NUEVOS: silla de ruedas, andador y roll out
+-- (stock en 0: cargalo desde la pestana Stock del panel)
+-- ============================================================
+insert into variantes_producto (id, producto_id, producto_nombre, variante, stock) values
+  ('silla-de-ruedas-unica', 'silla-de-ruedas', 'Silla de Ruedas', 'Modelo unico', 0),
+  ('andador-con-ruedas', 'andador', 'Andador', 'Con ruedas', 0),
+  ('andador-sin-ruedas', 'andador', 'Andador', 'Sin ruedas', 0),
+  ('roll-out-unica', 'roll-out', 'Roll Out', 'Modelo unico', 0)
+on conflict (id) do nothing;

@@ -1795,7 +1795,44 @@
       };
     }
 
-    async function cargarContactos() {
+    // ---------- Copia de seguridad ----------
+  function mostrarFechaBackup() {
+    var t = document.getElementById("textoBackup");
+    if (!t) return;
+    var ultimo = null;
+    try { ultimo = localStorage.getItem("gauss_ultimo_backup"); } catch (e) {}
+    if (!ultimo) { t.textContent = "💾 Copia de seguridad: todavía no descargaste ninguna desde este navegador."; return; }
+    var dias = Math.floor((Date.now() - new Date(ultimo).getTime()) / 86400000);
+    t.textContent = "💾 Última copia de seguridad: " + (dias <= 0 ? "hoy" : "hace " + dias + " día" + (dias === 1 ? "" : "s")) + (dias >= 7 ? " — conviene descargar una nueva." : ".");
+  }
+
+  async function descargarBackup() {
+    var btn = document.getElementById("btnBackup");
+    var tablas = ["pedidos", "contactos", "equipos", "equipos_historial", "variantes_producto"];
+    var copia = { generado: new Date().toISOString(), tablas: {} };
+    if (btn) { btn.disabled = true; btn.textContent = "Preparando..."; }
+    try {
+      for (var i = 0; i < tablas.length; i++) {
+        var r = await db.from(tablas[i]).select("*");
+        if (r.error) { copia.tablas[tablas[i]] = []; copia.avisos = (copia.avisos || []).concat(tablas[i] + ": " + r.error.message); }
+        else copia.tablas[tablas[i]] = r.data || [];
+      }
+      var blob = new Blob([JSON.stringify(copia, null, 2)], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "gauss-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      try { localStorage.setItem("gauss_ultimo_backup", new Date().toISOString()); } catch (e) {}
+      mostrarFechaBackup();
+      if (copia.avisos) alert("La copia se descargó, pero algunas tablas no se pudieron leer:\n" + copia.avisos.join("\n"));
+    } catch (e) {
+      alert("No se pudo generar la copia: " + e.message);
+    }
+    if (btn) { btn.disabled = false; btn.textContent = "Descargar copia de seguridad"; }
+  }
+
+  async function cargarContactos() {
       var resultado = await db.from("contactos").select("*").order("nombre");
       if (resultado.error) {
         listaContactos.innerHTML =
@@ -2254,6 +2291,9 @@
     }
 
 
+    var btnBackup = document.getElementById("btnBackup");
+    if (btnBackup) btnBackup.addEventListener("click", descargarBackup);
+    mostrarFechaBackup();
     if (btnImportarContactos) btnImportarContactos.addEventListener("click", importarContactosDePedidos);
     if (btnExportarContactos) btnExportarContactos.addEventListener("click", exportarContactosCsv);
     if (btnLimpiarFinalizados) btnLimpiarFinalizados.addEventListener("click", limpiarFinalizados);

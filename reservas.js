@@ -49,6 +49,27 @@
         { dias: 30, precio: 46000 },
       ],
     },
+    {
+      id: "silla-de-ruedas",
+      nombre: "Silla de Ruedas",
+      imagen: "silla-de-ruedas.webp",
+      variantes: [{ id: "silla-de-ruedas-unica", nombre: "Modelo único" }],
+      duraciones: [{ dias: 30, precio: 40000 }],
+    },
+    {
+      id: "andador",
+      nombre: "Andador",
+      imagen: "andador.webp",
+      variantes: [{ id: "andador-con-ruedas", nombre: "Con ruedas" }, { id: "andador-sin-ruedas", nombre: "Sin ruedas" }],
+      duraciones: [{ dias: 30, precio: 25000 }],
+    },
+    {
+      id: "roll-out",
+      nombre: "Roll Out",
+      imagen: "roll-out.webp",
+      variantes: [{ id: "roll-out-unica", nombre: "Modelo único" }],
+      duraciones: [{ dias: 30, precio: 40000 }],
+    },
   ];
 
   var CAMPOS_RESERVA = [

@@ -1879,3 +1879,23 @@ svg {
     gap: 12px;
   }
 }
+
+/* --- Grilla de especialidades en el inicio (7 productos) --- */
+.contenedor-fila.grilla-especialidades {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+.grilla-especialidades .tarjeta-producto {
+  height: 300px;
+}
+@media (max-width: 991.98px) {
+  .contenedor-fila.grilla-especialidades {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .grilla-especialidades .tarjeta-producto {
+    height: 220px;
+  }
+}
