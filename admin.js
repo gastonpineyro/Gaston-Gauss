@@ -101,6 +101,8 @@
     var btnExportarFacturitas = document.getElementById("btnExportarFacturitas");
     var btnConfirmarFacturados = document.getElementById("btnConfirmarFacturados");
     var grillaDashboard = document.getElementById("grillaDashboard");
+    var devolucionesResumen = document.getElementById("devolucionesResumen");
+    var equiposResumen = document.getElementById("equiposResumen");
     var avisoStockBajoResumen = document.getElementById("avisoStockBajoResumen");
     var rankingProductos = document.getElementById("rankingProductos");
     var contadorActivos = document.getElementById("contadorActivos");
@@ -302,15 +304,100 @@
 
     /* ---------------------- Resumen (dashboard) ---------------------- */
 
+    function renderizarDevolucionesProximas() {
+      if (!devolucionesResumen) return;
+      var proximas = pedidosCache
+        .filter(function (p) {
+          if (p.tipo !== "alquiler" || p.estado !== "activo" || !p.fecha_hasta) return false;
+          var d = diasHasta(p.fecha_hasta);
+          return d === 0 || d === 1;
+        })
+        .sort(function (a, b) {
+          return (a.fecha_hasta || "").localeCompare(b.fecha_hasta || "");
+        });
+
+      var html = '<h3 class="titulo-grupo-stock mb-3">Devoluciones de hoy y mañana</h3>';
+      if (proximas.length === 0) {
+        devolucionesResumen.innerHTML = html + '<p class="texto-vacio-admin">No hay devoluciones para hoy ni mañana.</p>';
+        return;
+      }
+      devolucionesResumen.innerHTML =
+        html +
+        proximas
+          .map(function (p) {
+            var cuando = diasHasta(p.fecha_hasta) === 0 ? "hoy" : "mañana";
+            var codigos = equiposCache
+              .filter(function (e) {
+                return e.pedido_id === p.id;
+              })
+              .map(function (e) {
+                return e.id;
+              });
+            var mensaje =
+              "Hola " + (p.nombre || "") + "! Te escribo por la devolución de " + p.producto_nombre +
+              ", que vence " + cuando + ". ¿Coordinamos el horario? ¡Gracias!";
+            return (
+              '<div class="tarjeta-vencimiento' + (cuando === "hoy" ? " vencido" : "") + '">' +
+              '<div class="info-vencimiento" style="flex:1;">' +
+              "<h4>" + escaparHtml(p.producto_nombre) + " — " + escaparHtml(nombreCliente(p)) + "</h4>" +
+              "<p>Vence <strong>" + cuando + "</strong> (" + formatearFecha(p.fecha_hasta) + ")" +
+              (p.telefono ? " · Tel: " + escaparHtml(p.telefono) : "") +
+              (p.direccion ? "<br>📍 " + escaparHtml(p.direccion) : "") +
+              (codigos.length ? "<br>🔖 Equipo: <strong>" + escaparHtml(codigos.join(", ")) + "</strong>" : "") +
+              "</p></div>" +
+              '<div class="acciones-vencimiento">' +
+              (p.telefono
+                ? '<a class="btn-accion-admin recordatorio" target="_blank" rel="noopener" href="' +
+                  escaparHtml(linkWhatsApp(p.telefono, mensaje)) + '">💬 WhatsApp</a>'
+                : "") +
+              "</div></div>"
+            );
+          })
+          .join("");
+    }
+
+    function renderizarEquiposPorProducto() {
+      if (!equiposResumen) return;
+      if (equiposCache.length === 0) {
+        equiposResumen.innerHTML = "";
+        return;
+      }
+      var porVariante = {};
+      equiposCache.forEach(function (e) {
+        var g = porVariante[e.variante_id] || (porVariante[e.variante_id] = { libres: 0, alquilados: 0, reparacion: 0 });
+        if (e.en_reparacion) g.reparacion++;
+        else if (pedidoActivoDeEquipo(e)) g.alquilados++;
+        else g.libres++;
+      });
+      equiposResumen.innerHTML =
+        '<h3 class="titulo-grupo-stock mb-3">Equipos con QR por producto</h3>' +
+        '<div class="grilla-stock">' +
+        Object.keys(porVariante)
+          .sort()
+          .map(function (id) {
+            var g = porVariante[id];
+            return (
+              '<div class="tarjeta-stock' + (g.libres === 0 ? " stock-agotado" : "") + '"><div class="info-stock">' +
+              "<h4>" + escaparHtml(nombreVariante(id)) + "</h4>" +
+              '<p class="disponibles-stock">' + g.libres + " libre" + (g.libres === 1 ? "" : "s") + "</p>" +
+              "<p>" + g.alquilados + " alquilado" + (g.alquilados === 1 ? "" : "s") +
+              (g.reparacion ? " · 🔧 " + g.reparacion + " en reparación" : "") + "</p>" +
+              "</div></div>"
+            );
+          })
+          .join("") +
+        "</div>";
+    }
+
     function renderizarResumen() {
       var hoy = new Date();
       var inicioMes = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0") + "-01";
       var hace30Dias = new Date(hoy.getTime() - 30 * 86400000).toISOString();
 
       var pedidosDelMes = pedidosCache.filter(function (p) {
-        return p.creado_en >= inicioMes;
+        return p.creado_en >= inicioMes && p.estado !== "cancelado";
       });
-      var totalFacturadoMes = pedidosDelMes.reduce(function (acc, p) {
+      var ventasDelMesMonto = pedidosDelMes.reduce(function (acc, p) {
         return acc + (p.total || 0);
       }, 0);
       var ventasMes = pedidosDelMes.filter(function (p) {
@@ -333,19 +420,35 @@
           diasHasta(p.fecha_hasta) < 0
         );
       }).length;
+      var paraFacturar = pedidosCache.filter(function (p) {
+        return p.pendiente_facturacion && !p.facturado_en;
+      });
+      var montoParaFacturar = paraFacturar.reduce(function (acc, p) {
+        return acc + (p.total || 0);
+      }, 0);
+      var esperandoEntrega = pedidosCache.filter(function (p) {
+        return p.tipo === "alquiler" && p.estado === "confirmado";
+      }).length;
+      var enReparacionTotal = equiposCache.filter(function (e) {
+        return e.en_reparacion;
+      }).length;
 
       var tarjetas = [
-        { titulo: "Pedidos este mes", valor: pedidosDelMes.length, nota: ventasMes + " ventas · " + alquileresMes + " alquileres" },
-        { titulo: "Facturado este mes", valor: formatearPrecio(totalFacturadoMes), nota: "suma de todos los pedidos del mes" },
-        { titulo: "Alquileres activos", valor: activosAhora, nota: "en la calle ahora mismo" },
-        { titulo: "Vencidos sin devolver", valor: vencidosSinDevolver, nota: "necesitan seguimiento", alerta: vencidosSinDevolver > 0 },
-        { titulo: "Comprobantes pendientes", valor: pendientesRevision, nota: "esperando tu revisión", alerta: pendientesRevision > 0 },
+        { titulo: "Pedidos este mes", valor: pedidosDelMes.length, nota: ventasMes + " ventas · " + alquileresMes + " alquileres", tab: "pedidos" },
+        { titulo: "Ventas del mes", valor: formatearPrecio(ventasDelMesMonto), nota: "sin contar los cancelados", tab: "pedidos" },
+        { titulo: "Para facturar", valor: paraFacturar.length, nota: formatearPrecio(montoParaFacturar) + " sin facturar", tab: "facturar", alerta: paraFacturar.length > 0 },
+        { titulo: "Esperando entrega", valor: esperandoEntrega, nota: "confirmados, aún sin entregar", tab: "pedidos", estado: "confirmado" },
+        { titulo: "Alquileres activos", valor: activosAhora, nota: "en la calle ahora mismo", tab: "activos" },
+        { titulo: "Vencidos sin devolver", valor: vencidosSinDevolver, nota: "necesitan seguimiento", tab: "vencidos", alerta: vencidosSinDevolver > 0 },
+        { titulo: "Comprobantes pendientes", valor: pendientesRevision, nota: "esperando tu revisión", tab: "comprobantes", alerta: pendientesRevision > 0 },
+        { titulo: "Equipos en reparación", valor: enReparacionTotal, nota: "no se pueden alquilar", tab: "equipos", alerta: enReparacionTotal > 0 },
       ];
 
       grillaDashboard.innerHTML = tarjetas
         .map(function (t) {
           return (
-            '<div class="tarjeta-dashboard' + (t.alerta ? " alerta" : "") + '">' +
+            '<div class="tarjeta-dashboard' + (t.alerta ? " alerta" : "") + '" data-tab="' + t.tab + '"' +
+            (t.estado ? ' data-estado="' + t.estado + '"' : "") + ' title="Tocá para ir">' +
             '<p class="titulo-tarjeta-dashboard">' + t.titulo + "</p>" +
             '<p class="valor-tarjeta-dashboard">' + t.valor + "</p>" +
             '<p class="nota-tarjeta-dashboard">' + t.nota + "</p>" +
@@ -353,6 +456,9 @@
           );
         })
         .join("");
+
+      renderizarDevolucionesProximas();
+      renderizarEquiposPorProducto();
 
       // Producto más pedido en los últimos 30 días
       var pedidosRecientes = pedidosCache.filter(function (p) {
@@ -1235,6 +1341,7 @@
       equiposCache = resultado.data;
       renderizarEquipos();
       refrescarListasAlquiler();
+      renderizarResumen();
     }
 
     function renderizarEquipos() {
@@ -2081,6 +2188,20 @@
       if (evento.target.classList.contains("btn-quitar-facturar")) quitarParaFacturar(id);
     });
 
+
+    if (grillaDashboard) {
+      grillaDashboard.addEventListener("click", function (evento) {
+        var tarjeta = evento.target.closest(".tarjeta-dashboard[data-tab]");
+        if (!tarjeta) return;
+        var estado = tarjeta.getAttribute("data-estado");
+        if (estado) {
+          selectFiltroEstado.value = estado;
+          buscadorPedidos.value = "";
+          renderizarTabla();
+        }
+        irATab(tarjeta.getAttribute("data-tab"));
+      });
+    }
 
     if (btnEscanear) btnEscanear.addEventListener("click", iniciarEscaner);
     if (btnDetenerEscaner) btnDetenerEscaner.addEventListener("click", detenerEscaner);

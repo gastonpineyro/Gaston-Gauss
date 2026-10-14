@@ -1803,3 +1803,6 @@ svg {
 }
 
 .estado-equipo-reparacion { color: #d97706; font-weight: 600; }
+
+.tarjeta-dashboard[data-tab] { cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
+.tarjeta-dashboard[data-tab]:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); transform: translateY(-1px); }
