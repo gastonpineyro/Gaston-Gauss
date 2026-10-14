@@ -1477,8 +1477,16 @@
       var pedido = pedidosCache.find(function (p) {
         return p.id === pedidoId;
       });
+      var marcadoParaFacturar = false;
       if (pedido && pedido.estado !== "activo") {
-        var r = await actualizarPedido(pedidoId, { estado: "activo" });
+        var cambios = { estado: "activo" };
+        // Al entregar el equipo, el pedido pasa solo a "Para facturar"
+        // (salvo que ya esté facturado o ya esté marcado).
+        if (!pedido.facturado_en && !pedido.pendiente_facturacion) {
+          cambios.pendiente_facturacion = true;
+          marcadoParaFacturar = true;
+        }
+        var r = await actualizarPedido(pedidoId, cambios);
         if (!r.ok) {
           await db.from("equipos").update({ pedido_id: null }).eq("id", codigo);
           alert("No se pudo activar el alquiler: " + r.motivo);
@@ -1489,7 +1497,8 @@
       await cargarPedidos();
       resultadoEscaneo.innerHTML =
         '<div class="tarjeta-resultado-escaneo libre"><strong>✓ Alta hecha.</strong> ' + escaparHtml(codigo) +
-        " quedó activo para " + escaparHtml(pedido ? nombreCliente(pedido) : "el cliente") + ".</div>";
+        " quedó activo para " + escaparHtml(pedido ? nombreCliente(pedido) : "el cliente") + "." +
+        (marcadoParaFacturar ? " 🧾 Quedó en \"Para facturar\"." : "") + "</div>";
     }
 
     async function bajaEquipo(codigo) {
