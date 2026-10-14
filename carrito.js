@@ -371,6 +371,20 @@
 
   /* ---------------------- Precio dinámico según modalidad ---------------------- */
 
+  // Si un modelo tiene precios propios (data-precio-<id-del-modelo>), se aplican a las duraciones.
+  function aplicarPreciosDeVariante() {
+    var v = document.querySelector("[data-variante]:checked");
+    var id = v ? v.getAttribute("data-variante") : null;
+    var elegido = null;
+    document.querySelectorAll('.selector-modalidad input[data-alquiler]').forEach(function (r) {
+      if (!r.hasAttribute("data-precio-base")) r.setAttribute("data-precio-base", r.getAttribute("data-precio"));
+      var propio = id ? r.getAttribute("data-precio-" + id) : null;
+      r.setAttribute("data-precio", propio || r.getAttribute("data-precio-base"));
+      if (r.checked) elegido = r;
+    });
+    if (elegido) actualizarPrecioSegunModalidad(elegido);
+  }
+
   function actualizarPrecioSegunModalidad(radio) {
     var precio = parseFloat(radio.getAttribute("data-precio"));
     if (isNaN(precio)) return;
@@ -690,7 +704,7 @@
         radio.addEventListener("change", function () {
           actualizarPrecioSegunModalidad(radio);
           actualizarImagenSegunSeleccion(radio);
-          if (radio.hasAttribute("data-variante")) actualizarDisponibilidadProducto();
+          if (radio.hasAttribute("data-variante")) { aplicarPreciosDeVariante(); actualizarDisponibilidadProducto(); }
           else refrescarBotonAgregar();
         });
         if (radio.checked) {
@@ -699,6 +713,7 @@
         }
       });
 
+      aplicarPreciosDeVariante();
       actualizarDisponibilidadProducto();
     });
 })();

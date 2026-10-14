@@ -13,10 +13,15 @@
       { dias: 15, precio: 25000 },
       { dias: 30, precio: 46000 },
     ],
+    "magneto-tubo-placas": [
+      { dias: 15, precio: 29000 },
+      { dias: 30, precio: 50000 },
+    ],
   };
 
   function duracionesDisponibles(productoId) {
     if (!productoId) return null;
+    if (DURACIONES_POR_PRODUCTO[productoId]) return DURACIONES_POR_PRODUCTO[productoId];
     if (productoId.indexOf("magneto") === 0) return DURACIONES_POR_PRODUCTO.magneto;
     return null;
   }

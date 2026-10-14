@@ -42,7 +42,7 @@
       variantes: [
         { id: "magneto-placas", nombre: "Con placas", imagen: "magneto-placas.jpg" },
         { id: "magneto-tubos", nombre: "Con tubos", imagen: "magneto.png" },
-        { id: "magneto-tubo-placas", nombre: "Tubo y placas", imagen: "magneto-tubo-placas.webp" },
+        { id: "magneto-tubo-placas", nombre: "Tubo y placas", imagen: "magneto-tubo-placas.webp", precios: { 15: 29000, 30: 50000 } },
       ],
       duraciones: [
         { dias: 15, precio: 25000 },
@@ -121,12 +121,19 @@
     return EQUIPOS[0];
   }
 
+  // Precio de una duración, teniendo en cuenta si la variante elegida tiene precios propios.
+  function conPrecioDeVariante(equipo, d) {
+    var v = varianteSeleccionada(equipo);
+    var propio = v && v.precios && v.precios[d.dias];
+    return propio ? { dias: d.dias, precio: propio } : d;
+  }
+
   function duracionElegida(equipo, dias) {
     var encontrada = null;
     equipo.duraciones.forEach(function (d) {
       if (d.dias === dias) encontrada = d;
     });
-    return encontrada || equipo.duraciones[0];
+    return conPrecioDeVariante(equipo, encontrada || equipo.duraciones[0]);
   }
 
   function poblarSelect() {
@@ -146,13 +153,17 @@
     if (!selectEquipo || !selectDuracion) return;
 
     var equipo = equipoPorId(selectEquipo.value);
+    var previa = selectDuracion.value;
     selectDuracion.innerHTML = "";
-    equipo.duraciones.forEach(function (d) {
+    equipo.duraciones.forEach(function (d0) {
+      var d = conPrecioDeVariante(equipo, d0);
       var opcion = document.createElement("option");
       opcion.value = d.dias;
       opcion.textContent = d.dias + " días — " + formatearPrecio(d.precio);
       selectDuracion.appendChild(opcion);
     });
+    if (previa) selectDuracion.value = previa;
+    if (!selectDuracion.value && selectDuracion.options.length) selectDuracion.selectedIndex = 0;
   }
 
   function poblarVariantes() {
@@ -349,7 +360,10 @@
       poblarDuraciones();
       actualizarResumen();
     });
-    if (selectVariante) selectVariante.addEventListener("change", actualizarResumen);
+    if (selectVariante) selectVariante.addEventListener("change", function () {
+      poblarDuraciones();
+      actualizarResumen();
+    });
     if (selectDuracion) selectDuracion.addEventListener("change", actualizarResumen);
     if (fechaDesde) fechaDesde.addEventListener("change", actualizarResumen);
 
