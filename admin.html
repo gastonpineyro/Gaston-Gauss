@@ -73,6 +73,9 @@
                 <button type="button" class="tab-admin" data-tab="equipos">
                     Equipos QR
                 </button>
+                <button type="button" class="tab-admin" data-tab="contactos">
+                    Contactos <span class="badge-tab badge-tab-vacio" id="contadorContactos">0</span>
+                </button>
                 <button type="button" class="tab-admin" data-tab="facturar">
                     Para facturar <span class="badge-tab" id="contadorFacturar">0</span>
                 </button>
@@ -115,6 +118,7 @@
                         </select>
                     </div>
                     <div class="ms-auto">
+                        <button type="button" class="btn-accion-admin baja" id="btnLimpiarFinalizados">🗑 Limpiar devueltos y cancelados</button>
                         <button type="button" class="btn-accion-admin activar" id="btnExportarCsv">⬇️ Exportar CSV</button>
                     </div>
                 </div>
@@ -239,6 +243,25 @@
                     </div>
                 </div>
                 <div id="listaEquipos"></div>
+            </div>
+
+            <!-- CONTACTOS -->
+            <div class="panel-tab-admin d-none" id="tabContactos">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Tu agenda de clientes. Cuando borrás un pedido, los datos de contacto de ese cliente se guardan
+                    acá automáticamente, así no se pierden aunque limpies la lista de pedidos.
+                </p>
+                <div class="d-flex flex-wrap gap-3 align-items-end mb-3">
+                    <div>
+                        <label class="etiqueta-campo-alquiler" for="buscadorContactos">Buscar</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler" id="buscadorContactos" placeholder="Nombre, DNI, teléfono o dirección..." style="min-width:220px;">
+                    </div>
+                    <div class="ms-auto d-flex flex-wrap gap-2">
+                        <button type="button" class="btn-accion-admin retiro" id="btnImportarContactos">👥 Guardar clientes de los pedidos actuales</button>
+                        <button type="button" class="btn-accion-admin activar" id="btnExportarContactos">⬇️ Exportar CSV</button>
+                    </div>
+                </div>
+                <div id="listaContactos"></div>
             </div>
 
             <!-- PARA FACTURAR -->

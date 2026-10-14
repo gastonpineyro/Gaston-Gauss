@@ -75,6 +75,12 @@
     var listaVencidos = document.getElementById("listaVencidos");
     var listaComprobantes = document.getElementById("listaComprobantes");
     var listaStock = document.getElementById("listaStock");
+    var listaContactos = document.getElementById("listaContactos");
+    var buscadorContactos = document.getElementById("buscadorContactos");
+    var contadorContactos = document.getElementById("contadorContactos");
+    var btnImportarContactos = document.getElementById("btnImportarContactos");
+    var btnExportarContactos = document.getElementById("btnExportarContactos");
+    var btnLimpiarFinalizados = document.getElementById("btnLimpiarFinalizados");
     var listaEquipos = document.getElementById("listaEquipos");
     var resumenEquipos = document.getElementById("resumenEquipos");
     var filtroEquipos = document.getElementById("filtroEquipos");
@@ -113,6 +119,7 @@
     var pedidosCache = [];
     var variantesCache = [];
     var equiposCache = [];
+    var contactosCache = [];
     var codigoPendienteDeLink = new URLSearchParams(window.location.search).get("equipo");
 
     /* ---------------------- Pantallas ---------------------- */
@@ -183,6 +190,7 @@
       renderizarParaFacturar();
       await cargarStock();
       await cargarEquipos();
+      await cargarContactos();
     }
 
     async function cargarStock() {
@@ -428,6 +436,7 @@
           if (p.tipo === "alquiler" && p.estado === "activo") {
             acciones.push('<button type="button" class="btn-accion-admin baja btn-dar-de-baja" data-id="' + p.id + '">↩️ Dar de baja</button>');
           }
+          acciones.push('<button type="button" class="btn-accion-admin baja btn-borrar-pedido" data-id="' + p.id + '">🗑 Borrar</button>');
 
           var clienteHtml = p.dni
             ? '<a href="#" class="link-historial-cliente" data-dni="' + p.dni + '">' + cliente + " (DNI " + p.dni + ")</a>"
@@ -1590,6 +1599,225 @@
       }
     }
 
+    /* ---------------------- Contactos y borrado de pedidos ---------------------- */
+
+    function claveCoincide(a, b) {
+      if (a.dni && b.dni) return String(a.dni).trim() === String(b.dni).trim();
+      if (a.telefono && b.telefono) return String(a.telefono).replace(/\D/g, "") === String(b.telefono).replace(/\D/g, "");
+      return false;
+    }
+
+    function contactoDePedido(p) {
+      return {
+        nombre: p.nombre || null,
+        apellido: p.apellido || null,
+        dni: p.dni || null,
+        telefono: p.telefono || null,
+        direccion: p.direccion || null,
+      };
+    }
+
+    async function cargarContactos() {
+      var resultado = await db.from("contactos").select("*").order("nombre");
+      if (resultado.error) {
+        listaContactos.innerHTML =
+          '<p class="texto-vacio-admin">No se pudieron cargar los contactos: ' + escaparHtml(resultado.error.message) +
+          " (¿ya corriste el SQL nuevo de contactos en Supabase?)</p>";
+        return;
+      }
+      contactosCache = resultado.data;
+      renderizarContactos();
+    }
+
+    // Guarda (o actualiza) el contacto de un pedido. Devuelve true si quedó guardado.
+    async function guardarContactoDePedido(p) {
+      var datos = contactoDePedido(p);
+      if (!datos.nombre || (!datos.dni && !datos.telefono)) return true; // nada útil que guardar
+      var existente = contactosCache.find(function (c) {
+        return claveCoincide(c, datos);
+      });
+      var resultado;
+      if (existente) {
+        resultado = await db.from("contactos").update(datos).eq("id", existente.id).select();
+      } else {
+        resultado = await db.from("contactos").insert(datos).select();
+      }
+      if (resultado.error || !resultado.data || resultado.data.length === 0) return false;
+      if (existente) Object.assign(existente, datos);
+      else contactosCache.push(resultado.data[0]);
+      return true;
+    }
+
+    function renderizarContactos() {
+      var q = (buscadorContactos.value || "").trim().toLowerCase();
+      var lista = contactosCache.filter(function (c) {
+        if (!q) return true;
+        return [c.nombre, c.apellido, c.dni, c.telefono, c.direccion].filter(Boolean).join(" ").toLowerCase().indexOf(q) !== -1;
+      });
+      contadorContactos.textContent = contactosCache.length;
+      contadorContactos.classList.toggle("badge-tab-vacio", contactosCache.length === 0);
+
+      if (lista.length === 0) {
+        listaContactos.innerHTML = '<p class="texto-vacio-admin">' +
+          (contactosCache.length === 0
+            ? 'Todavía no hay contactos guardados. Se guardan solos al borrar un pedido, o tocá "Guardar clientes de los pedidos actuales".'
+            : "No hay contactos con esa búsqueda.") + "</p>";
+        return;
+      }
+
+      listaContactos.innerHTML =
+        '<div class="table-responsive"><table class="table table-bordered bg-white tabla-pedidos-admin">' +
+        "<thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Dirección</th><th></th></tr></thead><tbody>" +
+        lista
+          .map(function (c) {
+            var nombre = [c.nombre, c.apellido].filter(Boolean).join(" ") || "-";
+            var wa = c.telefono
+              ? '<a class="btn-accion-admin activar" target="_blank" rel="noopener" href="' +
+                escaparHtml(linkWhatsApp(c.telefono, "Hola " + (c.nombre || "") + "!")) + '">💬 WhatsApp</a> '
+              : "";
+            return (
+              '<tr><td data-label="Nombre">' + escaparHtml(nombre) + "</td>" +
+              '<td data-label="DNI">' + escaparHtml(c.dni || "-") + "</td>" +
+              '<td data-label="Teléfono">' + escaparHtml(c.telefono || "-") + "</td>" +
+              '<td data-label="Dirección">' + escaparHtml(c.direccion || "-") + "</td>" +
+              '<td data-label="Acciones"><div class="acciones-fila-admin">' + wa +
+              '<button type="button" class="btn-accion-admin baja btn-borrar-contacto" data-contacto="' + c.id + '">Eliminar</button></div></td></tr>'
+            );
+          })
+          .join("") +
+        "</tbody></table></div>";
+    }
+
+    async function importarContactosDePedidos() {
+      var nuevos = 0;
+      for (var i = 0; i < pedidosCache.length; i++) {
+        var p = pedidosCache[i];
+        var datos = contactoDePedido(p);
+        if (!datos.nombre || (!datos.dni && !datos.telefono)) continue;
+        var yaEsta = contactosCache.some(function (c) {
+          return claveCoincide(c, datos);
+        });
+        if (yaEsta) continue;
+        if (await guardarContactoDePedido(p)) nuevos++;
+      }
+      renderizarContactos();
+      alert(nuevos > 0 ? "Se guardaron " + nuevos + " contacto(s) nuevo(s)." : "No había contactos nuevos para guardar.");
+    }
+
+    async function eliminarContacto(id) {
+      var c = contactosCache.find(function (x) {
+        return x.id === id;
+      });
+      if (!c || !confirm("¿Eliminar a " + ([c.nombre, c.apellido].filter(Boolean).join(" ") || "este contacto") + " de la agenda?")) return;
+      var resultado = await db.from("contactos").delete().eq("id", id).select();
+      if (resultado.error || !resultado.data || resultado.data.length === 0) {
+        alert("No se pudo eliminar el contacto" + (resultado.error ? ": " + resultado.error.message : "."));
+        return;
+      }
+      contactosCache = contactosCache.filter(function (x) {
+        return x.id !== id;
+      });
+      renderizarContactos();
+    }
+
+    function exportarContactosCsv() {
+      if (contactosCache.length === 0) {
+        alert("No hay contactos para exportar.");
+        return;
+      }
+      var filas = [["Nombre", "Apellido", "DNI", "Telefono", "Direccion"]].concat(
+        contactosCache.map(function (c) {
+          return [c.nombre, c.apellido, c.dni, c.telefono, c.direccion];
+        })
+      );
+      var csv = filas
+        .map(function (fila) {
+          return fila
+            .map(function (v) {
+              return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+            })
+            .join(",");
+        })
+        .join("\r\n");
+      var blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+      var enlace = document.createElement("a");
+      enlace.href = URL.createObjectURL(blob);
+      enlace.download = "contactos-gauss-" + hoyISO() + ".csv";
+      document.body.appendChild(enlace);
+      enlace.click();
+      document.body.removeChild(enlace);
+    }
+
+    async function borrarPedido(id) {
+      var p = pedidosCache.find(function (x) {
+        return x.id === id;
+      });
+      if (!p) return;
+
+      var aviso = "¿Borrar el pedido de " + nombreCliente(p) + " (" + p.producto_nombre + ")?\n\n";
+      if (p.estado === "activo" || p.estado === "confirmado") {
+        aviso += "⚠️ Este pedido figura como " + p.estado.toUpperCase() + ": el equipo puede seguir en la calle.\n";
+      }
+      if (p.pendiente_facturacion && !p.facturado_en) {
+        aviso += "⚠️ Todavía está marcado \"Para facturar\" y no se facturó.\n";
+      }
+      aviso += "Sus datos de contacto se guardan en la pestaña Contactos. Esto no se puede deshacer.";
+      if (!confirm(aviso)) return;
+
+      if (!(await guardarContactoDePedido(p))) {
+        alert("No se pudo guardar el contacto, así que no borré el pedido. (¿Corriste el SQL de contactos en Supabase?)");
+        return;
+      }
+      var resultado = await db.from("pedidos").delete().eq("id", id).select();
+      if (resultado.error || !resultado.data || resultado.data.length === 0) {
+        alert("No se pudo borrar el pedido" + (resultado.error ? ": " + resultado.error.message : " (¿venció la sesión?)."));
+        return;
+      }
+      await cargarPedidos();
+    }
+
+    async function limpiarFinalizados() {
+      var candidatos = pedidosCache.filter(function (p) {
+        var finalizado = p.estado === "devuelto" || p.estado === "cancelado";
+        var sinFacturarPendiente = p.pendiente_facturacion && !p.facturado_en;
+        return finalizado && !sinFacturarPendiente;
+      });
+      var salteados = pedidosCache.filter(function (p) {
+        return (p.estado === "devuelto" || p.estado === "cancelado") && p.pendiente_facturacion && !p.facturado_en;
+      }).length;
+
+      if (candidatos.length === 0) {
+        alert("No hay pedidos devueltos o cancelados para limpiar." + (salteados ? "\n(" + salteados + " están pendientes de facturar y no se tocan.)" : ""));
+        return;
+      }
+      if (
+        !confirm(
+          "Se van a borrar " + candidatos.length + " pedido(s) devueltos o cancelados." +
+            (salteados ? "\nLos " + salteados + " que están pendientes de facturar NO se borran." : "") +
+            "\n\nLos datos de contacto de esos clientes se guardan en Contactos. Esto no se puede deshacer. ¿Seguir?"
+        )
+      ) {
+        return;
+      }
+
+      for (var i = 0; i < candidatos.length; i++) {
+        if (!(await guardarContactoDePedido(candidatos[i]))) {
+          alert("No se pudo guardar un contacto, así que frené antes de borrar. (¿Corriste el SQL de contactos en Supabase?)");
+          return;
+        }
+      }
+      var ids = candidatos.map(function (p) {
+        return p.id;
+      });
+      var resultado = await db.from("pedidos").delete().in("id", ids).select();
+      if (resultado.error) {
+        alert("No se pudieron borrar: " + resultado.error.message);
+        return;
+      }
+      alert("Se borraron " + (resultado.data ? resultado.data.length : 0) + " pedido(s).");
+      await cargarPedidos();
+    }
+
     /* ---------------------- Eventos ---------------------- */
 
     formLogin.addEventListener("submit", async function (evento) {
@@ -1646,6 +1874,7 @@
       if (evento.target.classList.contains("btn-avisar-retiro")) avisarRetiro(id);
       if (evento.target.classList.contains("btn-activar-alquiler")) activarAlquiler(id);
       if (evento.target.classList.contains("btn-dar-de-baja")) darDeBaja(id);
+      if (evento.target.classList.contains("btn-borrar-pedido")) borrarPedido(id);
       if (evento.target.classList.contains("btn-marcar-facturar")) marcarParaFacturar(id);
       if (evento.target.classList.contains("btn-quitar-facturar")) quitarParaFacturar(id);
     });
@@ -1695,6 +1924,18 @@
           altaEquipo(codigo, evento.target.getAttribute("data-pedido"));
         }
         if (evento.target.classList.contains("btn-baja-equipo")) bajaEquipo(codigo);
+      });
+    }
+
+
+    if (btnImportarContactos) btnImportarContactos.addEventListener("click", importarContactosDePedidos);
+    if (btnExportarContactos) btnExportarContactos.addEventListener("click", exportarContactosCsv);
+    if (btnLimpiarFinalizados) btnLimpiarFinalizados.addEventListener("click", limpiarFinalizados);
+    if (buscadorContactos) buscadorContactos.addEventListener("input", renderizarContactos);
+    if (listaContactos) {
+      listaContactos.addEventListener("click", function (evento) {
+        var id = evento.target.getAttribute("data-contacto");
+        if (id && evento.target.classList.contains("btn-borrar-contacto")) eliminarContacto(id);
       });
     }
 

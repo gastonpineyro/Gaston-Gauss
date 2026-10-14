@@ -265,3 +265,28 @@ create policy "equipos_admin"
     to authenticated
     using (true)
     with check (true);
+
+
+-- ============================================================
+-- CONTACTOS (agenda de clientes que se conserva aunque borres pedidos)
+-- ============================================================
+
+create table if not exists contactos (
+    id uuid primary key default gen_random_uuid(),
+    creado_en timestamptz not null default now(),
+    nombre text,
+    apellido text,
+    dni text,
+    telefono text,
+    direccion text,
+    notas text
+);
+
+alter table contactos enable row level security;
+
+drop policy if exists "contactos_admin" on contactos;
+create policy "contactos_admin"
+    on contactos for all
+    to authenticated
+    using (true)
+    with check (true);
