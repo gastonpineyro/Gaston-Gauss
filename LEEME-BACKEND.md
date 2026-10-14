@@ -134,3 +134,10 @@ si pasás **7 días seguidos sin actividad** (se reactiva solo con que alguien
 entre a `admin.html` o se genere un pedido; si se llega a pausar por
 inactividad larga, se reactiva con un click desde el panel de Supabase). Para
 una ortopedia con movimiento normal, no debería ser un problema.
+
+## Equipos con QR (alta y baja escaneando)
+
+1. En Supabase > SQL Editor corré el bloque final de `supabase-schema.sql` ("EQUIPOS CON QR").
+2. En el panel, pestaña **Equipos QR**: elegí producto/talle, cantidad y "Crear equipos". Te ofrece imprimir las etiquetas.
+3. Pegá cada etiqueta en su equipo físico.
+4. Al escanear (con el botón "Escanear QR" del panel, o con la cámara normal del celu): libre → elegís cliente y queda activo; alquilado → "Dar de baja".

@@ -241,3 +241,27 @@ create policy "actualizar_variantes_admin"
 
 alter table pedidos add column if not exists pendiente_facturacion boolean not null default false;
 alter table pedidos add column if not exists facturado_en timestamptz;
+
+
+-- ============================================================
+-- EQUIPOS CON QR (una fila por cada unidad física)
+-- ============================================================
+-- Cada equipo tiene un código (el que lleva impreso su QR) y, si está
+-- alquilado, apunta al pedido con el que salió. Libre = pedido_id vacío.
+
+create table if not exists equipos (
+    id text primary key,                                   -- ej: 'MAGNETO-PLACAS-001'
+    variante_id text not null references variantes_producto(id),
+    pedido_id uuid references pedidos(id) on delete set null,
+    creado_en timestamptz not null default now()
+);
+
+alter table equipos enable row level security;
+
+-- Solo vos (logueado) podés ver y manejar los equipos.
+drop policy if exists "equipos_admin" on equipos;
+create policy "equipos_admin"
+    on equipos for all
+    to authenticated
+    using (true)
+    with check (true);

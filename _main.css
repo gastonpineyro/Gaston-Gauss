@@ -1586,12 +1586,6 @@ body {
 
 /* --- RESPONSIVE --- */
 @media (max-width: 768px) {
-  html {
-    overflow-x: hidden;
-  }
-  body {
-    overflow-x: hidden;
-  }
   .navbar-nav .enlace-gauss {
     border-bottom: none;
     padding: 10px 8px;
@@ -1626,12 +1620,6 @@ body {
   }
 }
 @media (max-width: 480px) {
-  html {
-    overflow-x: hidden;
-  }
-  body {
-    overflow-x: hidden;
-  }
   .header-gauss .navbar-brand .logo-gauss {
     font-size: 20px;
   }
@@ -1721,3 +1709,36 @@ body {
 .fila-candidato { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid #dee2e6; }
 .estado-equipo-libre { color:#198754; font-weight:600; }
 .estado-equipo-alquilado { color:#dc3545; font-weight:600; }
+
+/* --- SIN DESLIZAMIENTO LATERAL (celular / tablet) --- */
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+@supports (overflow: clip) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+}
+img,
+video,
+svg {
+  max-width: 100%;
+}
+/* El gutter grande de Bootstrap (g-5) saca la fila 24px afuera del
+   contenedor; en pantallas chicas se achica para que no se desborde. */
+@media (max-width: 991.98px) {
+  .row.g-5 {
+    --bs-gutter-x: 1.5rem;
+    --bs-gutter-y: 2rem;
+  }
+}
+/* El carrito cerrado no debe dejar sombra asomando en el borde derecho */
+.panel-carrito:not(.activo) {
+  box-shadow: none;
+}
