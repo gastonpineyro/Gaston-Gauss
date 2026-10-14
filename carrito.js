@@ -384,6 +384,8 @@
     if (unidadEl) {
       var esAlquiler = radio.getAttribute("data-alquiler") === "1";
       unidadEl.classList.toggle("d-none", !esAlquiler);
+      var diasRadio = parseInt(radio.getAttribute("data-dias"), 10);
+      if (esAlquiler && diasRadio) unidadEl.textContent = diasRadio === 30 ? " / mes" : " / " + diasRadio + " días";
     }
 
     var boton = contenedor.querySelector(".btn-agregar-carrito");
