@@ -392,7 +392,7 @@
         if (estadoFiltro !== "todos" && p.estado !== estadoFiltro) return false;
         if (tipoFiltro !== "todos" && p.tipo !== tipoFiltro) return false;
         if (busqueda) {
-          var texto = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+          var texto = [p.nombre, p.apellido, p.dni, p.telefono, p.direccion].filter(Boolean).join(" ").toLowerCase();
           if (texto.indexOf(busqueda) === -1) return false;
         }
         return true;
@@ -479,7 +479,7 @@
         if (estadoFiltro !== "todos" && p.estado !== estadoFiltro) return false;
         if (tipoFiltro !== "todos" && p.tipo !== tipoFiltro) return false;
         if (busqueda) {
-          var texto = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+          var texto = [p.nombre, p.apellido, p.dni, p.telefono, p.direccion].filter(Boolean).join(" ").toLowerCase();
           if (texto.indexOf(busqueda) === -1) return false;
         }
         return true;
@@ -613,7 +613,7 @@
       var activos = pedidosCache.filter(function (p) {
         if (p.tipo !== "alquiler" || p.estado !== "activo") return false;
         if (busqueda) {
-          var texto = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+          var texto = [p.nombre, p.apellido, p.dni, p.telefono, p.direccion].filter(Boolean).join(" ").toLowerCase();
           if (texto.indexOf(busqueda) === -1) return false;
         }
         return true;
@@ -649,7 +649,7 @@
           return false;
         }
         if (busqueda) {
-          var texto = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+          var texto = [p.nombre, p.apellido, p.dni, p.telefono, p.direccion].filter(Boolean).join(" ").toLowerCase();
           if (texto.indexOf(busqueda) === -1) return false;
         }
         return true;
@@ -1448,11 +1448,11 @@
         if (candidatos.length > 3) {
           html +=
             '<input type="text" class="form-control form-control-sm campo-alquiler mb-2" id="buscadorCandidatos" ' +
-            'placeholder="Buscar cliente por nombre, DNI o teléfono (' + candidatos.length + ' esperando)...">';
+            'placeholder="Buscar cliente por nombre, DNI, teléfono o dirección (' + candidatos.length + ' esperando)...">';
         }
         html += candidatos
           .map(function (p) {
-            var textoBusqueda = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
+            var textoBusqueda = [p.nombre, p.apellido, p.dni, p.telefono, p.direccion].filter(Boolean).join(" ").toLowerCase();
             return (
               '<div class="fila-candidato" data-texto="' + escaparHtml(textoBusqueda) + '"><div><strong>' + escaparHtml(nombreCliente(p)) + "</strong>" +
               (p.dni ? " · DNI " + escaparHtml(p.dni) : "") +
