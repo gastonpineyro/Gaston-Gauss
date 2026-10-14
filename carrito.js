@@ -405,9 +405,34 @@
 
   /* ---------------------- Disponibilidad en la ficha del producto ---------------------- */
 
+  var sinStockProducto = false;
+
+  // Si no hay stock y se eligió alquiler, el botón "Agregar al carrito" se bloquea.
+  function refrescarBotonAgregar() {
+    var boton = document.querySelector(".bloque-compra .btn-agregar-carrito") || document.querySelector(".btn-agregar-carrito");
+    if (!boton) return;
+    var modalidadName = boton.getAttribute("data-modalidad-name");
+    var radioMod = modalidadName ? document.querySelector('input[name="' + modalidadName + '"]:checked') : null;
+    var esAlquiler = radioMod ? radioMod.getAttribute("data-alquiler") === "1" : boton.getAttribute("data-alquiler") === "1";
+    var bloquear = sinStockProducto && esAlquiler;
+    if (bloquear) {
+      if (!boton.hasAttribute("data-texto-original")) boton.setAttribute("data-texto-original", boton.textContent);
+      boton.textContent = "Sin stock";
+      boton.disabled = true;
+      boton.classList.add("sin-stock-boton");
+    } else if (boton.hasAttribute("data-texto-original")) {
+      boton.textContent = boton.getAttribute("data-texto-original");
+      boton.removeAttribute("data-texto-original");
+      boton.disabled = false;
+      boton.classList.remove("sin-stock-boton");
+    }
+  }
+
   async function actualizarDisponibilidadProducto() {
     var contenedor = document.getElementById("disponibilidadProducto");
     if (!contenedor) return;
+    sinStockProducto = false;
+    refrescarBotonAgregar();
     if (!window.GaussDB || !GaussDB.configurado()) {
       contenedor.classList.add("d-none");
       return;
@@ -432,6 +457,9 @@
       contenedor.classList.add("d-none");
       return;
     }
+
+    sinStockProducto = resultado.disponible === false;
+    refrescarBotonAgregar();
 
     if (resultado.disponible) {
       contenedor.className = "disponibilidad-producto ok";
@@ -466,6 +494,7 @@
   }
 
   function manejarClickAgregar(boton) {
+    if (boton.disabled || boton.classList.contains("sin-stock-boton")) return;
     var detalle = boton.getAttribute("data-detalle") || "";
     var alquiler = boton.getAttribute("data-alquiler") === "1";
     var dias = boton.getAttribute("data-dias") ? parseInt(boton.getAttribute("data-dias"), 10) : null;
@@ -660,6 +689,7 @@
           actualizarPrecioSegunModalidad(radio);
           actualizarImagenSegunSeleccion(radio);
           if (radio.hasAttribute("data-variante")) actualizarDisponibilidadProducto();
+          else refrescarBotonAgregar();
         });
         if (radio.checked) {
           actualizarPrecioSegunModalidad(radio);

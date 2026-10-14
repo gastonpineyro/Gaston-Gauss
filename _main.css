@@ -1899,3 +1899,14 @@ svg {
     height: 220px;
   }
 }
+
+.btn-agregar-carrito.sin-stock-boton,
+.btn-agregar-carrito:disabled {
+  background-color: #adb5bd;
+  border-color: #adb5bd;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.85;
+  transform: none;
+  box-shadow: none;
+}
