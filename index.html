@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gauss Ortopedia - Inicio</title>
+    <title>Gauss Ortopedia · Venta y alquiler de equipos ortopédicos en Rosario</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta name="description" content="Plantillas ortopédicas, magnetoterapia, bota walker y muletas. Venta y alquiler en Rosario. Consultá disponibilidad por WhatsApp.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Gauss Ortopedia">
+    <meta property="og:title" content="Gauss Ortopedia · Venta y alquiler de equipos ortopédicos en Rosario">
+    <meta property="og:description" content="Plantillas ortopédicas, magnetoterapia, bota walker y muletas. Venta y alquiler en Rosario. Consultá disponibilidad por WhatsApp.">
+    <meta property="og:image" content="https://gastonpineyro.github.io/Gaston-Gauss/og-gauss.png">
+    <meta property="og:url" content="https://gastonpineyro.github.io/Gaston-Gauss/">
+    <meta name="twitter:card" content="summary_large_image">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">    
     <link rel="stylesheet" href="_main.css">
 </head>
@@ -26,10 +35,10 @@
                 <div class="collapse navbar-collapse justify-content-end" id="navbarNavGauss">
                     <ul class="navbar-nav gap-2 mt-3 mt-md-0 text-center text-md-start">
                         <li class="nav-item">
-                            <a class="nav-link enlace-gauss" href="index.html">Inicio</a>
+                            <a class="nav-link enlace-gauss active" href="index.html">Inicio</a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle enlace-gauss active" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle enlace-gauss" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Productos
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm text-center text-md-start">
@@ -66,7 +75,7 @@
         <div class="contenedor-fila">
             
             <a href="Plantillas.html" class="tarjeta-producto">
-                <img src="Plantillas.png.png" alt="Plantillas Ortopédicas">
+                <img src="plantillas.webp" alt="Plantillas Ortopédicas">
                 <div class="capa-oscura">
                     <h3>Plantillas</h3>
                 </div>
@@ -93,6 +102,27 @@
                 </div>
             </a>
         </div>
+
+        <section class="seccion-pasos" aria-labelledby="tituloPasos">
+            <h2 class="titulo-pasos" id="tituloPasos">¿Cómo alquilar?</h2>
+            <div class="grilla-pasos">
+                <div class="paso">
+                    <span class="numero-paso">1</span>
+                    <h3>Elegí tu equipo</h3>
+                    <p>Mirá los productos, elegí el talle o tipo y agregalo al carrito con la fecha de retiro.</p>
+                </div>
+                <div class="paso">
+                    <span class="numero-paso">2</span>
+                    <h3>Te confirmamos por WhatsApp</h3>
+                    <p>Verificamos disponibilidad, talle y forma de pago, y te avisamos cuando esté listo.</p>
+                </div>
+                <div class="paso">
+                    <span class="numero-paso">3</span>
+                    <h3>Retiralo en el local</h3>
+                    <p>Pasás a buscarlo por 27 de febrero 1724, Rosario, en nuestro horario de atención.</p>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer class="footer-gauss py-5 border-top bg-light">
@@ -212,6 +242,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="db.js"></script>
+    <script src="whatsapp-flotante.js" defer></script>
     <script src="carrito.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
