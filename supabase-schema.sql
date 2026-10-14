@@ -323,5 +323,6 @@ insert into variantes_producto (id, producto_id, producto_nombre, variante, stoc
   ('silla-de-ruedas-unica', 'silla-de-ruedas', 'Silla de Ruedas', 'Modelo unico', 0),
   ('andador-con-ruedas', 'andador', 'Andador', 'Con ruedas', 0),
   ('andador-sin-ruedas', 'andador', 'Andador', 'Sin ruedas', 0),
-  ('roll-out-unica', 'roll-out', 'Roll Out', 'Modelo unico', 0)
+  ('roll-out-unica', 'roll-out', 'Roll Out', 'Modelo unico', 0),
+  ('eleva-inodoro-unica', 'eleva-inodoro', 'Eleva Inodoro', 'Modelo unico', 0)
 on conflict (id) do nothing;

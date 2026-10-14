@@ -70,6 +70,13 @@
       variantes: [{ id: "roll-out-unica", nombre: "Modelo único" }],
       duraciones: [{ dias: 30, precio: 40000 }],
     },
+    {
+      id: "eleva-inodoro",
+      nombre: "Eleva Inodoro",
+      imagen: "eleva-inodoro.webp",
+      variantes: [{ id: "eleva-inodoro-unica", nombre: "Modelo único" }],
+      duraciones: [{ dias: 30, precio: 25000 }],
+    },
   ];
 
   var CAMPOS_RESERVA = [
