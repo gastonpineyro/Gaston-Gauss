@@ -399,6 +399,9 @@
       var filas = pedidosCache.filter(function (p) {
         if (estadoFiltro !== "todos" && p.estado !== estadoFiltro) return false;
         if (tipoFiltro !== "todos" && p.tipo !== tipoFiltro) return false;
+        // Los alquileres activos viven en la pestaña "Activos": acá solo se ven
+        // si elegís Estado: Activo o si estás buscando a un cliente.
+        if (estadoFiltro === "todos" && !busqueda && p.tipo === "alquiler" && p.estado === "activo") return false;
         if (busqueda) {
           var texto = [p.nombre, p.apellido, p.dni, p.telefono, p.direccion].filter(Boolean).join(" ").toLowerCase();
           if (texto.indexOf(busqueda) === -1) return false;
@@ -487,6 +490,9 @@
       var filas = pedidosCache.filter(function (p) {
         if (estadoFiltro !== "todos" && p.estado !== estadoFiltro) return false;
         if (tipoFiltro !== "todos" && p.tipo !== tipoFiltro) return false;
+        // Los alquileres activos viven en la pestaña "Activos": acá solo se ven
+        // si elegís Estado: Activo o si estás buscando a un cliente.
+        if (estadoFiltro === "todos" && !busqueda && p.tipo === "alquiler" && p.estado === "activo") return false;
         if (busqueda) {
           var texto = [p.nombre, p.apellido, p.dni, p.telefono, p.direccion].filter(Boolean).join(" ").toLowerCase();
           if (texto.indexOf(busqueda) === -1) return false;
