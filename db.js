@@ -81,13 +81,25 @@ var GaussDB = (function () {
     if (!db) return { disponible: true, motivo: "sin-configurar" };
 
     try {
+      // Los equipos en reparacion no se pueden alquilar: se descuentan del stock.
       var stockResultado = await db
         .from("variantes_producto")
-        .select("stock")
+        .select("stock, en_reparacion")
         .eq("id", productoId)
         .maybeSingle();
 
-      var stock = stockResultado.data ? stockResultado.data.stock : 1;
+      if (stockResultado.error) {
+        // Por si todavia no existe la columna en_reparacion en la base.
+        stockResultado = await db
+          .from("variantes_producto")
+          .select("stock")
+          .eq("id", productoId)
+          .maybeSingle();
+      }
+
+      var stock = stockResultado.data
+        ? Math.max(stockResultado.data.stock - (stockResultado.data.en_reparacion || 0), 0)
+        : 1;
 
       var resultado = await db
         .from("disponibilidad_publica")

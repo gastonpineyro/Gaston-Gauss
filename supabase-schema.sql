@@ -290,3 +290,26 @@ create policy "contactos_admin"
     to authenticated
     using (true)
     with check (true);
+
+
+-- ============================================================
+-- REPARACION E HISTORIAL DE EQUIPOS
+-- ============================================================
+alter table equipos add column if not exists en_reparacion boolean not null default false;
+alter table equipos add column if not exists reparacion_desde timestamptz;
+alter table equipos add column if not exists reparacion_nota text;
+
+alter table variantes_producto add column if not exists en_reparacion integer not null default 0;
+
+create table if not exists equipos_historial (
+  id uuid primary key default gen_random_uuid(),
+  creado_en timestamptz not null default now(),
+  equipo_id text not null,
+  accion text not null,
+  detalle text
+);
+
+alter table equipos_historial enable row level security;
+
+drop policy if exists "equipos_historial_admin" on equipos_historial;
+create policy "equipos_historial_admin" on equipos_historial for all to authenticated using (true) with check (true);

@@ -82,6 +82,7 @@
     var btnExportarContactos = document.getElementById("btnExportarContactos");
     var btnLimpiarFinalizados = document.getElementById("btnLimpiarFinalizados");
     var listaEquipos = document.getElementById("listaEquipos");
+    var panelHistorialEquipo = document.getElementById("panelHistorialEquipo");
     var resumenEquipos = document.getElementById("resumenEquipos");
     var filtroEquipos = document.getElementById("filtroEquipos");
     var selectVarianteEquipo = document.getElementById("selectVarianteEquipo");
@@ -222,7 +223,7 @@
         var ocupadas = pedidosCache.filter(function (p) {
           return p.producto_id === v.id && p.estado === "activo";
         }).length;
-        return esStockBajo(v, ocupadas);
+        return esStockBajo(v, ocupadas + (v.en_reparacion || 0));
       });
       contadorStockBajo.textContent = bajos.length;
       contadorStockBajo.classList.toggle("badge-tab-vacio", bajos.length === 0);
@@ -265,14 +266,16 @@
               var ocupadas = pedidosCache.filter(function (p) {
                 return p.producto_id === v.id && p.estado === "activo";
               }).length;
-              var disponibles = v.stock - ocupadas;
-              var claseAlerta = disponibles <= 0 ? " stock-agotado" : esStockBajo(v, ocupadas) ? " stock-bajo" : "";
+              var enReparacion = v.en_reparacion || 0;
+              var disponibles = v.stock - ocupadas - enReparacion;
+              var claseAlerta = disponibles <= 0 ? " stock-agotado" : esStockBajo(v, ocupadas + enReparacion) ? " stock-bajo" : "";
 
               return (
                 '<div class="tarjeta-stock' + claseAlerta + '">' +
                 '<div class="info-stock">' +
                 "<h4>" + v.variante + "</h4>" +
                 "<p>" + ocupadas + " ocupada" + (ocupadas === 1 ? "" : "s") + " ahora</p>" +
+                (enReparacion > 0 ? "<p>🔧 " + enReparacion + " en reparación</p>" : "") +
                 '<p class="disponibles-stock">' + Math.max(disponibles, 0) + " disponible" + (disponibles === 1 ? "" : "s") + "</p>" +
                 "</div>" +
                 '<div class="controles-stock">' +
@@ -587,11 +590,22 @@
           "</div>";
       }
 
+      var codigosEquipo = equiposCache
+        .filter(function (e) {
+          return e.pedido_id === p.id;
+        })
+        .map(function (e) {
+          return e.id;
+        });
+      var textoEquipo = codigosEquipo.length
+        ? "<br>🔖 Equipo: <strong>" + escaparHtml(codigosEquipo.join(", ")) + "</strong>"
+        : "";
+
       return (
         '<div class="tarjeta-vencimiento' + (dias <= 0 ? " vencido" : "") + '">' +
         '<div class="info-vencimiento" style="flex:1;">' +
         "<h4>" + p.producto_nombre + " — " + [p.nombre, p.apellido].filter(Boolean).join(" ") + " " + badgeEstado + "</h4>" +
-        "<p>" + textoDiasRestantes(p.fecha_hasta) + " (" + formatearFecha(p.fecha_hasta) + ") · Tel: " + (p.telefono || "sin cargar") + textoAuto + "</p>" +
+        "<p>" + textoDiasRestantes(p.fecha_hasta) + " (" + formatearFecha(p.fecha_hasta) + ") · Tel: " + (p.telefono || "sin cargar") + textoEquipo + textoAuto + "</p>" +
         renovarEnLocalHtml +
         "</div>" +
         '<div class="acciones-vencimiento">' +
@@ -1220,6 +1234,7 @@
       }
       equiposCache = resultado.data;
       renderizarEquipos();
+      refrescarListasAlquiler();
     }
 
     function renderizarEquipos() {
@@ -1246,8 +1261,12 @@
       var enCalle = equiposCache.filter(function (e) {
         return pedidoActivoDeEquipo(e);
       }).length;
+      var enRep = equiposCache.filter(function (e) {
+        return e.en_reparacion;
+      }).length;
       resumenEquipos.textContent =
-        "(" + equiposCache.length + " en total · " + enCalle + " alquilados · " + (equiposCache.length - enCalle) + " libres)";
+        "(" + equiposCache.length + " en total · " + enCalle + " alquilados · " + enRep + " en reparación · " +
+        (equiposCache.length - enCalle - enRep) + " libres)";
 
       if (lista.length === 0) {
         listaEquipos.innerHTML =
@@ -1261,7 +1280,10 @@
         lista
           .map(function (e) {
             var p = pedidoActivoDeEquipo(e);
-            var estado = p
+            var estado = e.en_reparacion
+              ? '<span class="estado-equipo-reparacion">🔧 En reparación</span>' +
+                (e.reparacion_nota ? "<br><small>" + escaparHtml(e.reparacion_nota) + "</small>" : "")
+              : p
               ? '<span class="estado-equipo-alquilado">Alquilado</span>'
               : '<span class="estado-equipo-libre">Libre</span>';
             var cliente = p ? escaparHtml(nombreCliente(p)) + " · hasta " + formatearFecha(p.fecha_hasta) : "-";
@@ -1270,8 +1292,9 @@
               '<td data-label="Producto">' + escaparHtml(nombreVariante(e.variante_id)) + "</td>" +
               '<td data-label="Estado">' + estado + "</td>" +
               '<td data-label="Cliente / devuelve">' + cliente + "</td>" +
-              '<td data-label="Acciones"><button type="button" class="btn-accion-admin retiro btn-etiqueta-equipo" data-equipo="' + escaparHtml(e.id) + '">QR</button> ' +
-              '<button type="button" class="btn-accion-admin baja btn-eliminar-equipo" data-equipo="' + escaparHtml(e.id) + '">Eliminar</button></td></tr>'
+              '<td data-label="Acciones"><div class="acciones-fila-admin"><button type="button" class="btn-accion-admin retiro btn-etiqueta-equipo" data-equipo="' + escaparHtml(e.id) + '">QR</button> ' +
+              '<button type="button" class="btn-accion-admin recordatorio btn-historial-equipo" data-equipo="' + escaparHtml(e.id) + '">Historial</button> ' +
+              '<button type="button" class="btn-accion-admin baja btn-eliminar-equipo" data-equipo="' + escaparHtml(e.id) + '">Eliminar</button></div></td></tr>'
             );
           })
           .join("") +
@@ -1435,24 +1458,38 @@
       }
 
       var pedido = pedidoActivoDeEquipo(equipo);
+      var historialHtml = await historialResumidoHtml(equipo.id);
+      var cabecera = "<div><code>" + escaparHtml(equipo.id) + "</code> · " + escaparHtml(nombreVariante(equipo.variante_id)) + "</div>";
+      var idAttr = escaparHtml(equipo.id);
+
+      if (equipo.en_reparacion) {
+        resultadoEscaneo.innerHTML =
+          '<div class="tarjeta-resultado-escaneo error">' + cabecera +
+          '<div class="estado-equipo-reparacion my-1">🔧 Está EN REPARACIÓN' +
+          (equipo.reparacion_desde ? " desde el " + new Date(equipo.reparacion_desde).toLocaleDateString("es-AR") : "") + "</div>" +
+          (equipo.reparacion_nota ? "<div>Falla: " + escaparHtml(equipo.reparacion_nota) + "</div>" : "") +
+          '<button type="button" class="btn-accion-admin activar mt-2 btn-fin-reparacion" data-equipo="' + idAttr + '">✅ Volver a servicio</button>' +
+          historialHtml + "</div>";
+        return;
+      }
 
       if (pedido) {
         resultadoEscaneo.innerHTML =
-          '<div class="tarjeta-resultado-escaneo alquilado">' +
-          "<div><code>" + escaparHtml(equipo.id) + "</code> · " + escaparHtml(nombreVariante(equipo.variante_id)) + "</div>" +
+          '<div class="tarjeta-resultado-escaneo alquilado">' + cabecera +
           '<div class="estado-equipo-alquilado my-1">Está ALQUILADO</div>' +
           "<div>Cliente: <strong>" + escaparHtml(nombreCliente(pedido)) + "</strong>" +
           (pedido.telefono ? " · " + escaparHtml(pedido.telefono) : "") + "</div>" +
           "<div>Período: " + formatearFecha(pedido.fecha_desde) + " → " + formatearFecha(pedido.fecha_hasta) + "</div>" +
-          '<button type="button" class="btn-accion-admin baja mt-2 btn-baja-equipo" data-equipo="' + escaparHtml(equipo.id) + '">↩️ Dar de baja (devuelto)</button>' +
-          "</div>";
+          '<div class="d-flex flex-wrap gap-2 mt-2">' +
+          '<button type="button" class="btn-accion-admin baja btn-baja-equipo" data-equipo="' + idAttr + '">↩️ Dar de baja (devuelto)</button>' +
+          '<button type="button" class="btn-accion-admin recordatorio btn-baja-reparacion" data-equipo="' + idAttr + '">🔧 Devuelto con falla: baja + reparación</button>' +
+          "</div>" + historialHtml + "</div>";
         return;
       }
 
       var candidatos = pedidosCandidatos(equipo);
       var html =
-        '<div class="tarjeta-resultado-escaneo libre">' +
-        "<div><code>" + escaparHtml(equipo.id) + "</code> · " + escaparHtml(nombreVariante(equipo.variante_id)) + "</div>" +
+        '<div class="tarjeta-resultado-escaneo libre">' + cabecera +
         '<div class="estado-equipo-libre my-1">Está LIBRE — ¿a quién se lo entregás?</div>';
 
       if (candidatos.length === 0) {
@@ -1480,10 +1517,20 @@
           })
           .join("");
       }
+      html +=
+        '<div class="mt-3"><button type="button" class="btn-accion-admin recordatorio btn-reparacion-equipo" data-equipo="' + idAttr +
+        '">🔧 Poner en reparación</button></div>' + historialHtml;
       resultadoEscaneo.innerHTML = html + "</div>";
     }
 
     async function altaEquipo(codigo, pedidoId) {
+      var equipoActual = equiposCache.find(function (e) {
+        return e.id === codigo;
+      });
+      if (equipoActual && equipoActual.en_reparacion) {
+        alert("Ese equipo está en reparación, no se puede entregar.");
+        return;
+      }
       var resultado = await db.from("equipos").update({ pedido_id: pedidoId }).eq("id", codigo).select();
       if (resultado.error || !resultado.data || resultado.data.length === 0) {
         alert("No se pudo asignar el equipo" + (resultado.error ? ": " + resultado.error.message : "."));
@@ -1509,6 +1556,7 @@
           return;
         }
       }
+      await registrarHistorial(codigo, "alta", "Entregado a " + (pedido ? nombreCliente(pedido) : "un cliente"));
       await cargarPedidos();
       resultadoEscaneo.innerHTML =
         '<div class="tarjeta-resultado-escaneo libre"><strong>✓ Alta hecha.</strong> ' + escaparHtml(codigo) +
@@ -1516,7 +1564,7 @@
         (marcadoParaFacturar ? " 🧾 Quedó en \"Para facturar\"." : "") + "</div>";
     }
 
-    async function bajaEquipo(codigo) {
+    async function bajaEquipo(codigo, conReparacion) {
       var equipo = equiposCache.find(function (e) {
         return e.id === codigo;
       });
@@ -1527,11 +1575,18 @@
           })
         : null;
 
+      var notaFalla = null;
+      if (conReparacion) {
+        notaFalla = window.prompt("¿Qué falla tiene el equipo? (podés dejarlo vacío)", "");
+        if (notaFalla === null) return; // canceló todo
+      }
+
       var resultado = await db.from("equipos").update({ pedido_id: null }).eq("id", codigo).select();
       if (resultado.error || !resultado.data || resultado.data.length === 0) {
         alert("No se pudo dar de baja el equipo" + (resultado.error ? ": " + resultado.error.message : "."));
         return;
       }
+      await registrarHistorial(codigo, "baja", "Devuelto por " + (pedido ? nombreCliente(pedido) : "el cliente"));
 
       var mensaje = "✓ Baja hecha. " + codigo + " quedó libre.";
       if (pedido) {
@@ -1547,13 +1602,23 @@
           mensaje += " Al pedido de " + nombreCliente(pedido) + " todavía le quedan " + quedan + " equipo(s) sin devolver.";
         }
       }
+      if (conReparacion) {
+        var okRep = await ponerEnReparacionDirecto(codigo, notaFalla);
+        mensaje += okRep ? " 🔧 Quedó EN REPARACIÓN." : " Ojo: no se pudo marcar en reparación.";
+      }
       await cargarPedidos();
       resultadoEscaneo.innerHTML = '<div class="tarjeta-resultado-escaneo libre"><strong>' + escaparHtml(mensaje) + "</strong></div>";
     }
 
     async function liberarEquiposDePedido(pedidoId) {
       try {
+        var liberados = equiposCache.filter(function (e) {
+          return e.pedido_id === pedidoId;
+        });
         await db.from("equipos").update({ pedido_id: null }).eq("pedido_id", pedidoId);
+        for (var i = 0; i < liberados.length; i++) {
+          await registrarHistorial(liberados[i].id, "baja", "Devuelto (dado de baja desde el pedido)");
+        }
         equiposCache.forEach(function (e) {
           if (e.pedido_id === pedidoId) e.pedido_id = null;
         });
@@ -1824,6 +1889,131 @@
       await cargarPedidos();
     }
 
+    /* ---------------------- Reparación e historial de equipos ---------------------- */
+
+    // Anota un movimiento del equipo. Si la tabla todavía no existe, no frena nada.
+    async function registrarHistorial(equipoId, accion, detalle) {
+      try {
+        await db.from("equipos_historial").insert({ equipo_id: equipoId, accion: accion, detalle: detalle || null });
+      } catch (e) {
+        /* sin historial no pasa nada */
+      }
+    }
+
+    var ETIQUETAS_HISTORIAL = {
+      alta: "▶️ Entregado",
+      baja: "↩️ Devuelto",
+      reparacion: "🔧 A reparación",
+      fin_reparacion: "✅ Volvió a servicio",
+    };
+
+    function filaHistorialHtml(h) {
+      return (
+        "<li><strong>" + (ETIQUETAS_HISTORIAL[h.accion] || escaparHtml(h.accion)) + "</strong> · " +
+        new Date(h.creado_en).toLocaleString("es-AR") +
+        (h.detalle ? " — " + escaparHtml(h.detalle) : "") + "</li>"
+      );
+    }
+
+    async function traerHistorial(equipoId, limite) {
+      try {
+        var r = await db
+          .from("equipos_historial")
+          .select("*")
+          .eq("equipo_id", equipoId)
+          .order("creado_en", { ascending: false })
+          .limit(limite);
+        return r.error ? null : r.data;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function historialResumidoHtml(equipoId) {
+      var datos = await traerHistorial(equipoId, 5);
+      if (!datos || datos.length === 0) return "";
+      return (
+        '<div class="mt-3"><small class="text-secondary">Últimos movimientos</small>' +
+        '<ul class="mb-0 ps-3" style="font-size:13px;">' + datos.map(filaHistorialHtml).join("") + "</ul></div>"
+      );
+    }
+
+    async function mostrarHistorialEquipo(codigo) {
+      var datos = await traerHistorial(codigo, 50);
+      var cuerpo;
+      if (datos === null) {
+        cuerpo = '<p class="mb-0 text-secondary">No se pudo leer el historial (¿corriste el SQL de reparación e historial?).</p>';
+      } else if (datos.length === 0) {
+        cuerpo = '<p class="mb-0 text-secondary">Todavía no hay movimientos de este equipo.</p>';
+      } else {
+        cuerpo = '<ul class="mb-0 ps-3" style="font-size:13px;">' + datos.map(filaHistorialHtml).join("") + "</ul>";
+      }
+      panelHistorialEquipo.innerHTML =
+        '<div class="tarjeta-resultado-escaneo"><div class="d-flex justify-content-between align-items-center mb-2">' +
+        "<strong>Historial de <code>" + escaparHtml(codigo) + "</code></strong>" +
+        '<button type="button" class="btn-accion-admin baja btn-cerrar-historial">Cerrar</button></div>' + cuerpo + "</div>";
+      panelHistorialEquipo.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    // Actualiza en la variante cuántos equipos están en reparación (lo lee el sitio público).
+    async function sincronizarReparacionVariante(varianteId) {
+      var cantidad = equiposCache.filter(function (e) {
+        return e.variante_id === varianteId && e.en_reparacion;
+      }).length;
+      var r = await db.from("variantes_producto").update({ en_reparacion: cantidad }).eq("id", varianteId).select();
+      if (r.error || !r.data || r.data.length === 0) return false;
+      var v = variantesCache.find(function (x) {
+        return x.id === varianteId;
+      });
+      if (v) v.en_reparacion = cantidad;
+      return true;
+    }
+
+    async function ponerEnReparacionDirecto(codigo, nota) {
+      var datos = { en_reparacion: true, reparacion_desde: new Date().toISOString(), reparacion_nota: nota || null };
+      var r = await db.from("equipos").update(datos).eq("id", codigo).select();
+      if (r.error || !r.data || r.data.length === 0) return false;
+      var eq = equiposCache.find(function (e) {
+        return e.id === codigo;
+      });
+      if (eq) Object.assign(eq, datos);
+      var ok = await sincronizarReparacionVariante(r.data[0].variante_id);
+      await registrarHistorial(codigo, "reparacion", nota || "Sin detalle");
+      return ok;
+    }
+
+    async function ponerEnReparacion(codigo) {
+      var nota = window.prompt("¿Qué falla tiene el equipo? (podés dejarlo vacío)", "");
+      if (nota === null) return;
+      var ok = await ponerEnReparacionDirecto(codigo, nota);
+      if (!ok) {
+        alert("No se pudo poner en reparación. ¿Corriste el SQL de reparación e historial en Supabase?");
+        return;
+      }
+      await cargarPedidos();
+      resultadoEscaneo.innerHTML =
+        '<div class="tarjeta-resultado-escaneo error"><strong>🔧 ' + escaparHtml(codigo) +
+        " quedó en reparación.</strong> Ya no se descuenta como disponible para alquilar.</div>";
+    }
+
+    async function volverAServicio(codigo) {
+      var datos = { en_reparacion: false, reparacion_desde: null, reparacion_nota: null };
+      var r = await db.from("equipos").update(datos).eq("id", codigo).select();
+      if (r.error || !r.data || r.data.length === 0) {
+        alert("No se pudo volver a servicio" + (r.error ? ": " + r.error.message : "."));
+        return;
+      }
+      var eq = equiposCache.find(function (e) {
+        return e.id === codigo;
+      });
+      if (eq) Object.assign(eq, datos);
+      await sincronizarReparacionVariante(r.data[0].variante_id);
+      await registrarHistorial(codigo, "fin_reparacion", "Volvió a estar disponible");
+      await cargarPedidos();
+      resultadoEscaneo.innerHTML =
+        '<div class="tarjeta-resultado-escaneo libre"><strong>✅ ' + escaparHtml(codigo) + " volvió a servicio y está libre.</strong></div>";
+    }
+
     /* ---------------------- Eventos ---------------------- */
 
     formLogin.addEventListener("submit", async function (evento) {
@@ -1907,11 +2097,17 @@
         if (evento.key === "Enter") procesarCodigo(inputCodigoManual.value);
       });
     }
+    if (panelHistorialEquipo) {
+      panelHistorialEquipo.addEventListener("click", function (evento) {
+        if (evento.target.classList.contains("btn-cerrar-historial")) panelHistorialEquipo.innerHTML = "";
+      });
+    }
     if (listaEquipos) {
       listaEquipos.addEventListener("click", function (evento) {
         var codigo = evento.target.getAttribute("data-equipo");
         if (!codigo) return;
         if (evento.target.classList.contains("btn-etiqueta-equipo")) imprimirEtiquetas([codigo]);
+        if (evento.target.classList.contains("btn-historial-equipo")) mostrarHistorialEquipo(codigo);
         if (evento.target.classList.contains("btn-eliminar-equipo")) eliminarEquipo(codigo);
       });
     }
@@ -1929,7 +2125,10 @@
         if (evento.target.classList.contains("btn-alta-equipo")) {
           altaEquipo(codigo, evento.target.getAttribute("data-pedido"));
         }
-        if (evento.target.classList.contains("btn-baja-equipo")) bajaEquipo(codigo);
+        if (evento.target.classList.contains("btn-baja-equipo")) bajaEquipo(codigo, false);
+        if (evento.target.classList.contains("btn-baja-reparacion")) bajaEquipo(codigo, true);
+        if (evento.target.classList.contains("btn-reparacion-equipo")) ponerEnReparacion(codigo);
+        if (evento.target.classList.contains("btn-fin-reparacion")) volverAServicio(codigo);
       });
     }
 

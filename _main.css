@@ -1801,3 +1801,5 @@ svg {
     overflow-x: visible;
   }
 }
+
+.estado-equipo-reparacion { color: #d97706; font-weight: 600; }
