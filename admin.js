@@ -1445,10 +1445,17 @@
           '<p class="mb-0 text-secondary">No hay pedidos confirmados esperando este producto. ' +
           'Confirmá el pedido en la pestaña "Pedidos" y volvé a escanear.</p>';
       } else {
+        if (candidatos.length > 3) {
+          html +=
+            '<input type="text" class="form-control form-control-sm campo-alquiler mb-2" id="buscadorCandidatos" ' +
+            'placeholder="Buscar cliente por nombre, DNI o teléfono (' + candidatos.length + ' esperando)...">';
+        }
         html += candidatos
           .map(function (p) {
+            var textoBusqueda = [p.nombre, p.apellido, p.dni, p.telefono].filter(Boolean).join(" ").toLowerCase();
             return (
-              '<div class="fila-candidato"><div><strong>' + escaparHtml(nombreCliente(p)) + "</strong>" +
+              '<div class="fila-candidato" data-texto="' + escaparHtml(textoBusqueda) + '"><div><strong>' + escaparHtml(nombreCliente(p)) + "</strong>" +
+              (p.dni ? " · DNI " + escaparHtml(p.dni) : "") +
               (p.telefono ? " · " + escaparHtml(p.telefono) : "") +
               "<br><small>" + formatearFecha(p.fecha_desde) + " → " + formatearFecha(p.fecha_hasta) +
               (p.cantidad > 1 ? " · x" + p.cantidad : "") + "</small></div>" +
@@ -1665,6 +1672,13 @@
       });
     }
     if (resultadoEscaneo) {
+      resultadoEscaneo.addEventListener("input", function (evento) {
+        if (evento.target.id !== "buscadorCandidatos") return;
+        var q = evento.target.value.trim().toLowerCase();
+        resultadoEscaneo.querySelectorAll(".fila-candidato").forEach(function (fila) {
+          fila.style.display = !q || fila.getAttribute("data-texto").indexOf(q) !== -1 ? "" : "none";
+        });
+      });
       resultadoEscaneo.addEventListener("click", function (evento) {
         var codigo = evento.target.getAttribute("data-equipo");
         if (!codigo) return;
