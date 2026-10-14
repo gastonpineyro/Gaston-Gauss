@@ -447,23 +447,23 @@
 
           return (
             "<tr>" +
-            "<td>" + fecha + "</td>" +
-            '<td><span class="badge-tipo ' + badgeTipo + '">' + p.tipo + "</span></td>" +
-            "<td>" + p.producto_nombre + " x" + p.cantidad + "</td>" +
-            "<td>" + periodo + "</td>" +
-            "<td>" + clienteHtml + "</td>" +
-            "<td>" + (p.telefono || "-") + "</td>" +
-            "<td>" + (p.direccion || "-") + (p.lesion ? "<br><small class='text-muted'>" + p.lesion + "</small>" : "") + "</td>" +
-            "<td>" + formatearPrecio(p.total) + "</td>" +
-            '<td><select class="form-select form-select-sm selector-estado" data-id="' + p.id + '">' +
+            '<td data-label="Fecha">' + fecha + "</td>" +
+            '<td data-label="Tipo"><span class="badge-tipo ' + badgeTipo + '">' + p.tipo + "</span></td>" +
+            '<td data-label="Producto">' + p.producto_nombre + " x" + p.cantidad + "</td>" +
+            '<td data-label="Período">' + periodo + "</td>" +
+            '<td data-label="Cliente">' + clienteHtml + "</td>" +
+            '<td data-label="Teléfono">' + (p.telefono || "-") + "</td>" +
+            '<td data-label="Dirección / Lesión">' + (p.direccion || "-") + (p.lesion ? "<br><small class='text-muted'>" + p.lesion + "</small>" : "") + "</td>" +
+            '<td data-label="Total">' + formatearPrecio(p.total) + "</td>" +
+            '<td data-label="Estado"><select class="form-select form-select-sm selector-estado" data-id="' + p.id + '">' +
             ["pendiente", "confirmado", "activo", "devuelto", "cancelado"]
               .map(function (e) {
                 return '<option value="' + e + '"' + (e === p.estado ? " selected" : "") + ">" + e + "</option>";
               })
               .join("") +
             "</select></td>" +
-            "<td>" + facturacionHtml + "</td>" +
-            '<td><div class="acciones-fila-admin">' + acciones.join("") + "</div></td>" +
+            '<td data-label="Facturación">' + facturacionHtml + "</td>" +
+            '<td data-label="Acciones"><div class="acciones-fila-admin">' + acciones.join("") + "</div></td>" +
             "</tr>"
           );
         })
@@ -1251,11 +1251,11 @@
               : '<span class="estado-equipo-libre">Libre</span>';
             var cliente = p ? escaparHtml(nombreCliente(p)) + " · hasta " + formatearFecha(p.fecha_hasta) : "-";
             return (
-              "<tr><td><code>" + escaparHtml(e.id) + "</code></td>" +
-              "<td>" + escaparHtml(nombreVariante(e.variante_id)) + "</td>" +
-              "<td>" + estado + "</td>" +
-              "<td>" + cliente + "</td>" +
-              '<td><button type="button" class="btn-accion-admin retiro btn-etiqueta-equipo" data-equipo="' + escaparHtml(e.id) + '">QR</button> ' +
+              '<tr><td data-label="Código"><code>' + escaparHtml(e.id) + "</code></td>" +
+              '<td data-label="Producto">' + escaparHtml(nombreVariante(e.variante_id)) + "</td>" +
+              '<td data-label="Estado">' + estado + "</td>" +
+              '<td data-label="Cliente / devuelve">' + cliente + "</td>" +
+              '<td data-label="Acciones"><button type="button" class="btn-accion-admin retiro btn-etiqueta-equipo" data-equipo="' + escaparHtml(e.id) + '">QR</button> ' +
               '<button type="button" class="btn-accion-admin baja btn-eliminar-equipo" data-equipo="' + escaparHtml(e.id) + '">Eliminar</button></td></tr>'
             );
           })
