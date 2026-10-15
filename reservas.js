@@ -331,6 +331,18 @@
 
     if (!select) return; // esta página no tiene el formulario, no hacemos nada
 
+    // ?origen=whatsapp: el cliente llena el formulario y el pedido queda
+    // guardado en el admin, sin abrir WhatsApp al terminar.
+    var soloFormulario = new URLSearchParams(window.location.search).get("origen") === "whatsapp";
+    if (soloFormulario && btnReservar) {
+      btnReservar.textContent = "Enviar pedido";
+      var cajaOk = document.createElement("div");
+      cajaOk.id = "exitoSoloFormulario";
+      cajaOk.className = "alert alert-success d-none mt-3 text-center";
+      cajaOk.innerHTML = "<strong>¡Recibimos tu pedido!</strong><br>Confirmamos la disponibilidad en 24 hs como máximo y te escribimos por WhatsApp para coordinar la entrega.";
+      btnReservar.insertAdjacentElement("afterend", cajaOk);
+    }
+
     poblarSelect();
 
     // Si el link trae ?equipo=magneto (por ejemplo, el que le pasás a
@@ -453,7 +465,7 @@
           }
 
           btnReservar.textContent = "Guardando reserva...";
-          await GaussDB.crearPedido({
+          var guardado = await GaussDB.crearPedido({
             tipo: "alquiler",
             productoId: idParaStock,
             productoNombre: equipo.nombre + (variante ? " - " + variante.nombre : ""),
@@ -473,6 +485,19 @@
 
           btnReservar.textContent = textoOriginal;
           btnReservar.classList.remove("deshabilitado");
+
+          if (soloFormulario) {
+            if (guardado && guardado.ok) {
+              btnReservar.classList.add("d-none");
+              var ok = document.getElementById("exitoSoloFormulario");
+              if (ok) ok.classList.remove("d-none");
+              if (ok) ok.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else if (aviso) {
+              aviso.textContent = "No pudimos guardar tu pedido. Probá de nuevo o escribinos por WhatsApp.";
+              aviso.classList.remove("d-none");
+            }
+            return;
+          }
         }
 
         window.open(construirMensajeReserva(), "_blank");
