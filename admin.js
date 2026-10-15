@@ -23,6 +23,26 @@
     return partes[2] + "/" + partes[1] + "/" + partes[0];
   }
 
+  var ZONA_AR = "America/Argentina/Buenos_Aires";
+
+  // Fecha y hora exactas (hora de Argentina) en que se hizo el pedido.
+  function fechaHoraPedido(iso) {
+    return new Date(iso).toLocaleString("es-AR", { timeZone: ZONA_AR, hour12: false });
+  }
+
+  // Hoy según el reloj de Argentina (no UTC), en formato AAAA-MM-DD.
+  function hoyLocalISO() {
+    return new Date().toLocaleDateString("en-CA", { timeZone: ZONA_AR });
+  }
+
+  // Los pedidos que entran por formulario.html no traen fechas: se completan
+  // cuando el cliente retira. Devuelve los campos a agregar si faltan.
+  function fechasSiFaltan(pedido) {
+    if (!pedido || pedido.tipo !== "alquiler" || pedido.fecha_desde) return {};
+    var desde = hoyLocalISO();
+    return { fecha_desde: desde, fecha_hasta: calcularFechaHasta(desde, pedido.duracion_dias || 30) };
+  }
+
   function hoyISO() {
     return new Date().toISOString().slice(0, 10);
   }
@@ -526,11 +546,18 @@
 
       tablaCuerpo.innerHTML = filas
         .map(function (p) {
-          var fecha = new Date(p.creado_en).toLocaleString("es-AR");
+          var fecha = fechaHoraPedido(p.creado_en);
           var periodo =
             p.tipo === "alquiler"
               ? formatearFecha(p.fecha_desde) + " → " + formatearFecha(p.fecha_hasta)
               : "-";
+          if (p.tipo === "alquiler" && !p.fecha_desde) {
+            periodo = (p.estado === "devuelto" || p.estado === "cancelado")
+              ? "Sin fecha"
+              : '<small class="text-muted">Sin fecha de retiro</small><br>' +
+                '<input type="date" class="form-control form-control-sm input-fecha-retiro" data-id="' + p.id + '" value="' + hoyLocalISO() + '" style="max-width:150px;display:inline-block;"> ' +
+                '<button type="button" class="btn-accion-admin activar btn-guardar-fecha-retiro" data-id="' + p.id + '">Guardar</button>';
+          }
           var cliente = [p.nombre, p.apellido].filter(Boolean).join(" ") || "-";
           var badgeTipo = p.tipo === "alquiler" ? "badge-tipo-alquiler" : "badge-tipo-venta";
 
@@ -626,7 +653,7 @@
       filas.forEach(function (p) {
         lineas.push(
           [
-            new Date(p.creado_en).toLocaleString("es-AR"),
+            fechaHoraPedido(p.creado_en),
             p.tipo,
             p.producto_nombre,
             p.cantidad,
@@ -1101,7 +1128,7 @@
         "Hola " + (pedido.nombre || "") + "! Tu " + pedido.producto_nombre +
         " ya está listo para retirar en Gauss Ortopedia (27 de febrero 1724, Rosario). " +
         "Horarios: Lunes a Viernes de 9:30 a 13 hs. y de 15 a 18 hs, Sábados 9:30 a 13 hs. " +
-        "Tu alquiler es por " + (pedido.duracion_dias || "-") + " días, hasta el " + formatearFecha(pedido.fecha_hasta) + ". ¡Te esperamos!";
+        "Tu alquiler es por " + (pedido.duracion_dias || "-") + " días" + (pedido.fecha_hasta ? ", hasta el " + formatearFecha(pedido.fecha_hasta) : "") + ". ¡Te esperamos!";
 
       window.open(linkWhatsApp(pedido.telefono, mensaje), "_blank");
       var resultado = await actualizarPedido(id, { aviso_retiro_enviado: true });
@@ -1269,15 +1296,40 @@
     }
 
     async function activarAlquiler(id) {
-      var resultado = await actualizarPedido(id, { estado: "activo" });
+      var pedidoPrevio = pedidosCache.find(function (p) {
+        return p.id === id;
+      });
+      var cambiosActivar = Object.assign({ estado: "activo" }, fechasSiFaltan(pedidoPrevio));
+      var resultado = await actualizarPedido(id, cambiosActivar);
       if (!resultado.ok) {
         alert("No se pudo activar el alquiler: " + resultado.motivo);
         return;
       }
+      var pedido = pedidoPrevio;
+      if (pedido) Object.assign(pedido, cambiosActivar);
+      renderizarTabla();
+      refrescarListasAlquiler();
+    }
+
+    async function guardarFechaRetiro(id) {
       var pedido = pedidosCache.find(function (p) {
         return p.id === id;
       });
-      if (pedido) pedido.estado = "activo";
+      var input = tablaCuerpo.querySelector('.input-fecha-retiro[data-id="' + id + '"]');
+      if (!pedido || !input || !input.value) {
+        alert("Elegí la fecha de retiro.");
+        return;
+      }
+      var cambios = {
+        fecha_desde: input.value,
+        fecha_hasta: calcularFechaHasta(input.value, pedido.duracion_dias || 30),
+      };
+      var resultado = await actualizarPedido(id, cambios);
+      if (!resultado.ok) {
+        alert("No se pudo guardar la fecha: " + resultado.motivo);
+        return;
+      }
+      Object.assign(pedido, cambios);
       renderizarTabla();
       refrescarListasAlquiler();
     }
@@ -1648,7 +1700,7 @@
       });
       var marcadoParaFacturar = false;
       if (pedido && pedido.estado !== "activo") {
-        var cambios = { estado: "activo" };
+        var cambios = Object.assign({ estado: "activo" }, fechasSiFaltan(pedido));
         // Al entregar el equipo, el pedido pasa solo a "Para facturar"
         // (salvo que ya esté facturado o ya esté marcado).
         if (!pedido.facturado_en && !pedido.pendiente_facturacion) {
@@ -2213,6 +2265,7 @@
       if (!id) return;
       if (evento.target.classList.contains("btn-avisar-retiro")) avisarRetiro(id);
       if (evento.target.classList.contains("btn-activar-alquiler")) activarAlquiler(id);
+      if (evento.target.classList.contains("btn-guardar-fecha-retiro")) guardarFechaRetiro(id);
       if (evento.target.classList.contains("btn-dar-de-baja")) darDeBaja(id);
       if (evento.target.classList.contains("btn-borrar-pedido")) borrarPedido(id);
       if (evento.target.classList.contains("btn-marcar-facturar")) marcarParaFacturar(id);
@@ -2313,16 +2366,18 @@
       if (!evento.target.classList.contains("selector-estado")) return;
       var id = evento.target.getAttribute("data-id");
       var nuevoEstado = evento.target.value;
-      var resultado = await actualizarPedido(id, { estado: nuevoEstado });
+      var pedido = pedidosCache.find(function (p) {
+        return p.id === id;
+      });
+      var cambiosEstado = { estado: nuevoEstado };
+      if (nuevoEstado === "activo") Object.assign(cambiosEstado, fechasSiFaltan(pedido));
+      var resultado = await actualizarPedido(id, cambiosEstado);
       if (!resultado.ok) {
         alert("No se pudo cambiar el estado: " + resultado.motivo);
         cargarPedidos();
         return;
       }
-      var pedido = pedidosCache.find(function (p) {
-        return p.id === id;
-      });
-      if (pedido) pedido.estado = nuevoEstado;
+      if (pedido) Object.assign(pedido, cambiosEstado);
       renderizarTabla();
       refrescarListasAlquiler();
     });

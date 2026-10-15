@@ -196,12 +196,12 @@
     var select = document.getElementById("selectEquipo");
     var selectDuracion = document.getElementById("selectDuracion");
     var fechaDesde = document.getElementById("fechaDesdeReserva");
-    if (!select || !selectDuracion || !fechaDesde) return;
+    if (!select || !selectDuracion) return;
 
     var equipo = equipoPorId(select.value);
     var dias = parseInt(selectDuracion.value, 10) || equipo.duraciones[0].dias;
     var duracion = duracionElegida(equipo, dias);
-    var desde = fechaDesde.value || hoyISO();
+    var desde = (fechaDesde && fechaDesde.value) || hoyISO();
     var hasta = calcularFechaHasta(desde, duracion.dias);
 
     var imagenEl = document.getElementById("resumenImagen");
@@ -219,7 +219,7 @@
     if (nombreEl) nombreEl.textContent = equipo.nombre + (varianteSeleccionada(equipo) ? " — " + varianteSeleccionada(equipo).nombre : "");
     if (precioEl) precioEl.textContent = formatearPrecio(duracion.precio);
     if (diasEl) diasEl.textContent = duracion.dias + " días";
-    if (hastaEl) hastaEl.textContent = formatearFecha(hasta);
+    if (hastaEl && fechaDesde) hastaEl.textContent = formatearFecha(hasta);
     if (totalEl) totalEl.textContent = formatearPrecio(duracion.precio);
   }
 
@@ -441,7 +441,11 @@
         var idParaStock = variante ? variante.id : equipo.id;
         var dias = parseInt(selectDuracion.value, 10) || equipo.duraciones[0].dias;
         var duracion = duracionElegida(equipo, dias);
-        var hasta = calcularFechaHasta(fechaDesde.value, duracion.dias);
+        // Sin campo de fecha (formulario.html): el pedido se guarda sin fechas y
+        // se completan cuando el cliente retira. Para el stock se mira "desde hoy".
+        var sinFecha = !fechaDesde;
+        var desdeStock = sinFecha ? hoyISO() : fechaDesde.value;
+        var hasta = calcularFechaHasta(desdeStock, duracion.dias);
 
         var textoOriginal = btnReservar.textContent;
         var avisoDisp = document.getElementById("avisoDisponibilidadReserva");
@@ -451,7 +455,7 @@
           btnReservar.textContent = "Verificando disponibilidad...";
           btnReservar.classList.add("deshabilitado");
 
-          var resultado = await GaussDB.chequearDisponibilidad(idParaStock, fechaDesde.value, hasta);
+          var resultado = await GaussDB.chequearDisponibilidad(idParaStock, desdeStock, hasta);
 
           if (resultado.disponible === false) {
             btnReservar.textContent = textoOriginal;
@@ -472,8 +476,8 @@
             cantidad: 1,
             precioUnitario: duracion.precio,
             total: duracion.precio,
-            fechaDesde: fechaDesde.value,
-            fechaHasta: hasta,
+            fechaDesde: sinFecha ? null : fechaDesde.value,
+            fechaHasta: sinFecha ? null : hasta,
             duracionDias: duracion.dias,
             nombre: document.getElementById("campoNombreReserva").value,
             apellido: document.getElementById("campoApellidoReserva").value,
