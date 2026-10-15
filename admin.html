@@ -132,7 +132,60 @@
                     </div>
                     <div class="ms-auto">
                         <button type="button" class="btn-accion-admin baja" id="btnLimpiarFinalizados">🗑 Limpiar devueltos y cancelados</button>
+                        <button type="button" class="btn-accion-admin activar" id="btnNuevoPedido">➕ Nuevo pedido</button>
                         <button type="button" class="btn-accion-admin activar" id="btnExportarCsv">⬇️ Exportar CSV</button>
+                    </div>
+                </div>
+
+                <div class="tarjeta-formulario-reserva d-none mb-4" id="panelNuevoPedido">
+                    <h6 class="mb-3">Nuevo pedido</h6>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <label class="etiqueta-campo-alquiler" for="npProducto">Producto</label>
+                            <select class="form-select form-select-sm campo-alquiler" id="npProducto"></select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="etiqueta-campo-alquiler" for="npTipo">Tipo</label>
+                            <select class="form-select form-select-sm campo-alquiler" id="npTipo">
+                                <option value="alquiler">Alquiler</option>
+                                <option value="venta">Venta</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3" id="npCajaDuracion">
+                            <label class="etiqueta-campo-alquiler" for="npDuracion">Duración</label>
+                            <select class="form-select form-select-sm campo-alquiler" id="npDuracion">
+                                <option value="30">30 días</option>
+                                <option value="15">15 días</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="etiqueta-campo-alquiler" for="npCantidad">Cantidad</label>
+                            <input type="number" min="1" value="1" class="form-control form-control-sm campo-alquiler" id="npCantidad">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="etiqueta-campo-alquiler" for="npTotal">Total ($)</label>
+                            <input type="number" min="0" class="form-control form-control-sm campo-alquiler" id="npTotal">
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="etiqueta-campo-alquiler" for="npEstado">Estado inicial</label>
+                            <select class="form-select form-select-sm campo-alquiler" id="npEstado">
+                                <option value="confirmado">Confirmado</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="activo">Activo (se entrega ahora)</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="npNombre">Nombre</label><input type="text" class="form-control form-control-sm campo-alquiler" id="npNombre"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="npApellido">Apellido</label><input type="text" class="form-control form-control-sm campo-alquiler" id="npApellido"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="npTelefono">Teléfono</label><input type="tel" class="form-control form-control-sm campo-alquiler" id="npTelefono"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="npDni">DNI</label><input type="text" class="form-control form-control-sm campo-alquiler" id="npDni"></div>
+                        <div class="col-12 col-md-6"><label class="etiqueta-campo-alquiler" for="npDireccion">Dirección</label><input type="text" class="form-control form-control-sm campo-alquiler" id="npDireccion"></div>
+                        <div class="col-12 col-md-6"><label class="etiqueta-campo-alquiler" for="npLesion">Lesión / motivo</label><input type="text" class="form-control form-control-sm campo-alquiler" id="npLesion"></div>
+                    </div>
+                    <p class="text-secondary mt-2 mb-2" style="font-size:12px;">Las fechas de retiro y devolución se completan solas al activar el alquiler.</p>
+                    <p class="text-danger d-none" id="npAviso" style="font-size:13px;"></p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn-accion-admin activar" id="btnGuardarNuevoPedido">Guardar pedido</button>
+                        <button type="button" class="btn-accion-admin baja" id="btnCancelarNuevoPedido">Cancelar</button>
                     </div>
                 </div>
 

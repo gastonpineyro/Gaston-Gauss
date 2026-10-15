@@ -2399,6 +2399,115 @@
       refrescarListasAlquiler();
     }
 
+    /* ---------------------- Nuevo pedido desde el admin ---------------------- */
+    var PRECIOS_ALQUILER_BASE = {
+      muletas: { 30: 18000 },
+      "bota-walker": { 30: 16000 },
+      "silla-de-ruedas": { 30: 40000 },
+      andador: { 30: 25000 },
+      "roll-out": { 30: 40000 },
+      "eleva-inodoro": { 30: 25000 },
+    };
+
+    function precioSugeridoNuevoPedido() {
+      var idVar = document.getElementById("npProducto").value;
+      var v = variantesCache.find(function (x) {
+        return x.id === idVar;
+      });
+      if (!v || document.getElementById("npTipo").value !== "alquiler") return "";
+      var dias = parseInt(document.getElementById("npDuracion").value, 10);
+      var tabla = PRECIOS_POR_DURACION[v.id] || PRECIOS_ALQUILER_BASE[v.producto_id] || null;
+      if (!tabla) return "";
+      var unitario = tabla[dias] || tabla[30];
+      var cant = parseInt(document.getElementById("npCantidad").value, 10) || 1;
+      return unitario ? unitario * cant : "";
+    }
+
+    function actualizarTotalNuevoPedido() {
+      var sug = precioSugeridoNuevoPedido();
+      document.getElementById("npTotal").value = sug === "" ? "" : sug;
+      document.getElementById("npCajaDuracion").classList.toggle("d-none", document.getElementById("npTipo").value !== "alquiler");
+    }
+
+    function abrirNuevoPedido() {
+      var sel = document.getElementById("npProducto");
+      sel.innerHTML = variantesCache
+        .map(function (v) {
+          return '<option value="' + escaparHtml(v.id) + '">' + escaparHtml(v.producto_nombre + " - " + v.variante) + "</option>";
+        })
+        .join("");
+      ["npNombre", "npApellido", "npTelefono", "npDni", "npDireccion", "npLesion"].forEach(function (id) {
+        document.getElementById(id).value = "";
+      });
+      document.getElementById("npCantidad").value = 1;
+      document.getElementById("npTipo").value = "alquiler";
+      document.getElementById("npDuracion").value = "30";
+      document.getElementById("npEstado").value = "confirmado";
+      document.getElementById("npAviso").classList.add("d-none");
+      actualizarTotalNuevoPedido();
+      document.getElementById("panelNuevoPedido").classList.remove("d-none");
+      document.getElementById("npProducto").focus();
+    }
+
+    async function guardarNuevoPedido() {
+      var aviso = document.getElementById("npAviso");
+      function error(msg) {
+        aviso.textContent = msg;
+        aviso.classList.remove("d-none");
+      }
+      var idVar = document.getElementById("npProducto").value;
+      var v = variantesCache.find(function (x) {
+        return x.id === idVar;
+      });
+      if (!v) return error("Elegí un producto.");
+      var nombre = document.getElementById("npNombre").value.trim();
+      var apellido = document.getElementById("npApellido").value.trim();
+      if (!nombre || !apellido) return error("Completá nombre y apellido.");
+      var total = parseInt(document.getElementById("npTotal").value, 10);
+      if (isNaN(total) || total < 0) return error("Completá el total.");
+      var cantidad = Math.max(parseInt(document.getElementById("npCantidad").value, 10) || 1, 1);
+      var tipo = document.getElementById("npTipo").value;
+      var estado = document.getElementById("npEstado").value;
+
+      var fila = {
+        tipo: tipo,
+        estado: estado,
+        producto_id: v.id,
+        producto_nombre: v.producto_nombre + " - " + v.variante,
+        cantidad: cantidad,
+        precio_unitario: Math.round(total / cantidad),
+        total: total,
+        duracion_dias: tipo === "alquiler" ? parseInt(document.getElementById("npDuracion").value, 10) : null,
+        nombre: nombre,
+        apellido: apellido,
+        telefono: document.getElementById("npTelefono").value.trim() || null,
+        dni: document.getElementById("npDni").value.trim() || null,
+        direccion: document.getElementById("npDireccion").value.trim() || null,
+        lesion: document.getElementById("npLesion").value.trim() || null,
+      };
+      if (estado === "activo") Object.assign(fila, fechasSiFaltan(fila));
+
+      var btn = document.getElementById("btnGuardarNuevoPedido");
+      btn.disabled = true;
+      var r = await db.from("pedidos").insert(fila).select();
+      btn.disabled = false;
+      if (r.error || !r.data || r.data.length === 0) {
+        return error("No se pudo guardar: " + (r.error ? r.error.message : "no se guardó ningún dato (¿la sesión venció?)."));
+      }
+      document.getElementById("panelNuevoPedido").classList.add("d-none");
+      await cargarPedidos();
+    }
+
+    document.getElementById("btnNuevoPedido").addEventListener("click", abrirNuevoPedido);
+    document.getElementById("btnCancelarNuevoPedido").addEventListener("click", function () {
+      document.getElementById("panelNuevoPedido").classList.add("d-none");
+    });
+    document.getElementById("btnGuardarNuevoPedido").addEventListener("click", guardarNuevoPedido);
+    ["npProducto", "npTipo", "npDuracion", "npCantidad"].forEach(function (id) {
+      document.getElementById(id).addEventListener("change", actualizarTotalNuevoPedido);
+    });
+
+
     tablaCuerpo.addEventListener("change", async function (evento) {
       if (evento.target.classList.contains("selector-duracion")) {
         cambiarDuracion(evento.target.getAttribute("data-id"), parseInt(evento.target.value, 10));
