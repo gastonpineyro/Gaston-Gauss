@@ -30,6 +30,20 @@
     "magneto-tubo-placas": { 15: 29000, 30: 50000 },
   };
 
+  // El Magneto es un solo equipo (un QR, un stock): el modelo (placas, tubos,
+  // tubo y placas) queda en el pedido. Un pedido "magneto-xxx" cuenta contra la
+  // variante unificada "magneto".
+  var MODELOS_MAGNETO = [
+    { id: "magneto-placas", variante: "Con placas" },
+    { id: "magneto-tubos", variante: "Con tubos" },
+    { id: "magneto-tubo-placas", variante: "Tubo y placas" },
+  ];
+
+  function pedidoEsDeVariante(productoIdPedido, varianteId) {
+    if (productoIdPedido === varianteId) return true;
+    return varianteId === "magneto" && typeof productoIdPedido === "string" && productoIdPedido.indexOf("magneto-") === 0;
+  }
+
   var ZONA_AR = "America/Argentina/Buenos_Aires";
 
   // Fecha y hora exactas (hora de Argentina) en que se hizo el pedido.
@@ -250,7 +264,7 @@
 
       var bajos = variantesCache.filter(function (v) {
         var ocupadas = pedidosCache.filter(function (p) {
-          return p.producto_id === v.id && p.estado === "activo";
+          return pedidoEsDeVariante(p.producto_id, v.id) && p.estado === "activo";
         }).length;
         return esStockBajo(v, ocupadas + (v.en_reparacion || 0));
       });
@@ -285,7 +299,7 @@
             return (
               acc +
               pedidosCache.filter(function (p) {
-                return p.producto_id === v.id && p.estado === "activo";
+                return pedidoEsDeVariante(p.producto_id, v.id) && p.estado === "activo";
               }).length
             );
           }, 0);
@@ -293,7 +307,7 @@
           var tarjetas = variantes
             .map(function (v) {
               var ocupadas = pedidosCache.filter(function (p) {
-                return p.producto_id === v.id && p.estado === "activo";
+                return pedidoEsDeVariante(p.producto_id, v.id) && p.estado === "activo";
               }).length;
               var enReparacion = v.en_reparacion || 0;
               var disponibles = v.stock - ocupadas - enReparacion;
@@ -1575,7 +1589,7 @@
     function pedidosCandidatos(equipo) {
       return pedidosCache
         .filter(function (p) {
-          if (p.tipo !== "alquiler" || p.producto_id !== equipo.variante_id) return false;
+          if (p.tipo !== "alquiler" || !pedidoEsDeVariante(p.producto_id, equipo.variante_id)) return false;
           if (p.estado === "confirmado") return true;
           // Pedido ya activo al que todavía le faltan equipos por entregar (cantidad > 1)
           if (p.estado === "activo") {
@@ -1662,7 +1676,9 @@
               '<div class="fila-candidato" data-texto="' + escaparHtml(textoBusqueda) + '"><div><strong>' + escaparHtml(nombreCliente(p)) + "</strong>" +
               (p.dni ? " · DNI " + escaparHtml(p.dni) : "") +
               (p.telefono ? " · " + escaparHtml(p.telefono) : "") +
-              "<br><small>" + formatearFecha(p.fecha_desde) + " → " + formatearFecha(p.fecha_hasta) +
+              "<br><small>" + escaparHtml(p.producto_nombre || "") +
+              (p.duracion_dias ? " · " + p.duracion_dias + " días" : "") +
+              (p.fecha_desde ? " · " + formatearFecha(p.fecha_desde) + " → " + formatearFecha(p.fecha_hasta) : "") +
               (p.cantidad > 1 ? " · x" + p.cantidad : "") + "</small></div>" +
               '<button type="button" class="btn-accion-admin activar btn-alta-equipo" data-equipo="' + escaparHtml(equipo.id) +
               '" data-pedido="' + p.id + '">▶️ Entregar a este cliente</button></div>'
@@ -2409,9 +2425,11 @@
       "eleva-inodoro": { 30: 25000 },
     };
 
+    var opcionesNuevoPedido = [];
+
     function precioSugeridoNuevoPedido() {
       var idVar = document.getElementById("npProducto").value;
-      var v = variantesCache.find(function (x) {
+      var v = opcionesNuevoPedido.find(function (x) {
         return x.id === idVar;
       });
       if (!v || document.getElementById("npTipo").value !== "alquiler") return "";
@@ -2431,7 +2449,17 @@
 
     function abrirNuevoPedido() {
       var sel = document.getElementById("npProducto");
-      sel.innerHTML = variantesCache
+      opcionesNuevoPedido = [];
+      variantesCache.forEach(function (v) {
+        if (v.id === "magneto") {
+          MODELOS_MAGNETO.forEach(function (m) {
+            opcionesNuevoPedido.push({ id: m.id, producto_id: "magneto", producto_nombre: v.producto_nombre, variante: m.variante });
+          });
+        } else {
+          opcionesNuevoPedido.push(v);
+        }
+      });
+      sel.innerHTML = opcionesNuevoPedido
         .map(function (v) {
           return '<option value="' + escaparHtml(v.id) + '">' + escaparHtml(v.producto_nombre + " - " + v.variante) + "</option>";
         })
@@ -2456,7 +2484,7 @@
         aviso.classList.remove("d-none");
       }
       var idVar = document.getElementById("npProducto").value;
-      var v = variantesCache.find(function (x) {
+      var v = opcionesNuevoPedido.find(function (x) {
         return x.id === idVar;
       });
       if (!v) return error("Elegí un producto.");

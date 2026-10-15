@@ -76,24 +76,45 @@ var GaussDB = (function () {
    * en variantes_producto. Si la variante no está en esa tabla (todavía
    * no armaste el stock, o no aplica), asume disponible.
    */
+  // El Magneto es un solo equipo: el modelo (placas, tubos, tubo y placas) se
+  // elige en el pedido, pero el stock y los QR son de "magneto" en conjunto.
+  function esMagneto(id) {
+    return typeof id === "string" && (id === "magneto" || id.indexOf("magneto-") === 0);
+  }
+
   async function chequearDisponibilidad(productoId, fechaDesde, fechaHasta) {
     var db = obtenerCliente();
     if (!db) return { disponible: true, motivo: "sin-configurar" };
 
     try {
       // Los equipos en reparacion no se pueden alquilar: se descuentan del stock.
+      var agrupado = esMagneto(productoId);
       var stockResultado = await db
         .from("variantes_producto")
         .select("stock, en_reparacion")
-        .eq("id", productoId)
+        .eq("id", agrupado ? "magneto" : productoId)
         .maybeSingle();
+
+      // Si todavia no se unificaron las variantes del Magneto en la base,
+      // se suman las que haya (placas + tubos + tubo y placas).
+      if (agrupado && !stockResultado.error && !stockResultado.data) {
+        var sueltas = await db.from("variantes_producto").select("stock, en_reparacion").like("id", "magneto-%");
+        if (!sueltas.error && sueltas.data && sueltas.data.length) {
+          stockResultado = {
+            data: {
+              stock: sueltas.data.reduce(function (a, r) { return a + (r.stock || 0); }, 0),
+              en_reparacion: sueltas.data.reduce(function (a, r) { return a + (r.en_reparacion || 0); }, 0),
+            },
+          };
+        }
+      }
 
       if (stockResultado.error) {
         // Por si todavia no existe la columna en_reparacion en la base.
         stockResultado = await db
           .from("variantes_producto")
           .select("stock")
-          .eq("id", productoId)
+          .eq("id", agrupado ? "magneto" : productoId)
           .maybeSingle();
       }
 
@@ -101,10 +122,11 @@ var GaussDB = (function () {
         ? Math.max(stockResultado.data.stock - (stockResultado.data.en_reparacion || 0), 0)
         : 1;
 
-      var resultado = await db
-        .from("disponibilidad_publica")
-        .select("id")
-        .eq("producto_id", productoId)
+      var consultaOcupadas = db.from("disponibilidad_publica").select("id");
+      consultaOcupadas = agrupado
+        ? consultaOcupadas.like("producto_id", "magneto%")
+        : consultaOcupadas.eq("producto_id", productoId);
+      var resultado = await consultaOcupadas
         .not("estado", "in", "(cancelado,devuelto)")
         .lte("fecha_desde", fechaHasta)
         .gte("fecha_hasta", fechaDesde);

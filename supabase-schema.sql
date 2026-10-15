@@ -326,3 +326,36 @@ insert into variantes_producto (id, producto_id, producto_nombre, variante, stoc
   ('roll-out-unica', 'roll-out', 'Roll Out', 'Modelo unico', 0),
   ('eleva-inodoro-unica', 'eleva-inodoro', 'Eleva Inodoro', 'Modelo unico', 0)
 on conflict (id) do nothing;
+-- Unifica el Magneto: un solo equipo (un stock, un QR).
+-- El modelo (placas, tubos, tubo y placas) queda en el pedido.
+
+-- 1) Crea la variante unica "magneto" con el stock total de las tres.
+insert into variantes_producto (id, producto_id, producto_nombre, variante, stock, en_reparacion)
+select 'magneto', 'magneto', 'Equipo de Magnetoterapia', 'Modelo unico',
+       coalesce(sum(stock), 0), coalesce(sum(en_reparacion), 0)
+from variantes_producto
+where id like 'magneto-%'
+on conflict (id) do nothing;
+
+-- 2) Si ya habias creado equipos QR del Magneto, pasan a un codigo nuevo
+--    (MAGNETO-001, MAGNETO-002...). Hay que volver a imprimir esas etiquetas.
+update equipos_historial h
+set equipo_id = 'MAGNETO-' || lpad(o.n::text, 3, '0')
+from (
+  select id, row_number() over (order by creado_en, id) as n
+  from equipos where variante_id like 'magneto-%'
+) o
+where h.equipo_id = o.id;
+
+update equipos e
+set id = 'MAGNETO-' || lpad(o.n::text, 3, '0'),
+    variante_id = 'magneto'
+from (
+  select id, row_number() over (order by creado_en, id) as n
+  from equipos where variante_id like 'magneto-%'
+) o
+where e.id = o.id;
+
+-- 3) Borra las tres variantes viejas (ya no tienen equipos asignados).
+delete from variantes_producto where id like 'magneto-%';
+
