@@ -333,7 +333,7 @@
 
     // ?origen=whatsapp: el cliente llena el formulario y el pedido queda
     // guardado en el admin, sin abrir WhatsApp al terminar.
-    var soloFormulario = new URLSearchParams(window.location.search).get("origen") === "whatsapp";
+    var soloFormulario = new URLSearchParams(window.location.search).get("origen") === "whatsapp" || document.body.getAttribute("data-solo-formulario") === "1";
     if (soloFormulario && btnReservar) {
       btnReservar.textContent = "Enviar pedido";
       var cajaOk = document.createElement("div");
