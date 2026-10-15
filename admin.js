@@ -561,9 +561,7 @@
           if (p.tipo === "alquiler" && !p.fecha_desde) {
             periodo = (p.estado === "devuelto" || p.estado === "cancelado")
               ? "Sin fecha"
-              : '<small class="text-muted">Sin fecha de retiro</small><br>' +
-                '<input type="date" class="form-control form-control-sm input-fecha-retiro" data-id="' + p.id + '" value="' + hoyLocalISO() + '" style="max-width:150px;display:inline-block;"> ' +
-                '<button type="button" class="btn-accion-admin activar btn-guardar-fecha-retiro" data-id="' + p.id + '">Guardar</button>';
+              : '<small class="text-muted">Se completa al activar el alquiler</small>';
           }
           if (p.tipo === "alquiler" && p.estado !== "devuelto" && p.estado !== "cancelado") {
             var durActual = p.duracion_dias || 30;
@@ -1326,29 +1324,6 @@
       }
       var pedido = pedidoPrevio;
       if (pedido) Object.assign(pedido, cambiosActivar);
-      renderizarTabla();
-      refrescarListasAlquiler();
-    }
-
-    async function guardarFechaRetiro(id) {
-      var pedido = pedidosCache.find(function (p) {
-        return p.id === id;
-      });
-      var input = tablaCuerpo.querySelector('.input-fecha-retiro[data-id="' + id + '"]');
-      if (!pedido || !input || !input.value) {
-        alert("Elegí la fecha de retiro.");
-        return;
-      }
-      var cambios = {
-        fecha_desde: input.value,
-        fecha_hasta: calcularFechaHasta(input.value, pedido.duracion_dias || 30),
-      };
-      var resultado = await actualizarPedido(id, cambios);
-      if (!resultado.ok) {
-        alert("No se pudo guardar la fecha: " + resultado.motivo);
-        return;
-      }
-      Object.assign(pedido, cambios);
       renderizarTabla();
       refrescarListasAlquiler();
     }
@@ -2284,7 +2259,6 @@
       if (!id) return;
       if (evento.target.classList.contains("btn-avisar-retiro")) avisarRetiro(id);
       if (evento.target.classList.contains("btn-activar-alquiler")) activarAlquiler(id);
-      if (evento.target.classList.contains("btn-guardar-fecha-retiro")) guardarFechaRetiro(id);
       if (evento.target.classList.contains("btn-dar-de-baja")) darDeBaja(id);
       if (evento.target.classList.contains("btn-borrar-pedido")) borrarPedido(id);
       if (evento.target.classList.contains("btn-marcar-facturar")) marcarParaFacturar(id);
