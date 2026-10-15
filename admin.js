@@ -2388,19 +2388,25 @@
       if (!pedido) return;
       var tabla = PRECIOS_POR_DURACION[pedido.producto_id];
       var sugerido = tabla && tabla[nuevosDias] ? tabla[nuevosDias] * (pedido.cantidad || 1) : pedido.total;
-      var respuesta = window.prompt(
-        "Cambiar a " + nuevosDias + " días. Total a cobrar ($):\n(Se sugiere el valor " + (tabla && tabla[nuevosDias] ? "de la tarifa" : "actual, corregilo si cambia") + ")",
-        String(sugerido)
-      );
-      if (respuesta === null) {
-        renderizarTabla();
-        return;
-      }
-      var total = parseInt(String(respuesta).replace(/\D/g, ""), 10);
-      if (isNaN(total) || total < 0) {
-        alert("El total no es válido.");
-        renderizarTabla();
-        return;
+      var total;
+      if (tabla && tabla[nuevosDias]) {
+        // Equipos con tarifa conocida (Magneto): se aplica directo, sin preguntar.
+        total = sugerido;
+      } else {
+        var respuesta = window.prompt(
+          "Cambiar a " + nuevosDias + " días. Este equipo no tiene tarifa cargada para esa duración.\nTotal a cobrar ($):",
+          String(sugerido)
+        );
+        if (respuesta === null) {
+          renderizarTabla();
+          return;
+        }
+        total = parseInt(String(respuesta).replace(/\D/g, ""), 10);
+        if (isNaN(total) || total < 0) {
+          alert("El total no es válido.");
+          renderizarTabla();
+          return;
+        }
       }
       var cambios = {
         duracion_dias: nuevosDias,
