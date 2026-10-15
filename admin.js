@@ -23,6 +23,13 @@
     return partes[2] + "/" + partes[1] + "/" + partes[0];
   }
 
+  // Precios por duración conocidos (para sugerir el nuevo total al cambiar de 15 a 30 días o al revés).
+  var PRECIOS_POR_DURACION = {
+    "magneto-placas": { 15: 25000, 30: 46000 },
+    "magneto-tubos": { 15: 25000, 30: 46000 },
+    "magneto-tubo-placas": { 15: 29000, 30: 50000 },
+  };
+
   var ZONA_AR = "America/Argentina/Buenos_Aires";
 
   // Fecha y hora exactas (hora de Argentina) en que se hizo el pedido.
@@ -557,6 +564,18 @@
               : '<small class="text-muted">Sin fecha de retiro</small><br>' +
                 '<input type="date" class="form-control form-control-sm input-fecha-retiro" data-id="' + p.id + '" value="' + hoyLocalISO() + '" style="max-width:150px;display:inline-block;"> ' +
                 '<button type="button" class="btn-accion-admin activar btn-guardar-fecha-retiro" data-id="' + p.id + '">Guardar</button>';
+          }
+          if (p.tipo === "alquiler" && p.estado !== "devuelto" && p.estado !== "cancelado") {
+            var durActual = p.duracion_dias || 30;
+            var opcionesDur = [15, 30];
+            if (opcionesDur.indexOf(durActual) === -1) opcionesDur.push(durActual);
+            periodo +=
+              '<br><label class="text-muted" style="font-size:12px;">Duración: ' +
+              '<select class="form-select form-select-sm selector-duracion" data-id="' + p.id + '" style="display:inline-block;width:auto;">' +
+              opcionesDur.map(function (d) {
+                return '<option value="' + d + '"' + (d === durActual ? " selected" : "") + ">" + d + " días</option>";
+              }).join("") +
+              "</select></label>";
           }
           var cliente = [p.nombre, p.apellido].filter(Boolean).join(" ") || "-";
           var badgeTipo = p.tipo === "alquiler" ? "badge-tipo-alquiler" : "badge-tipo-venta";
@@ -2362,7 +2381,49 @@
     if (btnExportarFacturitas) btnExportarFacturitas.addEventListener("click", exportarFacturitas);
     if (btnConfirmarFacturados) btnConfirmarFacturados.addEventListener("click", confirmarFacturados);
 
+    async function cambiarDuracion(id, nuevosDias) {
+      var pedido = pedidosCache.find(function (p) {
+        return p.id === id;
+      });
+      if (!pedido) return;
+      var tabla = PRECIOS_POR_DURACION[pedido.producto_id];
+      var sugerido = tabla && tabla[nuevosDias] ? tabla[nuevosDias] * (pedido.cantidad || 1) : pedido.total;
+      var respuesta = window.prompt(
+        "Cambiar a " + nuevosDias + " días. Total a cobrar ($):\n(Se sugiere el valor " + (tabla && tabla[nuevosDias] ? "de la tarifa" : "actual, corregilo si cambia") + ")",
+        String(sugerido)
+      );
+      if (respuesta === null) {
+        renderizarTabla();
+        return;
+      }
+      var total = parseInt(String(respuesta).replace(/\D/g, ""), 10);
+      if (isNaN(total) || total < 0) {
+        alert("El total no es válido.");
+        renderizarTabla();
+        return;
+      }
+      var cambios = {
+        duracion_dias: nuevosDias,
+        total: total,
+        precio_unitario: Math.round(total / (pedido.cantidad || 1)),
+      };
+      if (pedido.fecha_desde) cambios.fecha_hasta = calcularFechaHasta(pedido.fecha_desde, nuevosDias);
+      var resultado = await actualizarPedido(id, cambios);
+      if (!resultado.ok) {
+        alert("No se pudo cambiar la duración: " + resultado.motivo);
+        cargarPedidos();
+        return;
+      }
+      Object.assign(pedido, cambios);
+      renderizarTabla();
+      refrescarListasAlquiler();
+    }
+
     tablaCuerpo.addEventListener("change", async function (evento) {
+      if (evento.target.classList.contains("selector-duracion")) {
+        cambiarDuracion(evento.target.getAttribute("data-id"), parseInt(evento.target.value, 10));
+        return;
+      }
       if (!evento.target.classList.contains("selector-estado")) return;
       var id = evento.target.getAttribute("data-id");
       var nuevoEstado = evento.target.value;
