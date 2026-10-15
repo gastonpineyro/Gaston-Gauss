@@ -488,6 +488,27 @@
     }
   }
 
+  /* ---------------------- Link al formulario de pedido ---------------------- */
+  function agregarLinkFormulario() {
+    var link = typeof LINK_FORMULARIO !== "undefined" ? LINK_FORMULARIO : "";
+    if (!link) return;
+    var destinos = [];
+    var finalizar = document.getElementById("btnFinalizarCarrito");
+    if (finalizar) destinos.push({ el: finalizar, clase: "btn-formulario-pedido" });
+    var paso = document.querySelector("[data-formulario-paso]");
+    if (paso) destinos.push({ el: paso, clase: "btn-formulario-pedido btn-formulario-paso", dentro: true });
+    destinos.forEach(function (d) {
+      var a = document.createElement("a");
+      a.href = link;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = d.clase;
+      a.textContent = "📝 Completar formulario de pedido";
+      if (d.dentro) d.el.appendChild(a);
+      else d.el.insertAdjacentElement("afterend", a);
+    });
+  }
+
   /* ---------------------- Eventos ---------------------- */
 
   function manejarClickEnCuerpo(evento) {
@@ -714,6 +735,7 @@
       });
 
       aplicarPreciosDeVariante();
+      agregarLinkFormulario();
       actualizarDisponibilidadProducto();
     });
 })();

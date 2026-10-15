@@ -24,3 +24,8 @@ const SITE_URL = "https://gastonpineyro.github.io/Gaston-Gauss";
 /* Alias bancario / de Mercado Pago que se le manda al cliente para
    renovar el alquiler. Cambialo por el tuyo. */
 const ALIAS_PAGO = "Gauss.ortopedia";
+
+/* Link del formulario de pedido (Google Forms, Typeform, etc.). Pegalo
+   entre las comillas. Mientras esté vacío, el botón no se muestra en el
+   sitio. */
+const LINK_FORMULARIO = "";

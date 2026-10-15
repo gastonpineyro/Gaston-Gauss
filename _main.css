@@ -1910,3 +1910,26 @@ svg {
   transform: none;
   box-shadow: none;
 }
+
+.btn-formulario-pedido {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  padding: 10px 16px;
+  border: 2px solid #D04F5E;
+  border-radius: 10px;
+  color: #D04F5E;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  background: transparent;
+}
+.btn-formulario-pedido:hover {
+  background: #D04F5E;
+  color: #fff;
+}
+.btn-formulario-paso {
+  display: inline-block;
+  font-size: 13px;
+  padding: 8px 14px;
+}
