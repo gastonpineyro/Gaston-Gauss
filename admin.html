@@ -360,7 +360,17 @@
                     <div id="ppItems"></div>
                     <datalist id="ppSugerencias"></datalist>
                     <button type="button" class="btn-accion-admin activar mt-2" id="ppAgregarItem">➕ Agregar otro producto</button>
+                    <div class="row g-2 justify-content-end align-items-end mt-2">
+                        <div class="col-12 col-md-3">
+                            <label class="etiqueta-campo-alquiler" for="ppSena">Seña abonada ($, opcional)</label>
+                            <input type="number" min="0" class="form-control form-control-sm campo-alquiler" id="ppSena" placeholder="0">
+                        </div>
+                    </div>
                     <div class="text-end mt-3" style="font-size:18px;"><strong>Total: <span id="ppTotal">$ 0</span></strong></div>
+                    <div class="text-end mt-1 d-none" id="ppSaldoCaja" style="font-size:16px;">
+                        <span class="text-secondary">Seña: <span id="ppSenaTexto">$ 0</span></span> ·
+                        <strong class="text-danger">Falta abonar: <span id="ppSaldo">$ 0</span></strong>
+                    </div>
                     <div class="alert alert-light border mt-3 d-none" id="ppEntrega" style="font-size:14px;"></div>
                 </div>
 

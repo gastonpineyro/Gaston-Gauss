@@ -137,6 +137,11 @@
     return items;
   }
 
+  function leerSena() {
+    var n = parseFloat($("ppSena").value);
+    return isNaN(n) || n < 0 ? 0 : n;
+  }
+
   function entregaEstimada() {
     var inicioISO = $("ppInicio").value || hoyISO();
     var inicio = fechaDeISO(inicioISO);
@@ -160,6 +165,15 @@
       if (it.plantilla) hayPlantilla = true;
     });
     $("ppTotal").textContent = dinero(total);
+    var sena = leerSena();
+    var cajaSaldo = $("ppSaldoCaja");
+    if (sena > 0) {
+      cajaSaldo.classList.remove("d-none");
+      $("ppSenaTexto").textContent = dinero(sena);
+      $("ppSaldo").textContent = dinero(Math.max(total - sena, 0));
+    } else {
+      cajaSaldo.classList.add("d-none");
+    }
     var cajaEntrega = $("ppEntrega");
     if (hayPlantilla) {
       cajaEntrega.classList.remove("d-none");
@@ -301,10 +315,28 @@
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
     doc.setTextColor(40, 40, 40);
-    doc.text("TOTAL", xPrecio - 20, y + 3);
+    doc.text("TOTAL", xPrecio - 34, y + 3);
     doc.setTextColor(rojo[0], rojo[1], rojo[2]);
     doc.text(dinero(total), xSub - 2, y + 3, { align: "right" });
-    y += 14;
+    y += 9;
+
+    // Seña y saldo
+    var sena = leerSena();
+    if (sena > 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(60, 60, 60);
+      doc.text("Seña abonada", xPrecio - 34, y + 2);
+      doc.text("- " + dinero(sena), xSub - 2, y + 2, { align: "right" });
+      y += 8;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(rojo[0], rojo[1], rojo[2]);
+      doc.text("FALTA ABONAR", xPrecio - 34, y + 2);
+      doc.text(dinero(Math.max(total - sena, 0)), xSub - 2, y + 2, { align: "right" });
+      y += 8;
+    }
+    y += 5;
 
     // Entrega estimada de plantillas
     if (items.some(function (it) { return it.plantilla; })) {
@@ -371,7 +403,7 @@
   /* ---------------------- Inicio ---------------------- */
 
   function limpiar() {
-    ["ppNombre", "ppApellido", "ppDni", "ppTelefono", "ppDireccion", "ppNotas"].forEach(function (id) {
+    ["ppNombre", "ppApellido", "ppDni", "ppTelefono", "ppDireccion", "ppNotas", "ppSena"].forEach(function (id) {
       $(id).value = "";
     });
     contenedorItems.innerHTML = "";
@@ -419,6 +451,7 @@
       recalcular();
     });
     $("ppInicio").addEventListener("change", recalcular);
+    $("ppSena").addEventListener("input", recalcular);
     $("ppDescargar").addEventListener("click", descargar);
     $("ppLimpiar").addEventListener("click", limpiar);
 
