@@ -359,3 +359,5 @@ where e.id = o.id;
 -- 3) Borra las tres variantes viejas (ya no tienen equipos asignados).
 delete from variantes_producto where id like 'magneto-%';
 
+-- Guarda en cada contacto el historial de alquileres de pedidos ya borrados.
+alter table contactos add column if not exists historial jsonb not null default '[]'::jsonb;

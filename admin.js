@@ -1925,12 +1925,25 @@
     }
 
     // Guarda (o actualiza) el contacto de un pedido. Devuelve true si quedó guardado.
-    async function guardarContactoDePedido(p) {
+    // Si archivar = true (el pedido se va a borrar), el alquiler queda anotado en
+    // el historial del contacto para no perder cuántas veces y qué alquiló.
+    async function guardarContactoDePedido(p, archivar) {
       var datos = contactoDePedido(p);
       if (!datos.nombre || (!datos.dni && !datos.telefono)) return true; // nada útil que guardar
       var existente = contactosCache.find(function (c) {
         return claveCoincide(c, datos);
       });
+      if (archivar && p.tipo === "alquiler" && (p.estado === "devuelto" || p.estado === "activo")) {
+        var previo = existente && Array.isArray(existente.historial) ? existente.historial : [];
+        if (!previo.some(function (h) { return h.pid === p.id; })) {
+          datos.historial = previo.concat([{
+            pid: p.id,
+            producto: p.producto_nombre,
+            desde: p.fecha_desde || (p.creado_en || "").slice(0, 10),
+            dias: p.duracion_dias || null,
+          }]);
+        }
+      }
       var resultado;
       if (existente) {
         resultado = await db.from("contactos").update(datos).eq("id", existente.id).select();
@@ -1941,6 +1954,30 @@
       if (existente) Object.assign(existente, datos);
       else contactosCache.push(resultado.data[0]);
       return true;
+    }
+
+    // Cuántas veces alquiló un contacto y qué: los pedidos actuales + los ya borrados (historial guardado).
+    function resumenAlquileresContacto(c) {
+      var productos = {};
+      var total = 0;
+      function sumar(nombre) {
+        total++;
+        productos[nombre || "Equipo"] = (productos[nombre || "Equipo"] || 0) + 1;
+      }
+      var archivados = Array.isArray(c.historial) ? c.historial : [];
+      archivados.forEach(function (h) {
+        sumar(h.producto);
+      });
+      var idsArchivados = archivados.map(function (h) { return h.pid; });
+      pedidosCache.forEach(function (p) {
+        if (p.tipo !== "alquiler" || (p.estado !== "activo" && p.estado !== "devuelto")) return;
+        if (idsArchivados.indexOf(p.id) !== -1) return;
+        if (claveCoincide(c, contactoDePedido(p))) sumar(p.producto_nombre);
+      });
+      var detalle = Object.keys(productos).map(function (n) {
+        return n + " ×" + productos[n];
+      });
+      return { total: total, detalle: detalle };
     }
 
     function renderizarContactos() {
@@ -1962,7 +1999,7 @@
 
       listaContactos.innerHTML =
         '<div class="table-responsive"><table class="table table-bordered bg-white tabla-pedidos-admin">' +
-        "<thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Dirección</th><th></th></tr></thead><tbody>" +
+        "<thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Dirección</th><th>Alquileres</th><th></th></tr></thead><tbody>" +
         lista
           .map(function (c) {
             var nombre = [c.nombre, c.apellido].filter(Boolean).join(" ") || "-";
@@ -1975,6 +2012,12 @@
               '<td data-label="DNI">' + escaparHtml(c.dni || "-") + "</td>" +
               '<td data-label="Teléfono">' + escaparHtml(c.telefono || "-") + "</td>" +
               '<td data-label="Dirección">' + escaparHtml(c.direccion || "-") + "</td>" +
+              '<td data-label="Alquileres">' + (function () {
+                var res = resumenAlquileresContacto(c);
+                return res.total === 0
+                  ? "-"
+                  : "<strong>" + res.total + (res.total === 1 ? " vez" : " veces") + "</strong><br><small class='text-muted'>" + escaparHtml(res.detalle.join(" · ")) + "</small>";
+              })() + "</td>" +
               '<td data-label="Acciones"><div class="acciones-fila-admin">' + wa +
               '<button type="button" class="btn-accion-admin baja btn-borrar-contacto" data-contacto="' + c.id + '">Eliminar</button></div></td></tr>'
             );
@@ -2020,9 +2063,10 @@
         alert("No hay contactos para exportar.");
         return;
       }
-      var filas = [["Nombre", "Apellido", "DNI", "Telefono", "Direccion"]].concat(
+      var filas = [["Nombre", "Apellido", "DNI", "Telefono", "Direccion", "Veces que alquilo", "Productos"]].concat(
         contactosCache.map(function (c) {
-          return [c.nombre, c.apellido, c.dni, c.telefono, c.direccion];
+          var res = resumenAlquileresContacto(c);
+          return [c.nombre, c.apellido, c.dni, c.telefono, c.direccion, res.total, res.detalle.join(" | ")];
         })
       );
       var csv = filas
@@ -2059,8 +2103,8 @@
       aviso += "Sus datos de contacto se guardan en la pestaña Contactos. Esto no se puede deshacer.";
       if (!confirm(aviso)) return;
 
-      if (!(await guardarContactoDePedido(p))) {
-        alert("No se pudo guardar el contacto, así que no borré el pedido. (¿Corriste el SQL de contactos en Supabase?)");
+      if (!(await guardarContactoDePedido(p, true))) {
+        alert("No se pudo guardar el contacto, así que no borré el pedido. (¿Corriste el SQL de contactos en Supabase, incluido el 7-historial-contactos?)");
         return;
       }
       var resultado = await db.from("pedidos").delete().eq("id", id).select();
@@ -2096,8 +2140,8 @@
       }
 
       for (var i = 0; i < candidatos.length; i++) {
-        if (!(await guardarContactoDePedido(candidatos[i]))) {
-          alert("No se pudo guardar un contacto, así que frené antes de borrar. (¿Corriste el SQL de contactos en Supabase?)");
+        if (!(await guardarContactoDePedido(candidatos[i], true))) {
+          alert("No se pudo guardar un contacto, así que frené antes de borrar. (¿Corriste el SQL de contactos en Supabase, incluido el 7-historial-contactos?)");
           return;
         }
       }
