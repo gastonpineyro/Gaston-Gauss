@@ -400,6 +400,44 @@
     if (r) r.doc.save(r.nombre);
   }
 
+  /* ---------------------- API para el resto del panel ---------------------- */
+
+  // Entrega estimada (7 a 10 días hábiles) desde una fecha AAAA-MM-DD.
+  function calcularEntrega(inicioISO) {
+    var inicio = fechaDeISO(inicioISO || hoyISO());
+    return {
+      desdeISO: aISO(sumarDiasHabiles(inicio, DIAS_MIN_PLANTILLAS)),
+      hastaISO: aISO(sumarDiasHabiles(inicio, DIAS_MAX_PLANTILLAS)),
+    };
+  }
+
+  // Datos del presupuesto actual para guardarlos como trabajo de plantillas
+  // (solo cuentan los productos marcados como "Plantilla").
+  function datosParaTrabajo() {
+    var items = leerItems().filter(function (it) {
+      return it.desc && it.plantilla;
+    });
+    if (items.length === 0) return { error: "Marcá al menos un producto como \"Plantilla\" (con su descripción) para guardarlo como trabajo." };
+    var inicioISO = $("ppInicio").value || hoyISO();
+    var entrega = calcularEntrega(inicioISO);
+    return {
+      nombre: $("ppNombre").value.trim() || null,
+      apellido: $("ppApellido").value.trim() || null,
+      dni: $("ppDni").value.trim() || null,
+      telefono: $("ppTelefono").value.trim() || null,
+      direccion: $("ppDireccion").value.trim() || null,
+      descripcion: items.map(function (it) { return it.cant + " × " + it.desc; }).join("; "),
+      total: Math.round(items.reduce(function (a, it) { return a + it.subtotal; }, 0)),
+      sena: Math.round(leerSena()),
+      fecha_inicio: inicioISO,
+      entrega_desde: entrega.desdeISO,
+      entrega_hasta: entrega.hastaISO,
+      notas: $("ppNotas").value.trim() || null,
+    };
+  }
+
+  window.GaussPresupuesto = { calcularEntrega: calcularEntrega, datosParaTrabajo: datosParaTrabajo };
+
   /* ---------------------- Inicio ---------------------- */
 
   function limpiar() {

@@ -44,6 +44,23 @@
     return varianteId === "magneto" && typeof productoIdPedido === "string" && productoIdPedido.indexOf("magneto-") === 0;
   }
 
+  // Pedidos "pendientes" con más de 24 hs sin atender (la promesa al cliente es confirmar en 24 hs).
+  var HORAS_PARA_RESPONDER = 24;
+
+  function horasDesde(iso) {
+    return (Date.now() - new Date(iso).getTime()) / 3600000;
+  }
+
+  function esSinResponder(p) {
+    return p.estado === "pendiente" && horasDesde(p.creado_en) >= HORAS_PARA_RESPONDER;
+  }
+
+  function textoHaceCuanto(iso) {
+    var h = Math.floor(horasDesde(iso));
+    if (h < 48) return "hace " + h + " hs";
+    return "hace " + Math.floor(h / 24) + " días";
+  }
+
   var ZONA_AR = "America/Argentina/Buenos_Aires";
 
   // Fecha y hora exactas (hora de Argentina) en que se hizo el pedido.
@@ -253,6 +270,7 @@
       await cargarStock();
       await cargarEquipos();
       await cargarContactos();
+      await cargarPlantillas();
     }
 
     async function cargarStock() {
@@ -448,7 +466,18 @@
         "</div>";
     }
 
+    function actualizarContadorSinResponder() {
+      var n = pedidosCache.filter(esSinResponder).length;
+      var badge = document.getElementById("contadorSinResponder");
+      if (badge) {
+        badge.textContent = n;
+        badge.classList.toggle("badge-tab-vacio", n === 0);
+      }
+      return n;
+    }
+
     function renderizarResumen() {
+      var sinResponder = actualizarContadorSinResponder();
       var hoy = new Date();
       var inicioMes = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0") + "-01";
       var hace30Dias = new Date(hoy.getTime() - 30 * 86400000).toISOString();
@@ -492,7 +521,18 @@
         return e.en_reparacion;
       }).length;
 
+      var trabajosAbiertos = plantillasCache.filter(function (t) {
+        return t.estado === "en_fabricacion" || t.estado === "lista";
+      });
+      var trabajosEnFab = trabajosAbiertos.filter(function (t) { return t.estado === "en_fabricacion"; }).length;
+      var trabajosListos = trabajosAbiertos.length - trabajosEnFab;
+      var trabajosAtrasados = trabajosAbiertos.filter(function (t) {
+        return t.estado === "en_fabricacion" && t.entrega_hasta && hoyLocalISO() > t.entrega_hasta;
+      }).length;
+
       var tarjetas = [
+        { titulo: "Sin responder +24 hs", valor: sinResponder, nota: sinResponder > 0 ? "pendientes que esperan tu respuesta" : "todo al día 🎉", tab: "pedidos", estado: "pendiente", alerta: sinResponder > 0 },
+        { titulo: "Plantillas en curso", valor: trabajosAbiertos.length, nota: trabajosEnFab + " en fabricación · " + trabajosListos + " listas" + (trabajosAtrasados ? " · " + trabajosAtrasados + " atrasadas" : ""), tab: "plantillas", alerta: trabajosAtrasados > 0 },
         { titulo: "Pedidos este mes", valor: pedidosDelMes.length, nota: ventasMes + " ventas · " + alquileresMes + " alquileres", tab: "pedidos" },
         { titulo: "Ventas del mes", valor: formatearPrecio(ventasDelMesMonto), nota: "sin contar los cancelados", tab: "pedidos" },
         { titulo: "Para facturar", valor: paraFacturar.length, nota: formatearPrecio(montoParaFacturar) + " sin facturar", tab: "facturar", alerta: paraFacturar.length > 0 },
@@ -560,6 +600,7 @@
     /* ---------------------- Tabla de pedidos ---------------------- */
 
     function renderizarTabla() {
+      actualizarContadorSinResponder();
       var estadoFiltro = selectFiltroEstado.value;
       var tipoFiltro = selectFiltroTipo.value;
       var busqueda = (buscadorPedidos.value || "").trim().toLowerCase();
@@ -585,7 +626,9 @@
 
       tablaCuerpo.innerHTML = filas
         .map(function (p) {
-          var fecha = fechaHoraPedido(p.creado_en);
+          var sinResponder = esSinResponder(p);
+          var fecha = fechaHoraPedido(p.creado_en) +
+            (sinResponder ? '<br><span class="etiqueta-sin-responder">⏰ Sin responder ' + textoHaceCuanto(p.creado_en) + "</span>" : "");
           var periodo =
             p.tipo === "alquiler"
               ? formatearFecha(p.fecha_desde) + " → " + formatearFecha(p.fecha_hasta)
@@ -643,7 +686,7 @@
           }
 
           return (
-            "<tr>" +
+            "<tr" + (sinResponder ? ' class="fila-sin-responder"' : "") + ">" +
             '<td data-label="Fecha">' + fecha + "</td>" +
             '<td data-label="Tipo"><span class="badge-tipo ' + badgeTipo + '">' + p.tipo + "</span></td>" +
             '<td data-label="Producto">' + p.producto_nombre + " x" + p.cantidad + "</td>" +
@@ -1888,12 +1931,13 @@
 
   async function descargarBackup() {
     var btn = document.getElementById("btnBackup");
-    var tablas = ["pedidos", "contactos", "equipos", "equipos_historial", "variantes_producto"];
+    var tablas = ["pedidos", "contactos", "equipos", "equipos_historial", "variantes_producto", "trabajos_plantillas"];
     var copia = { generado: new Date().toISOString(), tablas: {} };
     if (btn) { btn.disabled = true; btn.textContent = "Preparando..."; }
     try {
       for (var i = 0; i < tablas.length; i++) {
         var r = await leerTodas(tablas[i], [{ col: "id", asc: true }]);
+        if (r.error && tablas[i] === "trabajos_plantillas") { copia.tablas[tablas[i]] = []; continue; } // todavía no se creó la tabla: no es un error
         if (r.error) { copia.tablas[tablas[i]] = []; copia.avisos = (copia.avisos || []).concat(tablas[i] + ": " + r.error.message); }
         else copia.tablas[tablas[i]] = r.data || [];
       }
@@ -2675,6 +2719,301 @@
       document.getElementById(id).addEventListener("change", actualizarTotalNuevoPedido);
     });
 
+
+    /* ---------------------- Plantillas: seguimiento de trabajos ---------------------- */
+    var plantillasCache = [];
+    var listaPlantillas = document.getElementById("listaPlantillas");
+
+    var ETIQUETA_TRABAJO = {
+      en_fabricacion: "🛠 En fabricación",
+      lista: "✅ Lista para retirar",
+      entregada: "📦 Entregada",
+      cancelada: "✖ Cancelada",
+    };
+
+    async function cargarPlantillas() {
+      var resultado = await leerTodas("trabajos_plantillas", [{ col: "creado_en", asc: false }, { col: "id", asc: true }]);
+      if (resultado.error) {
+        plantillasCache = [];
+        listaPlantillas.innerHTML =
+          '<p class="texto-vacio-admin">No se pudieron cargar los trabajos: ' + escaparHtml(resultado.error.message) +
+          " (¿ya corriste el SQL 8-plantillas en Supabase?)</p>";
+        actualizarContadorPlantillas();
+        return;
+      }
+      plantillasCache = resultado.data;
+      renderizarPlantillas();
+    }
+
+    function actualizarContadorPlantillas() {
+      var abiertos = plantillasCache.filter(function (t) {
+        return t.estado === "en_fabricacion" || t.estado === "lista";
+      }).length;
+      var badge = document.getElementById("contadorPlantillas");
+      if (badge) {
+        badge.textContent = abiertos;
+        badge.classList.toggle("badge-tab-vacio", abiertos === 0);
+      }
+    }
+
+    function nombreTrabajo(t) {
+      return [t.nombre, t.apellido].filter(Boolean).join(" ") || "Sin nombre";
+    }
+
+    function renderizarPlantillas() {
+      actualizarContadorPlantillas();
+      var filtro = document.getElementById("filtroPlantillas").value;
+      var q = (document.getElementById("buscadorPlantillas").value || "").trim().toLowerCase();
+      var hoy = hoyLocalISO();
+
+      var lista = plantillasCache.filter(function (t) {
+        if (filtro === "abiertos" && t.estado !== "en_fabricacion" && t.estado !== "lista") return false;
+        if (filtro !== "abiertos" && filtro !== "todos" && t.estado !== filtro) return false;
+        if (q && [t.nombre, t.apellido, t.dni, t.telefono, t.descripcion].filter(Boolean).join(" ").toLowerCase().indexOf(q) === -1) return false;
+        return true;
+      });
+
+      if (lista.length === 0) {
+        listaPlantillas.innerHTML = '<p class="texto-vacio-admin">' +
+          (plantillasCache.length === 0 ? 'Todavía no cargaste trabajos. Tocá "Nuevo trabajo" o guardalos desde un presupuesto.' : "No hay trabajos con este filtro.") + "</p>";
+        return;
+      }
+
+      // Primero los que antes se tienen que entregar
+      lista.sort(function (a1, b1) {
+        return (a1.entrega_hasta || "9999").localeCompare(b1.entrega_hasta || "9999");
+      });
+
+      listaPlantillas.innerHTML = lista
+        .map(function (t) {
+          var saldo = Math.max((t.total || 0) - (t.sena || 0), 0);
+          var abierto = t.estado === "en_fabricacion" || t.estado === "lista";
+          var aviso = "";
+          if (t.estado === "en_fabricacion" && t.entrega_hasta && hoy > t.entrega_hasta) {
+            aviso = '<span class="etiqueta-sin-responder">⚠️ Pasó la fecha estimada de entrega</span>';
+          } else if (t.estado === "en_fabricacion" && t.entrega_desde && hoy >= t.entrega_desde) {
+            aviso = '<span class="text-warning fw-bold" style="font-size:12px;">📅 Ya puede estar lista</span>';
+          }
+          var botones = [];
+          if (t.estado === "en_fabricacion") {
+            botones.push('<button type="button" class="btn-accion-admin activar" data-accion="lista" data-id="' + t.id + '">✅ Lista para retirar</button>');
+          }
+          if (t.estado === "lista") {
+            botones.push(
+              t.telefono
+                ? '<button type="button" class="btn-accion-admin retiro" data-accion="avisar" data-id="' + t.id + '">📲 ' + (t.avisado_listo ? "Avisar de nuevo" : "Avisar por WhatsApp") + "</button>"
+                : ""
+            );
+            botones.push('<button type="button" class="btn-accion-admin activar" data-accion="entregada" data-id="' + t.id + '">📦 Marcar entregada</button>');
+          }
+          if (abierto && saldo > 0) {
+            botones.push('<button type="button" class="btn-accion-admin retiro" data-accion="pago" data-id="' + t.id + '">💵 Registrar pago</button>');
+          }
+          if (abierto) {
+            botones.push('<button type="button" class="btn-accion-admin baja" data-accion="cancelar" data-id="' + t.id + '">Cancelar trabajo</button>');
+          }
+          botones.push('<button type="button" class="btn-accion-admin baja" data-accion="borrar" data-id="' + t.id + '">🗑 Borrar</button>');
+
+          return (
+            '<div class="tarjeta-trabajo estado-trabajo-' + t.estado + '">' +
+            '<div class="d-flex flex-wrap justify-content-between gap-2">' +
+            "<div><strong>" + escaparHtml(nombreTrabajo(t)) + "</strong>" +
+            (t.dni ? " · DNI " + escaparHtml(t.dni) : "") + (t.telefono ? " · " + escaparHtml(t.telefono) : "") + "</div>" +
+            '<span class="estado-trabajo">' + ETIQUETA_TRABAJO[t.estado] + (t.estado === "lista" && t.avisado_listo ? " · avisado" : "") + "</span></div>" +
+            '<div class="mt-1">' + escaparHtml(t.descripcion) + "</div>" +
+            (t.notas ? '<div class="text-muted" style="font-size:12px;">' + escaparHtml(t.notas) + "</div>" : "") +
+            '<div class="datos-trabajo">' +
+            "<div><small>Total</small><br><strong>" + formatearPrecio(t.total) + "</strong></div>" +
+            "<div><small>Seña</small><br><strong>" + formatearPrecio(t.sena) + "</strong></div>" +
+            "<div><small>Falta abonar</small><br><strong" + (saldo > 0 && abierto ? ' class="text-danger"' : "") + ">" + formatearPrecio(saldo) + "</strong></div>" +
+            "<div><small>Entrega estimada</small><br><strong>" +
+            (t.entrega_desde ? formatearFecha(t.entrega_desde) + " → " + formatearFecha(t.entrega_hasta) : "-") + "</strong></div></div>" +
+            (aviso ? "<div class='mt-1'>" + aviso + "</div>" : "") +
+            '<div class="acciones-fila-admin mt-2">' + botones.join("") + "</div></div>"
+          );
+        })
+        .join("");
+    }
+
+    async function actualizarTrabajo(id, cambios) {
+      var r = await db.from("trabajos_plantillas").update(cambios).eq("id", id).select();
+      if (r.error || !r.data || r.data.length === 0) {
+        alert("No se pudo guardar el cambio" + (r.error ? ": " + r.error.message : " (¿venció la sesión?)."));
+        return false;
+      }
+      var t = plantillasCache.find(function (x) {
+        return x.id === id;
+      });
+      if (t) Object.assign(t, cambios);
+      renderizarPlantillas();
+      renderizarResumen();
+      return true;
+    }
+
+    async function accionTrabajo(accion, id) {
+      var t = plantillasCache.find(function (x) {
+        return x.id === id;
+      });
+      if (!t) return;
+      var saldo = Math.max((t.total || 0) - (t.sena || 0), 0);
+
+      if (accion === "lista") {
+        await actualizarTrabajo(id, { estado: "lista" });
+      } else if (accion === "avisar") {
+        var msg =
+          "Hola " + (t.nombre || "") + "! Tus plantillas ya están listas para retirar en Gauss Ortopedia (27 de febrero 1724, Rosario). " +
+          "Horarios: Lunes a Viernes de 9:30 a 13 hs. y de 15 a 18 hs, Sábados 9:30 a 13 hs. " +
+          (saldo > 0 ? "Saldo a abonar: " + formatearPrecio(saldo) + ". " : "") + "¡Te esperamos!";
+        window.open(linkWhatsApp(t.telefono, msg), "_blank");
+        await actualizarTrabajo(id, { avisado_listo: true });
+      } else if (accion === "pago") {
+        var resp = window.prompt("Falta abonar " + formatearPrecio(saldo) + ".\n¿Cuánto pagó ahora? ($)", String(saldo));
+        if (resp === null) return;
+        var monto = parseInt(String(resp).replace(/\D/g, ""), 10);
+        if (isNaN(monto) || monto <= 0) {
+          alert("El monto no es válido.");
+          return;
+        }
+        await actualizarTrabajo(id, { sena: Math.min((t.sena || 0) + monto, t.total || 0) });
+      } else if (accion === "entregada") {
+        var cambios = { estado: "entregada", entregada_en: new Date().toISOString() };
+        if (saldo > 0) {
+          if (!confirm("Todavía falta abonar " + formatearPrecio(saldo) + ".\n\nAceptar = lo cobraste ahora y se marca como entregada y pagada.\nCancelar = no marcar como entregada.")) return;
+          cambios.sena = t.total;
+        }
+        await actualizarTrabajo(id, cambios);
+      } else if (accion === "cancelar") {
+        if (!confirm("¿Cancelar el trabajo de " + nombreTrabajo(t) + "?")) return;
+        await actualizarTrabajo(id, { estado: "cancelada" });
+      } else if (accion === "borrar") {
+        if (!confirm("¿Borrar el trabajo de " + nombreTrabajo(t) + "? No se puede deshacer.")) return;
+        var rb = await db.from("trabajos_plantillas").delete().eq("id", id).select();
+        if (rb.error || !rb.data || rb.data.length === 0) {
+          alert("No se pudo borrar" + (rb.error ? ": " + rb.error.message : "."));
+          return;
+        }
+        plantillasCache = plantillasCache.filter(function (x) {
+          return x.id !== id;
+        });
+        renderizarPlantillas();
+        renderizarResumen();
+      }
+    }
+
+    // Crea un trabajo (desde el formulario de la pestaña o desde un presupuesto)
+    async function crearTrabajo(datos) {
+      datos.estado = datos.estado || "en_fabricacion";
+      var r = await db.from("trabajos_plantillas").insert(datos).select();
+      if (r.error || !r.data || r.data.length === 0) {
+        return { ok: false, motivo: r.error ? r.error.message : "no se guardó ningún dato (¿venció la sesión?)." };
+      }
+      plantillasCache.unshift(r.data[0]);
+      try {
+        await guardarContactoDePedido(datos);
+      } catch (e) {
+        /* el contacto es un extra: si falla, el trabajo igual quedó guardado */
+      }
+      renderizarPlantillas();
+      renderizarResumen();
+      return { ok: true };
+    }
+
+    function recalcularEntregaNuevoTrabajo() {
+      var ini = document.getElementById("ntInicio").value;
+      var e = window.GaussPresupuesto ? window.GaussPresupuesto.calcularEntrega(ini) : null;
+      document.getElementById("ntEntrega").textContent = e ? "Entrega estimada: " + formatearFecha(e.desdeISO) + " al " + formatearFecha(e.hastaISO) : "";
+    }
+
+    function abrirNuevoTrabajo() {
+      ["ntNombre", "ntApellido", "ntDni", "ntTelefono", "ntDescripcion", "ntTotal", "ntSena", "ntNotas"].forEach(function (id) {
+        document.getElementById(id).value = "";
+      });
+      document.getElementById("ntInicio").value = hoyLocalISO();
+      document.getElementById("ntAviso").classList.add("d-none");
+      recalcularEntregaNuevoTrabajo();
+      document.getElementById("panelNuevoTrabajo").classList.remove("d-none");
+      document.getElementById("ntNombre").focus();
+    }
+
+    async function guardarNuevoTrabajo() {
+      var aviso = document.getElementById("ntAviso");
+      function error(m) {
+        aviso.textContent = m;
+        aviso.classList.remove("d-none");
+      }
+      var nombre = document.getElementById("ntNombre").value.trim();
+      var descripcion = document.getElementById("ntDescripcion").value.trim();
+      var total = parseInt(document.getElementById("ntTotal").value, 10);
+      var sena = parseInt(document.getElementById("ntSena").value, 10) || 0;
+      if (!nombre) return error("Completá el nombre.");
+      if (!descripcion) return error("Completá la descripción del trabajo.");
+      if (isNaN(total) || total < 0) return error("Completá el total.");
+      if (sena < 0 || sena > total) return error("La seña no puede ser mayor que el total.");
+      var inicio = document.getElementById("ntInicio").value || hoyLocalISO();
+      var e = window.GaussPresupuesto.calcularEntrega(inicio);
+      var res = await crearTrabajo({
+        nombre: nombre,
+        apellido: document.getElementById("ntApellido").value.trim() || null,
+        dni: document.getElementById("ntDni").value.trim() || null,
+        telefono: document.getElementById("ntTelefono").value.trim() || null,
+        descripcion: descripcion,
+        total: total,
+        sena: sena,
+        fecha_inicio: inicio,
+        entrega_desde: e.desdeISO,
+        entrega_hasta: e.hastaISO,
+        notas: document.getElementById("ntNotas").value.trim() || null,
+      });
+      if (!res.ok) return error("No se pudo guardar: " + res.motivo);
+      document.getElementById("panelNuevoTrabajo").classList.add("d-none");
+    }
+
+    async function guardarPresupuestoComoTrabajo() {
+      var aviso = document.getElementById("ppAviso");
+      var ok = document.getElementById("ppOk");
+      aviso.classList.add("d-none");
+      ok.classList.add("d-none");
+      var datos = window.GaussPresupuesto.datosParaTrabajo();
+      if (datos.error) {
+        aviso.textContent = datos.error;
+        aviso.classList.remove("d-none");
+        return;
+      }
+      if (!datos.nombre) {
+        aviso.textContent = "Completá el nombre del cliente para guardar el trabajo.";
+        aviso.classList.remove("d-none");
+        return;
+      }
+      if (datos.sena > datos.total) {
+        aviso.textContent = "La seña es mayor que el total de las plantillas del presupuesto.";
+        aviso.classList.remove("d-none");
+        return;
+      }
+      var res = await crearTrabajo(datos);
+      if (!res.ok) {
+        aviso.textContent = "No se pudo guardar el trabajo: " + res.motivo + " (¿corriste el SQL 8-plantillas?)";
+        aviso.classList.remove("d-none");
+        return;
+      }
+      ok.textContent = "✓ Trabajo guardado. Lo ves en la pestaña Plantillas.";
+      ok.classList.remove("d-none");
+      irATab("plantillas");
+    }
+
+    document.getElementById("btnNuevoTrabajo").addEventListener("click", abrirNuevoTrabajo);
+    document.getElementById("btnCancelarTrabajo").addEventListener("click", function () {
+      document.getElementById("panelNuevoTrabajo").classList.add("d-none");
+    });
+    document.getElementById("btnGuardarTrabajo").addEventListener("click", guardarNuevoTrabajo);
+    document.getElementById("ntInicio").addEventListener("change", recalcularEntregaNuevoTrabajo);
+    document.getElementById("filtroPlantillas").addEventListener("change", renderizarPlantillas);
+    document.getElementById("buscadorPlantillas").addEventListener("input", renderizarPlantillas);
+    document.getElementById("ppGuardarTrabajo").addEventListener("click", guardarPresupuestoComoTrabajo);
+    listaPlantillas.addEventListener("click", function (evento) {
+      var accion = evento.target.getAttribute("data-accion");
+      var id = evento.target.getAttribute("data-id");
+      if (accion && id) accionTrabajo(accion, id);
+    });
 
     tablaCuerpo.addEventListener("change", async function (evento) {
       if (evento.target.classList.contains("selector-duracion")) {

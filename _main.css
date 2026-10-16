@@ -1975,3 +1975,41 @@ svg {
     text-align: left;
   }
 }
+
+/* --- PEDIDOS SIN RESPONDER (+24 hs) --- */
+.fila-sin-responder > td {
+  background: #fff4f5 !important;
+}
+.fila-sin-responder > td:first-child {
+  box-shadow: inset 4px 0 0 #D04F5E;
+}
+.etiqueta-sin-responder {
+  color: #D04F5E;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* --- PLANTILLAS: trabajos --- */
+.tarjeta-trabajo {
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-left: 4px solid #738A9B;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.tarjeta-trabajo.estado-trabajo-lista { border-left-color: #3d8b57; }
+.tarjeta-trabajo.estado-trabajo-entregada { border-left-color: #adb5bd; opacity: 0.85; }
+.tarjeta-trabajo.estado-trabajo-cancelada { border-left-color: #D04F5E; opacity: 0.7; }
+.estado-trabajo { font-size: 13px; font-weight: 600; color: #738A9B; }
+.datos-trabajo {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+.datos-trabajo small { color: #6c757d; }
+@media (max-width: 767.98px) {
+  .datos-trabajo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

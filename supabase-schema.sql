@@ -361,3 +361,31 @@ delete from variantes_producto where id like 'magneto-%';
 
 -- Guarda en cada contacto el historial de alquileres de pedidos ya borrados.
 alter table contactos add column if not exists historial jsonb not null default '[]'::jsonb;
+-- Seguimiento de trabajos de plantillas (sena, saldo, fecha de entrega y estado).
+create table if not exists trabajos_plantillas (
+  id uuid primary key default gen_random_uuid(),
+  creado_en timestamptz not null default now(),
+  nombre text,
+  apellido text,
+  dni text,
+  telefono text,
+  direccion text,
+  descripcion text not null,
+  total integer not null default 0,
+  sena integer not null default 0,
+  fecha_inicio date,
+  entrega_desde date,
+  entrega_hasta date,
+  estado text not null default 'en_fabricacion'
+    check (estado in ('en_fabricacion', 'lista', 'entregada', 'cancelada')),
+  avisado_listo boolean not null default false,
+  entregada_en timestamptz,
+  notas text
+);
+
+alter table trabajos_plantillas enable row level security;
+
+drop policy if exists "trabajos_plantillas_admin" on trabajos_plantillas;
+create policy "trabajos_plantillas_admin"
+  on trabajos_plantillas for all to authenticated
+  using (true) with check (true);

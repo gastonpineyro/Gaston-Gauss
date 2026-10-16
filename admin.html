@@ -55,7 +55,7 @@
         <div class="container-fluid py-4 px-4">
             <div class="tabs-admin mb-4">
                 <button type="button" class="tab-admin activo" data-tab="resumen">Resumen</button>
-                <button type="button" class="tab-admin" data-tab="pedidos">Pedidos</button>
+                <button type="button" class="tab-admin" data-tab="pedidos">Pedidos <span class="badge-tab badge-tab-vacio" id="contadorSinResponder" title="Pendientes con más de 24 hs sin atender">0</span></button>
                 <button type="button" class="tab-admin" data-tab="activos">
                     Activos <span class="badge-tab" id="contadorActivos">0</span>
                 </button>
@@ -76,6 +76,9 @@
                 </button>
                 <button type="button" class="tab-admin" data-tab="contactos">
                     Contactos <span class="badge-tab badge-tab-vacio" id="contadorContactos">0</span>
+                </button>
+                <button type="button" class="tab-admin" data-tab="plantillas">
+                    Plantillas <span class="badge-tab badge-tab-vacio" id="contadorPlantillas">0</span>
                 </button>
                 <button type="button" class="tab-admin" data-tab="presupuesto">
                     Presupuesto
@@ -350,6 +353,57 @@
             </div>
 
             <!-- PARA FACTURAR -->
+            <!-- PLANTILLAS (seguimiento de trabajos) -->
+            <div class="panel-tab-admin d-none" id="tabPlantillas">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Seguimiento de los trabajos de plantillas: seña, saldo, fecha estimada de entrega y estado.
+                    Podés crearlos desde acá o con "Guardar como trabajo" en la pestaña Presupuesto.
+                </p>
+                <div class="d-flex flex-wrap gap-3 align-items-end mb-3">
+                    <div>
+                        <label class="etiqueta-campo-alquiler" for="buscadorPlantillas">Buscar</label>
+                        <input type="text" class="form-control form-control-sm campo-alquiler" id="buscadorPlantillas" placeholder="Nombre, DNI, teléfono..." style="min-width:220px;">
+                    </div>
+                    <div>
+                        <label class="etiqueta-campo-alquiler" for="filtroPlantillas">Mostrar</label>
+                        <select class="form-select form-select-sm campo-alquiler" id="filtroPlantillas">
+                            <option value="abiertos">En fabricación y listas</option>
+                            <option value="en_fabricacion">Solo en fabricación</option>
+                            <option value="lista">Solo listas para retirar</option>
+                            <option value="entregada">Entregadas</option>
+                            <option value="cancelada">Canceladas</option>
+                            <option value="todos">Todas</option>
+                        </select>
+                    </div>
+                    <div class="ms-auto">
+                        <button type="button" class="btn-accion-admin activar" id="btnNuevoTrabajo">➕ Nuevo trabajo</button>
+                    </div>
+                </div>
+
+                <div class="tarjeta-formulario-reserva d-none mb-4" id="panelNuevoTrabajo">
+                    <h6 class="mb-3">Nuevo trabajo de plantillas</h6>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ntNombre">Nombre</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ntNombre"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ntApellido">Apellido</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ntApellido"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ntDni">DNI</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ntDni"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ntTelefono">Teléfono</label><input type="tel" class="form-control form-control-sm campo-alquiler" id="ntTelefono"></div>
+                        <div class="col-12"><label class="etiqueta-campo-alquiler" for="ntDescripcion">Descripción del trabajo</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ntDescripcion" placeholder="Ej: Plantillas ortopédicas (par) pie plano"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ntTotal">Total ($)</label><input type="number" min="0" class="form-control form-control-sm campo-alquiler" id="ntTotal"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ntSena">Seña abonada ($)</label><input type="number" min="0" class="form-control form-control-sm campo-alquiler" id="ntSena" placeholder="0"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ntInicio">Los 7 a 10 días hábiles cuentan desde</label><input type="date" class="form-control form-control-sm campo-alquiler" id="ntInicio"></div>
+                        <div class="col-6 col-md-3 d-flex align-items-end"><span class="text-secondary" id="ntEntrega" style="font-size:13px;"></span></div>
+                        <div class="col-12"><label class="etiqueta-campo-alquiler" for="ntNotas">Notas (opcional)</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ntNotas"></div>
+                    </div>
+                    <p class="text-danger d-none mt-2 mb-0" id="ntAviso" style="font-size:13px;"></p>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" class="btn-accion-admin activar" id="btnGuardarTrabajo">Guardar trabajo</button>
+                        <button type="button" class="btn-accion-admin baja" id="btnCancelarTrabajo">Cancelar</button>
+                    </div>
+                </div>
+
+                <div id="listaPlantillas"></div>
+            </div>
+
             <!-- PRESUPUESTO -->
             <div class="panel-tab-admin d-none" id="tabPresupuesto">
                 <p class="text-secondary mb-3" style="font-size:13px;">
@@ -399,8 +453,10 @@
                 </div>
 
                 <p class="text-danger d-none" id="ppAviso" style="font-size:13px;"></p>
+                <p class="text-success d-none" id="ppOk" style="font-size:13px;"></p>
                 <div class="d-flex gap-2 flex-wrap">
                     <button type="button" class="btn-accion-admin activar" id="ppDescargar">📄 Descargar PDF</button>
+                    <button type="button" class="btn-accion-admin retiro" id="ppGuardarTrabajo">🦶 Guardar como trabajo de plantillas</button>
                     <button type="button" class="btn-accion-admin baja" id="ppLimpiar">Limpiar</button>
                 </div>
             </div>
