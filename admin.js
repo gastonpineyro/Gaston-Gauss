@@ -213,9 +213,27 @@
 
     /* ---------------------- Carga de datos ---------------------- */
 
+    // Supabase devuelve como máximo 1000 filas por consulta. Para que el panel
+    // siga mostrando TODO aunque haya miles de pedidos, se lee de a tandas.
+    async function leerTodas(tabla, orden) {
+      var todas = [];
+      var paso = 1000;
+      for (var desde = 0; ; desde += paso) {
+        var consulta = db.from(tabla).select("*");
+        (orden || []).forEach(function (o) {
+          consulta = consulta.order(o.col, { ascending: !!o.asc });
+        });
+        var r = await consulta.range(desde, desde + paso - 1);
+        if (r.error) return { data: null, error: r.error };
+        todas = todas.concat(r.data || []);
+        if (!r.data || r.data.length < paso) break;
+      }
+      return { data: todas, error: null };
+    }
+
     async function cargarPedidos() {
       tablaCuerpo.innerHTML = '<tr><td colspan="11" class="text-center py-4">Cargando pedidos...</td></tr>';
-      var resultado = await db.from("pedidos").select("*").order("creado_en", { ascending: false });
+      var resultado = await leerTodas("pedidos", [{ col: "creado_en", asc: false }, { col: "id", asc: true }]);
 
       if (resultado.error) {
         tablaCuerpo.innerHTML =
@@ -1390,7 +1408,7 @@
     }
 
     async function cargarEquipos() {
-      var resultado = await db.from("equipos").select("*").order("id");
+      var resultado = await leerTodas("equipos", [{ col: "id", asc: true }]);
       if (resultado.error) {
         listaEquipos.innerHTML =
           '<p class="texto-vacio-admin">No se pudieron cargar los equipos: ' +
@@ -1875,7 +1893,7 @@
     if (btn) { btn.disabled = true; btn.textContent = "Preparando..."; }
     try {
       for (var i = 0; i < tablas.length; i++) {
-        var r = await db.from(tablas[i]).select("*");
+        var r = await leerTodas(tablas[i], [{ col: "id", asc: true }]);
         if (r.error) { copia.tablas[tablas[i]] = []; copia.avisos = (copia.avisos || []).concat(tablas[i] + ": " + r.error.message); }
         else copia.tablas[tablas[i]] = r.data || [];
       }
@@ -1895,7 +1913,7 @@
   }
 
   async function cargarContactos() {
-      var resultado = await db.from("contactos").select("*").order("nombre");
+      var resultado = await leerTodas("contactos", [{ col: "nombre", asc: true }, { col: "id", asc: true }]);
       if (resultado.error) {
         listaContactos.innerHTML =
           '<p class="texto-vacio-admin">No se pudieron cargar los contactos: ' + escaparHtml(resultado.error.message) +
