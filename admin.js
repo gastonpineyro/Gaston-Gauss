@@ -2019,6 +2019,8 @@
                   : "<strong>" + res.total + (res.total === 1 ? " vez" : " veces") + "</strong><br><small class='text-muted'>" + escaparHtml(res.detalle.join(" · ")) + "</small>";
               })() + "</td>" +
               '<td data-label="Acciones"><div class="acciones-fila-admin">' + wa +
+              '<button type="button" class="btn-accion-admin retiro btn-pedido-contacto" data-contacto="' + c.id + '">➕ Nuevo pedido</button> ' +
+              '<button type="button" class="btn-accion-admin activar btn-editar-contacto" data-contacto="' + c.id + '">✏️ Editar</button> ' +
               '<button type="button" class="btn-accion-admin baja btn-borrar-contacto" data-contacto="' + c.id + '">Eliminar</button></div></td></tr>'
             );
           })
@@ -2426,6 +2428,8 @@
       listaContactos.addEventListener("click", function (evento) {
         var id = evento.target.getAttribute("data-contacto");
         if (id && evento.target.classList.contains("btn-borrar-contacto")) eliminarContacto(id);
+        if (id && evento.target.classList.contains("btn-editar-contacto")) abrirEditarContacto(id);
+        if (id && evento.target.classList.contains("btn-pedido-contacto")) nuevoPedidoDeContacto(id);
       });
     }
 
@@ -2509,7 +2513,67 @@
       document.getElementById("npCajaDuracion").classList.toggle("d-none", document.getElementById("npTipo").value !== "alquiler");
     }
 
-    function abrirNuevoPedido() {
+    var contactoEnEdicion = null;
+
+    function abrirEditarContacto(id) {
+      var c = contactosCache.find(function (x) {
+        return x.id === id;
+      });
+      if (!c) return;
+      contactoEnEdicion = id;
+      document.getElementById("ecNombre").value = c.nombre || "";
+      document.getElementById("ecApellido").value = c.apellido || "";
+      document.getElementById("ecDni").value = c.dni || "";
+      document.getElementById("ecTelefono").value = c.telefono || "";
+      document.getElementById("ecDireccion").value = c.direccion || "";
+      document.getElementById("ecAviso").classList.add("d-none");
+      var panel = document.getElementById("panelEditarContacto");
+      panel.classList.remove("d-none");
+      panel.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.getElementById("ecNombre").focus();
+    }
+
+    async function guardarContactoEditado() {
+      var aviso = document.getElementById("ecAviso");
+      var c = contactosCache.find(function (x) {
+        return x.id === contactoEnEdicion;
+      });
+      if (!c) return;
+      var datos = {
+        nombre: document.getElementById("ecNombre").value.trim() || null,
+        apellido: document.getElementById("ecApellido").value.trim() || null,
+        dni: document.getElementById("ecDni").value.trim() || null,
+        telefono: document.getElementById("ecTelefono").value.trim() || null,
+        direccion: document.getElementById("ecDireccion").value.trim() || null,
+      };
+      if (!datos.nombre) {
+        aviso.textContent = "El nombre no puede quedar vacío.";
+        aviso.classList.remove("d-none");
+        return;
+      }
+      var r = await db.from("contactos").update(datos).eq("id", c.id).select();
+      if (r.error || !r.data || r.data.length === 0) {
+        aviso.textContent = "No se pudo guardar: " + (r.error ? r.error.message : "no se guardó ningún dato (¿la sesión venció?).");
+        aviso.classList.remove("d-none");
+        return;
+      }
+      Object.assign(c, datos);
+      document.getElementById("panelEditarContacto").classList.add("d-none");
+      contactoEnEdicion = null;
+      renderizarContactos();
+    }
+
+    function nuevoPedidoDeContacto(id) {
+      var c = contactosCache.find(function (x) {
+        return x.id === id;
+      });
+      if (!c) return;
+      irATab("pedidos");
+      abrirNuevoPedido(c);
+      document.getElementById("panelNuevoPedido").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function abrirNuevoPedido(contacto) {
       var sel = document.getElementById("npProducto");
       opcionesNuevoPedido = [];
       variantesCache.forEach(function (v) {
@@ -2529,6 +2593,13 @@
       ["npNombre", "npApellido", "npTelefono", "npDni", "npDireccion", "npLesion"].forEach(function (id) {
         document.getElementById(id).value = "";
       });
+      if (contacto) {
+        document.getElementById("npNombre").value = contacto.nombre || "";
+        document.getElementById("npApellido").value = contacto.apellido || "";
+        document.getElementById("npTelefono").value = contacto.telefono || "";
+        document.getElementById("npDni").value = contacto.dni || "";
+        document.getElementById("npDireccion").value = contacto.direccion || "";
+      }
       document.getElementById("npCantidad").value = 1;
       document.getElementById("npTipo").value = "alquiler";
       document.getElementById("npDuracion").value = "30";
@@ -2588,7 +2659,14 @@
       await cargarPedidos();
     }
 
-    document.getElementById("btnNuevoPedido").addEventListener("click", abrirNuevoPedido);
+    document.getElementById("btnNuevoPedido").addEventListener("click", function () {
+      abrirNuevoPedido();
+    });
+    document.getElementById("btnGuardarContacto").addEventListener("click", guardarContactoEditado);
+    document.getElementById("btnCancelarContacto").addEventListener("click", function () {
+      document.getElementById("panelEditarContacto").classList.add("d-none");
+      contactoEnEdicion = null;
+    });
     document.getElementById("btnCancelarNuevoPedido").addEventListener("click", function () {
       document.getElementById("panelNuevoPedido").classList.add("d-none");
     });

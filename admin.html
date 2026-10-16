@@ -331,6 +331,21 @@
                         <button type="button" class="btn-accion-admin activar" id="btnExportarContactos">⬇️ Exportar CSV</button>
                     </div>
                 </div>
+                <div class="tarjeta-formulario-reserva d-none mb-3" id="panelEditarContacto">
+                    <h6 class="mb-3">Editar contacto</h6>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ecNombre">Nombre</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ecNombre"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ecApellido">Apellido</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ecApellido"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ecDni">DNI</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ecDni"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ecTelefono">Teléfono</label><input type="tel" class="form-control form-control-sm campo-alquiler" id="ecTelefono"></div>
+                        <div class="col-12"><label class="etiqueta-campo-alquiler" for="ecDireccion">Dirección</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ecDireccion"></div>
+                    </div>
+                    <p class="text-danger d-none mt-2 mb-0" id="ecAviso" style="font-size:13px;"></p>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="button" class="btn-accion-admin activar" id="btnGuardarContacto">Guardar cambios</button>
+                        <button type="button" class="btn-accion-admin baja" id="btnCancelarContacto">Cancelar</button>
+                    </div>
+                </div>
                 <div id="listaContactos"></div>
             </div>
 
