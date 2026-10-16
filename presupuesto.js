@@ -210,19 +210,19 @@
     var gris = [90, 98, 106];
     var y = 20;
 
-    // Encabezado
+    // Encabezado: mismo logo que la página (GAUSS rojo en negrita y ORTOPEDIA gris azulado con letras separadas)
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
+    doc.setFontSize(25);
     doc.setTextColor(rojo[0], rojo[1], rojo[2]);
     doc.text("GAUSS", M, y);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(13);
-    doc.setTextColor(60, 60, 60);
-    doc.text("Ortopedia", M + 28, y);
+    doc.setFontSize(10.5);
+    doc.setTextColor(115, 138, 155);
+    doc.text("ORTOPEDIA", M + 0.3, y + 5.6, { charSpace: 1.1 });
     doc.setFontSize(8.5);
     doc.setTextColor(gris[0], gris[1], gris[2]);
-    doc.text(DATOS_LOCAL.direccion + " · Tel. " + DATOS_LOCAL.telefono, M, y + 6);
-    doc.text(DATOS_LOCAL.horarios, M, y + 10.5);
+    doc.text(DATOS_LOCAL.direccion + " · Tel. " + DATOS_LOCAL.telefono, M, y + 12);
+    doc.text(DATOS_LOCAL.horarios, M, y + 16.5);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
@@ -236,7 +236,7 @@
     var validez = parseInt($("ppValidez").value, 10);
     if (validez > 0) doc.text("Válido por " + validez + " días (hasta el " + formatearFecha(sumarDias(fechaPres, validez)) + ")", W - M, y + 10.5, { align: "right" });
 
-    y += 17;
+    y += 23;
     doc.setDrawColor(rojo[0], rojo[1], rojo[2]);
     doc.setLineWidth(0.7);
     doc.line(M, y, W - M, y);
