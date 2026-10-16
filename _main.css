@@ -1933,3 +1933,45 @@ svg {
   font-size: 13px;
   padding: 8px 14px;
 }
+
+/* --- PRESUPUESTO (admin) --- */
+.fila-item-presupuesto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 130px 95px 105px 36px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.fila-item-encabezado {
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 4px;
+}
+.pp-plantilla {
+  font-size: 12px;
+  color: #6c757d;
+  white-space: nowrap;
+}
+.pp-subtotal {
+  text-align: right;
+  font-weight: 600;
+  font-size: 14px;
+}
+@media (max-width: 767.98px) {
+  .fila-item-encabezado {
+    display: none;
+  }
+  .fila-item-presupuesto {
+    grid-template-columns: 1fr 1fr;
+    padding: 10px;
+    border: 1px solid #e3e6ea;
+    border-radius: 10px;
+    background: #fff;
+  }
+  .fila-item-presupuesto .pp-desc {
+    grid-column: 1 / -1;
+  }
+  .fila-item-presupuesto .pp-subtotal {
+    text-align: left;
+  }
+}

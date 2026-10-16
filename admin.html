@@ -77,6 +77,9 @@
                 <button type="button" class="tab-admin" data-tab="contactos">
                     Contactos <span class="badge-tab badge-tab-vacio" id="contadorContactos">0</span>
                 </button>
+                <button type="button" class="tab-admin" data-tab="presupuesto">
+                    Presupuesto
+                </button>
                 <button type="button" class="tab-admin" data-tab="facturar">
                     Para facturar <span class="badge-tab" id="contadorFacturar">0</span>
                 </button>
@@ -332,6 +335,51 @@
             </div>
 
             <!-- PARA FACTURAR -->
+            <!-- PRESUPUESTO -->
+            <div class="panel-tab-admin d-none" id="tabPresupuesto">
+                <p class="text-secondary mb-3" style="font-size:13px;">
+                    Completá los datos y descargá el presupuesto en PDF. Si hay plantillas, se calcula la fecha
+                    estimada de entrega (7 a 10 días hábiles, sin contar sábados, domingos ni feriados).
+                </p>
+                <div class="tarjeta-formulario-reserva mb-3">
+                    <h6 class="mb-3">Cliente</h6>
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ppNombre">Nombre</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ppNombre"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ppApellido">Apellido</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ppApellido"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ppDni">DNI</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ppDni"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ppTelefono">Teléfono</label><input type="tel" class="form-control form-control-sm campo-alquiler" id="ppTelefono"></div>
+                        <div class="col-12"><label class="etiqueta-campo-alquiler" for="ppDireccion">Dirección (opcional)</label><input type="text" class="form-control form-control-sm campo-alquiler" id="ppDireccion"></div>
+                    </div>
+                </div>
+
+                <div class="tarjeta-formulario-reserva mb-3">
+                    <h6 class="mb-3">Productos</h6>
+                    <div class="fila-item-presupuesto fila-item-encabezado">
+                        <span>Producto o servicio</span><span>Cant.</span><span>Precio unit. ($)</span><span></span><span class="text-end">Subtotal</span><span></span>
+                    </div>
+                    <div id="ppItems"></div>
+                    <datalist id="ppSugerencias"></datalist>
+                    <button type="button" class="btn-accion-admin activar mt-2" id="ppAgregarItem">➕ Agregar otro producto</button>
+                    <div class="text-end mt-3" style="font-size:18px;"><strong>Total: <span id="ppTotal">$ 0</span></strong></div>
+                    <div class="alert alert-light border mt-3 d-none" id="ppEntrega" style="font-size:14px;"></div>
+                </div>
+
+                <div class="tarjeta-formulario-reserva mb-3">
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ppFecha">Fecha del presupuesto</label><input type="date" class="form-control form-control-sm campo-alquiler" id="ppFecha"></div>
+                        <div class="col-6 col-md-3"><label class="etiqueta-campo-alquiler" for="ppValidez">Válido por (días)</label><input type="number" min="0" class="form-control form-control-sm campo-alquiler" id="ppValidez" value="7"></div>
+                        <div class="col-12 col-md-6 d-none" id="ppInicioCaja"><label class="etiqueta-campo-alquiler" for="ppInicio">Los días hábiles de las plantillas cuentan desde</label><input type="date" class="form-control form-control-sm campo-alquiler" id="ppInicio"></div>
+                        <div class="col-12"><label class="etiqueta-campo-alquiler" for="ppNotas">Observaciones (opcional)</label><textarea class="form-control form-control-sm campo-alquiler" id="ppNotas" rows="2"></textarea></div>
+                    </div>
+                </div>
+
+                <p class="text-danger d-none" id="ppAviso" style="font-size:13px;"></p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn-accion-admin activar" id="ppDescargar">📄 Descargar PDF</button>
+                    <button type="button" class="btn-accion-admin baja" id="ppLimpiar">Limpiar</button>
+                </div>
+            </div>
+
             <div class="panel-tab-admin d-none" id="tabFacturar">
                 <p class="text-secondary mb-3" style="font-size:13px;">
                     Marcá "Para facturar" en cada pedido de la pestaña Pedidos para que aparezca acá. Cuando tengas
@@ -354,9 +402,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="db.js"></script>
     <script src="admin.js" defer></script>
+    <script src="presupuesto.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>
