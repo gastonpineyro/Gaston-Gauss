@@ -529,10 +529,11 @@
       var trabajosAtrasados = trabajosAbiertos.filter(function (t) {
         return t.estado === "en_fabricacion" && t.entrega_hasta && hoyLocalISO() > t.entrega_hasta;
       }).length;
+      var trabajosPorVencer = trabajosAbiertos.filter(entregaPorVencer).length;
 
       var tarjetas = [
         { titulo: "Sin responder +24 hs", valor: sinResponder, nota: sinResponder > 0 ? "pendientes que esperan tu respuesta" : "todo al día 🎉", tab: "pedidos", estado: "pendiente", alerta: sinResponder > 0 },
-        { titulo: "Plantillas en curso", valor: trabajosAbiertos.length, nota: trabajosEnFab + " en fabricación · " + trabajosListos + " listas" + (trabajosAtrasados ? " · " + trabajosAtrasados + " atrasadas" : ""), tab: "plantillas", alerta: trabajosAtrasados > 0 },
+        { titulo: "Plantillas en curso", valor: trabajosAbiertos.length, nota: trabajosEnFab + " en fabricación · " + trabajosListos + " listas" + (trabajosPorVencer ? " · " + trabajosPorVencer + " vencen en 3 días o menos" : "") + (trabajosAtrasados ? " · " + trabajosAtrasados + " atrasadas" : ""), tab: "plantillas", alerta: trabajosAtrasados > 0 || trabajosPorVencer > 0 },
         { titulo: "Pedidos este mes", valor: pedidosDelMes.length, nota: ventasMes + " ventas · " + alquileresMes + " alquileres", tab: "pedidos" },
         { titulo: "Ventas del mes", valor: formatearPrecio(ventasDelMesMonto), nota: "sin contar los cancelados", tab: "pedidos" },
         { titulo: "Para facturar", valor: paraFacturar.length, nota: formatearPrecio(montoParaFacturar) + " sin facturar", tab: "facturar", alerta: paraFacturar.length > 0 },
@@ -2743,6 +2744,7 @@
       }
       plantillasCache = resultado.data;
       renderizarPlantillas();
+      renderizarResumen();
     }
 
     function actualizarContadorPlantillas() {
@@ -2754,6 +2756,18 @@
         badge.textContent = abiertos;
         badge.classList.toggle("badge-tab-vacio", abiertos === 0);
       }
+    }
+
+    // Días corridos que faltan para la fecha máxima de entrega (negativo = ya pasó)
+    var DIAS_AVISO_ENTREGA = 3;
+    function diasParaEntrega(t) {
+      if (!t.entrega_hasta) return null;
+      var h = hoyLocalISO().split("-"), f = t.entrega_hasta.split("-");
+      return Math.round((Date.UTC(+f[0], f[1] - 1, +f[2]) - Date.UTC(+h[0], h[1] - 1, +h[2])) / 86400000);
+    }
+    function entregaPorVencer(t) {
+      var d = diasParaEntrega(t);
+      return t.estado === "en_fabricacion" && d !== null && d >= 0 && d <= DIAS_AVISO_ENTREGA;
     }
 
     function nombreTrabajo(t) {
@@ -2791,6 +2805,9 @@
           var aviso = "";
           if (t.estado === "en_fabricacion" && t.entrega_hasta && hoy > t.entrega_hasta) {
             aviso = '<span class="etiqueta-sin-responder">⚠️ Pasó la fecha estimada de entrega</span>';
+          } else if (entregaPorVencer(t)) {
+            var dd = diasParaEntrega(t);
+            aviso = '<span class="etiqueta-sin-responder">⏰ ' + (dd === 0 ? "Hoy vence" : dd === 1 ? "Mañana vence" : "Vence en " + dd + " días") + " la fecha máxima de entrega</span>";
           } else if (t.estado === "en_fabricacion" && t.entrega_desde && hoy >= t.entrega_desde) {
             aviso = '<span class="text-warning fw-bold" style="font-size:12px;">📅 Ya puede estar lista</span>';
           }
