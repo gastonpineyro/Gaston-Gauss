@@ -29,3 +29,9 @@ const ALIAS_PAGO = "Gauss.ortopedia";
    entre las comillas. Mientras esté vacío, el botón no se muestra en el
    sitio. */
 const LINK_FORMULARIO = "";
+
+/* Pago online con Mercado Pago (tarjeta, débito, dinero en cuenta).
+   Dejalo en false hasta que hayas hecho los pasos del archivo
+   LEEME-PAGOS.md (crear las 2 funciones en Supabase y cargar tu token).
+   Cuando esté todo listo, cambialo a true. */
+const PAGOS_ONLINE = false;

@@ -593,8 +593,9 @@
     return idCarrito.replace(/-alquiler-\d+$/, "").replace(/-venta$/, "");
   }
 
-  async function manejarClickFinalizar(evento) {
+  async function manejarClickFinalizar(evento, online) {
     evento.preventDefault();
+    var pedidosCreados = [];
     var carrito = leerCarrito();
     if (carrito.length === 0) return;
 
@@ -646,7 +647,7 @@
       boton.textContent = "Guardando pedido...";
       for (var j = 0; j < carrito.length; j++) {
         var linea = carrito[j];
-        await GaussDB.crearPedido({
+        var guardadoLinea = await GaussDB.crearPedido({
           tipo: linea.alquiler ? "alquiler" : "venta",
           productoId: linea.varianteId || idProductoBase(linea.id),
           productoNombre: linea.nombre,
@@ -663,6 +664,7 @@
           direccion: datos.campoDireccion,
           lesion: datos.campoLesion,
         });
+        if (guardadoLinea && guardadoLinea.ok) pedidosCreados.push(guardadoLinea.pedido.id);
       }
 
       boton.textContent = textoOriginal;
@@ -671,7 +673,7 @@
       // Solo ventas (sin alquiler): igual quedan registradas.
       for (var k = 0; k < carrito.length; k++) {
         var lineaVenta = carrito[k];
-        await GaussDB.crearPedido({
+        var guardadoVenta = await GaussDB.crearPedido({
           tipo: "venta",
           productoId: lineaVenta.varianteId || idProductoBase(lineaVenta.id),
           productoNombre: lineaVenta.nombre,
@@ -679,7 +681,31 @@
           precioUnitario: lineaVenta.precio,
           total: lineaVenta.precio * lineaVenta.cantidad,
         });
+        if (guardadoVenta && guardadoVenta.ok) pedidosCreados.push(guardadoVenta.pedido.id);
       }
+    }
+
+    if (online) {
+      var aviso = document.getElementById("avisoDisponibilidad");
+      var falla = function (texto) {
+        boton.textContent = textoOriginal;
+        boton.classList.remove("deshabilitado");
+        if (aviso) {
+          aviso.textContent = texto;
+          aviso.classList.remove("d-none");
+        }
+      };
+      if (pedidosCreados.length !== carrito.length) {
+        return falla("No pudimos registrar el pedido. Probá de nuevo o finalizá por WhatsApp.");
+      }
+      boton.textContent = "Abriendo Mercado Pago...";
+      boton.classList.add("deshabilitado");
+      var pago = await GaussDB.iniciarPagoOnline(pedidosCreados);
+      if (!pago.ok) {
+        return falla("No pudimos abrir el pago online. Tu pedido quedó registrado: finalizalo por WhatsApp o probá de nuevo en un rato.");
+      }
+      window.location.href = pago.url;
+      return;
     }
 
     window.open(construirMensajeWhatsApp(carrito), "_blank");
@@ -707,7 +733,22 @@
     if (btnVaciar) btnVaciar.addEventListener("click", vaciarCarrito);
     if (cuerpo) cuerpo.addEventListener("click", manejarClickEnCuerpo);
     if (datosAlquiler) datosAlquiler.addEventListener("input", guardarCampoAlquiler);
-    if (btnFinalizar) btnFinalizar.addEventListener("click", manejarClickFinalizar);
+    if (btnFinalizar) btnFinalizar.addEventListener("click", function (e) { manejarClickFinalizar(e, false); });
+
+    // Botón opcional de pago online (se muestra solo si PAGOS_ONLINE = true en supabase-config.js)
+    if (btnFinalizar && typeof PAGOS_ONLINE !== "undefined" && PAGOS_ONLINE) {
+      var btnOnline = document.createElement("button");
+      btnOnline.type = "button";
+      btnOnline.className = "btn-pagar-online";
+      btnOnline.id = "btnPagarOnline";
+      btnOnline.textContent = "💳 Pagar ahora con tarjeta o Mercado Pago";
+      var nota = document.createElement("p");
+      nota.className = "nota-pago-online";
+      nota.textContent = "Pago seguro por Mercado Pago. También podés pagar en el local al retirar.";
+      btnFinalizar.insertAdjacentElement("afterend", nota);
+      btnFinalizar.insertAdjacentElement("afterend", btnOnline);
+      btnOnline.addEventListener("click", function (e) { manejarClickFinalizar(e, true); });
+    }
 
     document.addEventListener("keydown", function (evento) {
       if (evento.key === "Escape") cerrarCarrito();

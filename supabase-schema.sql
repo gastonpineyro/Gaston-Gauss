@@ -389,3 +389,32 @@ drop policy if exists "trabajos_plantillas_admin" on trabajos_plantillas;
 create policy "trabajos_plantillas_admin"
   on trabajos_plantillas for all to authenticated
   using (true) with check (true);
+
+-- ============ 9. PAGOS ONLINE (Mercado Pago) ============
+-- Pagos online con Mercado Pago (tarjeta, dinero en cuenta, etc.).
+alter table pedidos add column if not exists pago_online_estado text;   -- pendiente | aprobado | rechazado | devuelto | revisar_monto
+alter table pedidos add column if not exists pago_online_id text;
+alter table pedidos add column if not exists pago_online_monto numeric;
+alter table pedidos add column if not exists pago_online_metodo text;
+alter table pedidos add column if not exists pagado_en timestamptz;
+
+-- Seguridad: quien crea un pedido desde la web (anónimo) no puede decir que ya está pagado.
+-- Solo las funciones del servidor (Mercado Pago) pueden completar estos datos.
+create or replace function limpiar_pago_en_pedido_nuevo() returns trigger
+language plpgsql as $$
+begin
+  if coalesce(auth.role(), 'anon') <> 'service_role' then
+    new.pago_online_estado := null;
+    new.pago_online_id := null;
+    new.pago_online_monto := null;
+    new.pago_online_metodo := null;
+    new.pagado_en := null;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_limpiar_pago_pedido_nuevo on pedidos;
+create trigger trg_limpiar_pago_pedido_nuevo
+  before insert on pedidos
+  for each row execute function limpiar_pago_en_pedido_nuevo();

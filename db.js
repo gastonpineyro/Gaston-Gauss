@@ -250,7 +250,23 @@ var GaussDB = (function () {
     }
   }
 
+  // Pide a la función del servidor el link de pago de Mercado Pago para estos pedidos.
+  async function iniciarPagoOnline(ids) {
+    var db = obtenerCliente();
+    if (!db) return { ok: false, motivo: "sin-configurar" };
+    try {
+      var r = await db.functions.invoke("crear-pago", { body: { pedidos: ids } });
+      if (r.error || !r.data || !r.data.url) {
+        return { ok: false, motivo: (r.error && r.error.message) || (r.data && r.data.error) || "sin respuesta" };
+      }
+      return { ok: true, url: r.data.url };
+    } catch (e) {
+      return { ok: false, motivo: String(e) };
+    }
+  }
+
   return {
+    iniciarPagoOnline: iniciarPagoOnline,
     configurado: configurado,
     crearPedido: crearPedido,
     chequearDisponibilidad: chequearDisponibilidad,

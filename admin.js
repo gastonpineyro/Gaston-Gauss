@@ -630,6 +630,7 @@
           var sinResponder = esSinResponder(p);
           var fecha = fechaHoraPedido(p.creado_en) +
             (sinResponder ? '<br><span class="etiqueta-sin-responder">⏰ Sin responder ' + textoHaceCuanto(p.creado_en) + "</span>" : "");
+          fecha += etiquetaPagoOnline(p);
           var periodo =
             p.tipo === "alquiler"
               ? formatearFecha(p.fecha_desde) + " → " + formatearFecha(p.fecha_hasta)
@@ -2756,6 +2757,20 @@
         badge.textContent = abiertos;
         badge.classList.toggle("badge-tab-vacio", abiertos === 0);
       }
+    }
+
+    // Estado del pago hecho desde la web con Mercado Pago
+    function etiquetaPagoOnline(p) {
+      var e = p.pago_online_estado;
+      if (!e) return "";
+      var monto = p.pago_online_monto ? formatearPrecio(p.pago_online_monto) : "";
+      var fecha = p.pagado_en ? " el " + fechaHoraPedido(p.pagado_en) : "";
+      if (e === "aprobado") return '<br><span class="etiqueta-pago-online ok">💳 Pagado online ' + monto + fecha + "</span>";
+      if (e === "revisar_monto") return '<br><span class="etiqueta-pago-online alerta">⚠️ Pagó ' + monto + " pero el pedido es de " + formatearPrecio(p.total) + " (revisar)</span>";
+      if (e === "pendiente") return '<br><span class="etiqueta-pago-online">💳 Inició el pago online (todavía no se acreditó)</span>';
+      if (e === "rechazado") return '<br><span class="etiqueta-pago-online alerta">💳 Pago online rechazado</span>';
+      if (e === "devuelto") return '<br><span class="etiqueta-pago-online alerta">💳 Pago online devuelto</span>';
+      return "";
     }
 
     // Días corridos que faltan para la fecha máxima de entrega (negativo = ya pasó)
