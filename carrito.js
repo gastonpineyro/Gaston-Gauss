@@ -665,6 +665,38 @@
     });
   }
 
+  /* Si el link trae ?modo=venta o ?modo=alquiler, la página muestra solo esa modalidad
+     (el menú Ventas / Alquileres del sitio). Sin el parámetro, no cambia nada. */
+  function aplicarModoDePagina() {
+    var modo = new URLSearchParams(window.location.search).get("modo");
+    if (modo !== "venta" && modo !== "alquiler") return;
+    var quiereAlquiler = modo === "alquiler";
+    var avisado = false;
+    document.querySelectorAll(".selector-modalidad").forEach(function (grupo) {
+      var radios = Array.prototype.slice.call(grupo.querySelectorAll('input[type="radio"][data-alquiler]'));
+      if (radios.length === 0) return;
+      var deseados = radios.filter(function (r) {
+        return (r.getAttribute("data-alquiler") === "1") === quiereAlquiler;
+      });
+      if (deseados.length === 0 || deseados.length === radios.length) return;
+      radios.forEach(function (r) {
+        if (deseados.indexOf(r) === -1) r.closest("label").classList.add("d-none");
+      });
+      if (!deseados.some(function (r) { return r.checked; })) {
+        deseados[0].checked = true;
+        deseados[0].dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      if (deseados.length === 1) grupo.classList.add("d-none");
+      if (!avisado) {
+        avisado = true;
+        var nota = document.createElement("p");
+        nota.className = "nota-modo-pagina";
+        nota.innerHTML = (quiereAlquiler ? "🔁 Alquiler" : "🛒 Venta") + ' · <a href="?modo=' + (quiereAlquiler ? "venta" : "alquiler") + '">Ver ' + (quiereAlquiler ? "la opción de compra" : "la opción de alquiler") + "</a>";
+        grupo.insertAdjacentElement("beforebegin", nota);
+      }
+    });
+  }
+
   async function manejarClickFinalizar(evento, online) {
     evento.preventDefault();
     var pedidosCreados = [];
@@ -874,6 +906,7 @@
         }
       });
 
+      aplicarModoDePagina();
       aplicarPreciosDeVariante();
       agregarLinkFormulario();
       actualizarDisponibilidadProducto();

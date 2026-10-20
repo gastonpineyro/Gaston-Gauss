@@ -2042,3 +2042,18 @@ svg {
 .qr-transferencia { display: block; margin: 8px auto 12px; max-width: 220px; width: 100%; }
 .btn-copiar { border: 1px solid #738A9B; background: #fff; color: #2b4a5e; border-radius: 6px; font-size: 12px; padding: 2px 8px; margin-left: 6px; cursor: pointer; }
 .etiqueta-pago-online .link-comprobante-pedido { margin-left: 4px; }
+
+/* --- Admin: vista Todo / Alquileres / Ventas --- */
+.selector-modo-admin { display: inline-flex; gap: 0; border: 1px solid #738A9B; border-radius: 8px; overflow: hidden; }
+.selector-modo-admin button { border: 0; background: #fff; color: #2b4a5e; padding: 8px 16px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.selector-modo-admin button + button { border-left: 1px solid #738A9B; }
+.selector-modo-admin button.activo { background: #738A9B; color: #fff; }
+#pantallaPanel[data-modo-admin="venta"] .solo-alquiler { display: none !important; }
+#pantallaPanel[data-modo-admin="alquiler"] .solo-venta { display: none !important; }
+@media (max-width: 575.98px) {
+  .selector-modo-admin { display: flex; width: 100%; }
+  .selector-modo-admin button { flex: 1; padding: 8px 6px; font-size: 13px; }
+}
+
+.nota-modo-pagina { font-size: 14px; font-weight: 600; color: #2b4a5e; margin: 0 0 8px; }
+.nota-modo-pagina a { font-weight: 400; margin-left: 4px; }

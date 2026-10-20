@@ -41,7 +41,7 @@
     </div>
 
     <!-- Panel con los pedidos -->
-    <div class="d-none" id="pantallaPanel">
+    <div class="d-none" id="pantallaPanel" data-modo-admin="todo">
         <div class="franja-admin">
             <div class="logo-gauss" style="color:#fff;">
                 GAUSS <span class="sub-logo-gauss" style="color:rgba(255,255,255,.75);">Ortopedia · Admin</span>
@@ -53,34 +53,40 @@
         </div>
 
         <div class="container-fluid py-4 px-4">
+            <div class="selector-modo-admin mb-3" id="selectorModoAdmin" role="group" aria-label="Qué querés ver">
+                <button type="button" data-modo="todo" class="activo">Todo</button>
+                <button type="button" data-modo="alquiler">🔁 Alquileres</button>
+                <button type="button" data-modo="venta">🛒 Ventas</button>
+            </div>
+
             <div class="tabs-admin mb-4">
                 <button type="button" class="tab-admin activo" data-tab="resumen">Resumen</button>
                 <button type="button" class="tab-admin" data-tab="pedidos">Pedidos <span class="badge-tab badge-tab-vacio" id="contadorSinResponder" title="Pendientes con más de 24 hs sin atender">0</span></button>
-                <button type="button" class="tab-admin" data-tab="activos">
+                <button type="button" class="tab-admin solo-alquiler" data-tab="activos">
                     Activos <span class="badge-tab" id="contadorActivos">0</span>
                 </button>
-                <button type="button" class="tab-admin" data-tab="porvencer">
+                <button type="button" class="tab-admin solo-alquiler" data-tab="porvencer">
                     Por vencer <span class="badge-tab" id="contadorPorvencer">0</span>
                 </button>
-                <button type="button" class="tab-admin" data-tab="vencidos">
+                <button type="button" class="tab-admin solo-alquiler" data-tab="vencidos">
                     Vencidos <span class="badge-tab" id="contadorVencidos">0</span>
                 </button>
-                <button type="button" class="tab-admin" data-tab="comprobantes">
+                <button type="button" class="tab-admin solo-alquiler" data-tab="comprobantes">
                     Comprobantes por revisar <span class="badge-tab" id="contadorComprobantes">0</span>
                 </button>
                 <button type="button" class="tab-admin" data-tab="stock">
                     Stock <span class="badge-tab badge-tab-vacio" id="contadorStockBajo">0</span>
                 </button>
-                <button type="button" class="tab-admin" data-tab="equipos">
+                <button type="button" class="tab-admin solo-alquiler" data-tab="equipos">
                     Equipos QR
                 </button>
                 <button type="button" class="tab-admin" data-tab="contactos">
                     Contactos <span class="badge-tab badge-tab-vacio" id="contadorContactos">0</span>
                 </button>
-                <button type="button" class="tab-admin" data-tab="plantillas">
+                <button type="button" class="tab-admin solo-venta" data-tab="plantillas">
                     Plantillas <span class="badge-tab badge-tab-vacio" id="contadorPlantillas">0</span>
                 </button>
-                <button type="button" class="tab-admin" data-tab="presupuesto">
+                <button type="button" class="tab-admin solo-venta" data-tab="presupuesto">
                     Presupuesto
                 </button>
                 <button type="button" class="tab-admin" data-tab="facturar">
@@ -99,8 +105,8 @@
                     <button type="button" class="btn-accion-admin" id="btnBackup">Descargar copia de seguridad</button>
                 </div>
 
-                <div id="devolucionesResumen" class="mb-4"></div>
-                <div id="equiposResumen" class="mb-4"></div>
+                <div id="devolucionesResumen" class="mb-4 solo-alquiler"></div>
+                <div id="equiposResumen" class="mb-4 solo-alquiler"></div>
 
                 <h3 class="titulo-grupo-stock mb-3">Producto más pedido (últimos 30 días)</h3>
                 <div id="rankingProductos"></div>

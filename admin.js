@@ -189,6 +189,7 @@
       pantallaLogin.classList.add("d-none");
       pantallaPanel.classList.remove("d-none");
       if (emailUsuario) emailUsuario.textContent = sesion.user.email;
+      aplicarModoAdmin();
       cargarPedidos().then(function () {
         // Si entró desde el QR escaneado con la cámara del celu (admin.html?equipo=CODIGO)
         if (codigoPendienteDeLink) {
@@ -466,8 +467,46 @@
         "</div>";
     }
 
+    /* ---------------------- Vista: todo / alquileres / ventas ---------------------- */
+    var modoAdmin = "todo";
+    try {
+      modoAdmin = localStorage.getItem("gauss-modo-admin") || "todo";
+    } catch (e) {}
+    if (["todo", "alquiler", "venta"].indexOf(modoAdmin) === -1) modoAdmin = "todo";
+
+    function pedidosVista() {
+      if (modoAdmin === "todo") return pedidosCache;
+      return pedidosCache.filter(function (p) {
+        return p.tipo === modoAdmin;
+      });
+    }
+
+    function aplicarModoAdmin() {
+      document.getElementById("pantallaPanel").setAttribute("data-modo-admin", modoAdmin);
+      document.querySelectorAll("#selectorModoAdmin button").forEach(function (b) {
+        b.classList.toggle("activo", b.getAttribute("data-modo") === modoAdmin);
+      });
+      // La tabla de pedidos sigue el modo (y el filtro "Tipo" se bloquea mientras tanto)
+      selectFiltroTipo.value = modoAdmin === "todo" ? "todos" : modoAdmin;
+      selectFiltroTipo.disabled = modoAdmin !== "todo";
+      var activa = document.querySelector(".tab-admin.activo");
+      if (activa && activa.offsetParent === null) irATab("resumen");
+    }
+
+    document.getElementById("selectorModoAdmin").addEventListener("click", function (evento) {
+      var modo = evento.target.getAttribute("data-modo");
+      if (!modo || modo === modoAdmin) return;
+      modoAdmin = modo;
+      try {
+        localStorage.setItem("gauss-modo-admin", modo);
+      } catch (e) {}
+      aplicarModoAdmin();
+      renderizarResumen();
+      renderizarTabla();
+    });
+
     function actualizarContadorSinResponder() {
-      var n = pedidosCache.filter(esSinResponder).length;
+      var n = pedidosVista().filter(esSinResponder).length;
       var badge = document.getElementById("contadorSinResponder");
       if (badge) {
         badge.textContent = n;
@@ -477,6 +516,7 @@
     }
 
     function renderizarResumen() {
+      var pedidosCache = pedidosVista(); // en este bloque, "pedidosCache" es solo lo de la vista elegida
       var sinResponder = actualizarContadorSinResponder();
       var hoy = new Date();
       var inicioMes = hoy.getFullYear() + "-" + String(hoy.getMonth() + 1).padStart(2, "0") + "-01";
@@ -534,19 +574,22 @@
 
       var tarjetas = [
         { titulo: "Sin responder +24 hs", valor: sinResponder, nota: sinResponder > 0 ? "pendientes que esperan tu respuesta" : "todo al día 🎉", tab: "pedidos", estado: "pendiente", alerta: sinResponder > 0 },
-        { titulo: "Plantillas en curso", valor: trabajosAbiertos.length, nota: trabajosEnFab + " en fabricación · " + trabajosListos + " listas" + (trabajosPorVencer ? " · " + trabajosPorVencer + " vencen en 3 días o menos" : "") + (trabajosAtrasados ? " · " + trabajosAtrasados + " atrasadas" : ""), tab: "plantillas", alerta: trabajosAtrasados > 0 || trabajosPorVencer > 0 },
+        { modo: "venta", titulo: "Plantillas en curso", valor: trabajosAbiertos.length, nota: trabajosEnFab + " en fabricación · " + trabajosListos + " listas" + (trabajosPorVencer ? " · " + trabajosPorVencer + " vencen en 3 días o menos" : "") + (trabajosAtrasados ? " · " + trabajosAtrasados + " atrasadas" : ""), tab: "plantillas", alerta: trabajosAtrasados > 0 || trabajosPorVencer > 0 },
         { titulo: "Pedidos este mes", valor: pedidosDelMes.length, nota: ventasMes + " ventas · " + alquileresMes + " alquileres", tab: "pedidos" },
-        { titulo: "Ventas del mes", valor: formatearPrecio(ventasDelMesMonto), nota: "sin contar los cancelados", tab: "pedidos" },
+        { titulo: (modoAdmin === "alquiler" ? "Alquileres del mes" : "Ventas del mes"), valor: formatearPrecio(ventasDelMesMonto), nota: "sin contar los cancelados", tab: "pedidos" },
         { titulo: "Para facturar", valor: paraFacturar.length, nota: formatearPrecio(montoParaFacturar) + " sin facturar", tab: "facturar", alerta: paraFacturar.length > 0 },
-        { titulo: "Esperando entrega", valor: esperandoEntrega, nota: "confirmados, aún sin entregar", tab: "pedidos", estado: "confirmado" },
-        { titulo: "Alquileres activos", valor: activosAhora, nota: "en la calle ahora mismo", tab: "activos" },
-        { titulo: "Vencidos sin devolver", valor: vencidosSinDevolver, nota: "necesitan seguimiento", tab: "vencidos", alerta: vencidosSinDevolver > 0 },
+        { modo: "alquiler", titulo: "Esperando entrega", valor: esperandoEntrega, nota: "confirmados, aún sin entregar", tab: "pedidos", estado: "confirmado" },
+        { modo: "alquiler", titulo: "Alquileres activos", valor: activosAhora, nota: "en la calle ahora mismo", tab: "activos" },
+        { modo: "alquiler", titulo: "Vencidos sin devolver", valor: vencidosSinDevolver, nota: "necesitan seguimiento", tab: "vencidos", alerta: vencidosSinDevolver > 0 },
         { titulo: "Transferencias a verificar", valor: transferenciasPendientes, nota: "pagos que dicen haber hecho", tab: "pedidos", alerta: transferenciasPendientes > 0 },
-        { titulo: "Comprobantes pendientes", valor: pendientesRevision, nota: "esperando tu revisión", tab: "comprobantes", alerta: pendientesRevision > 0 },
-        { titulo: "Equipos en reparación", valor: enReparacionTotal, nota: "no se pueden alquilar", tab: "equipos", alerta: enReparacionTotal > 0 },
+        { modo: "alquiler", titulo: "Comprobantes pendientes", valor: pendientesRevision, nota: "esperando tu revisión", tab: "comprobantes", alerta: pendientesRevision > 0 },
+        { modo: "alquiler", titulo: "Equipos en reparación", valor: enReparacionTotal, nota: "no se pueden alquilar", tab: "equipos", alerta: enReparacionTotal > 0 },
       ];
 
       grillaDashboard.innerHTML = tarjetas
+        .filter(function (t) {
+          return !t.modo || modoAdmin === "todo" || t.modo === modoAdmin;
+        })
         .map(function (t) {
           return (
             '<div class="tarjeta-dashboard' + (t.alerta ? " alerta" : "") + '" data-tab="' + t.tab + '"' +
