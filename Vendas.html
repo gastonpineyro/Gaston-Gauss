@@ -71,7 +71,7 @@
     <div class="row g-5 align-items-center mb-5">
         <div class="col-12 col-md-6">
             <div class="contenedor-foto-producto">
-                <img src="ph-vendas.svg" alt="Vendas" class="img-fluid rounded shadow-sm">
+                <img src="ph-vendas.svg" id="imagenModelo" alt="Vendas" class="img-fluid rounded shadow-sm">
             </div>
         </div>
 
@@ -82,7 +82,7 @@
             <h2 class="h6 mt-4 mb-2">Elegí el tipo</h2>
             <div class="selector-modalidad selector-vertical" role="radiogroup" aria-label="Tipo de venda">
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-venda" value="Venda coban" data-medidas="5 cm|7 cm|10 cm" checked>
+                    <input type="radio" name="tipo-venda" value="Venda coban" data-imagen="venda-coban.jpg" data-medidas="5 cm|7 cm|10 cm" checked>
                     <span>Venda coban</span>
                 </label>
                 <label class="opcion-modalidad">
@@ -129,6 +129,9 @@
                         var nombre = elegida("tipo-venda") + (elegida("medida-venda") && !bloque.classList.contains("d-none") ? " " + elegida("medida-venda") : "");
                         boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería consultar el precio y la disponibilidad de: " + (nombre || "Vendas"));
                         boton.textContent = "Consultar precio: " + (nombre || "Vendas");
+                        var tipoSel = document.querySelector('input[name="tipo-venda"]:checked');
+                        var foto = document.getElementById("imagenModelo");
+                        if (foto) foto.src = (tipoSel && tipoSel.getAttribute("data-imagen")) || "ph-vendas.svg";
                     }
                     tipos.forEach(function (r) { r.addEventListener("change", pintarMedidas); });
                     listaMedidas.addEventListener("change", actualizar);
