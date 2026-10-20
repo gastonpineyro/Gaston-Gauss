@@ -2077,3 +2077,9 @@ svg {
   color: #D04F5E; text-decoration: underline; text-underline-offset: 2px;
 }
 .bajada-seccion a:hover, .nota-modo-pagina a:hover, .aviso-carrito a:hover, .caja-transferencia a:hover { color: #a93a48; }
+
+/* --- Buscador de productos --- */
+.caja-buscador-productos { max-width: 520px; margin: 0 auto 24px; }
+.caja-buscador-productos .form-control { padding: 12px 16px; border-radius: 999px; border: 1px solid #c9d2d9; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+.caja-buscador-productos .form-control:focus { border-color: #738A9B; box-shadow: 0 0 0 3px rgba(115,138,155,.2); }
+.sin-resultados-productos { text-align: center; color: #6c757d; margin: 14px 0 0; }
