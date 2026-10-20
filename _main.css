@@ -2134,3 +2134,8 @@ svg {
   font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #4a5c69;
   background: #e8edf1; border-radius: 999px; padding: 3px 10px; flex: none;
 }
+
+/* Lista vertical de modelos (productos con varios tipos) */
+.selector-modalidad.selector-vertical { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 8px; }
+.selector-modalidad.selector-vertical .opcion-modalidad { text-align: left; }
+@media (max-width: 767.98px) { .selector-modalidad.selector-vertical { justify-content: flex-start; } }

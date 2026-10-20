@@ -79,10 +79,46 @@
             <span class="badge-categoria">Venta</span>
             <h1 class="nombre-producto mt-2">Rodilleras</h1>
             <p class="mt-3">Rodilleras para soporte y compresión de la rodilla. Consultanos por talles y modelos.</p>
+            <h2 class="h6 mt-4 mb-2">Elegí el modelo</h2>
+            <div class="selector-modalidad selector-vertical" role="radiogroup" aria-label="Modelo de rodillera">
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene" checked>
+                    <span>Rodillera de neoprene</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene con abrojos">
+                    <span>Rodillera de neoprene con abrojos</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene con abrojos y ballenas laterales">
+                    <span>Rodillera de neoprene con abrojos y ballenas laterales</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene abierta corta">
+                    <span>Rodillera de neoprene abierta corta</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene abierta">
+                    <span>Rodillera de neoprene abierta</span>
+                </label>
+            </div>
             <p class="text-secondary">Precio y talles: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
-                <a href="https://wa.me/543415641488?text=Hola%21%20Quer%C3%ADa%20consultar%20el%20precio%20y%20la%20disponibilidad%20de%3A%20Rodilleras" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio por WhatsApp</a>
+                <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio de este modelo</a>
             </div>
+            <script>
+                (function () {
+                    var radios = document.querySelectorAll('input[name="tipo-rodillera"]');
+                    var boton = document.getElementById("btnConsultarModelo");
+                    function actualizar() {
+                        var sel = document.querySelector('input[name="tipo-rodillera"]:checked');
+                        var texto = "Hola! Quería consultar el precio y la disponibilidad de: " + (sel ? sel.value : "Rodilleras");
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent(texto);
+                    }
+                    radios.forEach(function (r) { r.addEventListener("change", actualizar); });
+                    actualizar();
+                })();
+            </script>
         </div>
     </div>
 
