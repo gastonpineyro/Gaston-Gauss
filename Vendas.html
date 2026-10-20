@@ -90,7 +90,7 @@
                     <span>Venda elástica deportiva</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-venda" value="Venda elástica 10 cm" data-medidas="">
+                    <input type="radio" name="tipo-venda" value="Venda elástica 10 cm" data-imagen="venda-elastica.jpg" data-por-metro="3000" data-medidas="">
                     <span>Venda elástica 10 cm</span>
                 </label>
                 <label class="opcion-modalidad">
@@ -101,6 +101,12 @@
             <div id="bloqueMedidas">
                 <h2 class="h6 mt-3 mb-2">Elegí la medida</h2>
                 <div class="selector-modalidad" id="listaMedidas" role="radiogroup" aria-label="Medida"></div>
+            </div>
+            <div id="bloquePorMetro" class="caja-por-metro d-none">
+                <p class="mb-2"><strong>📏 Se vende por metro: $3.000 el metro.</strong></p>
+                <label for="metrosVenda" class="me-2">¿Cuántos metros?</label>
+                <input type="number" id="metrosVenda" min="1" step="1" value="1" class="form-control form-control-sm d-inline-block" style="width:90px;">
+                <span class="ms-2">Total: <strong id="totalPorMetro">$3.000</strong></span>
             </div>
             <p class="text-secondary">Precio y disponibilidad: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
@@ -125,16 +131,28 @@
                         }).join("");
                         actualizar();
                     }
+                    function fmt(n) {
+                        return "$" + n.toLocaleString("es-AR");
+                    }
                     function actualizar() {
+                        var tipoPM = document.querySelector('input[name="tipo-venda"]:checked');
+                        var precioMetro = tipoPM ? parseInt(tipoPM.getAttribute("data-por-metro"), 10) : NaN;
+                        var cajaPM = document.getElementById("bloquePorMetro");
+                        var metrosInput = document.getElementById("metrosVenda");
+                        var metros = Math.max(parseInt(metrosInput.value, 10) || 1, 1);
+                        cajaPM.classList.toggle("d-none", isNaN(precioMetro));
+                        if (!isNaN(precioMetro)) document.getElementById("totalPorMetro").textContent = fmt(metros * precioMetro);
                         var nombre = elegida("tipo-venda") + (elegida("medida-venda") && !bloque.classList.contains("d-none") ? " " + elegida("medida-venda") : "");
-                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería consultar el precio y la disponibilidad de: " + (nombre || "Vendas"));
-                        boton.textContent = "Consultar precio: " + (nombre || "Vendas");
+                        var extra = !isNaN(precioMetro) ? " — " + metros + (metros === 1 ? " metro" : " metros") + " (" + fmt(metros * precioMetro) + ")" : "";
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent((!isNaN(precioMetro) ? "Hola! Quería comprar: " : "Hola! Quería consultar el precio y la disponibilidad de: ") + (nombre || "Vendas") + extra);
+                        boton.textContent = (!isNaN(precioMetro) ? "Pedir por WhatsApp: " : "Consultar precio: ") + (nombre || "Vendas") + extra;
                         var tipoSel = document.querySelector('input[name="tipo-venda"]:checked');
                         var foto = document.getElementById("imagenModelo");
                         if (foto) foto.src = (tipoSel && tipoSel.getAttribute("data-imagen")) || "ph-vendas.svg";
                     }
                     tipos.forEach(function (r) { r.addEventListener("change", pintarMedidas); });
                     listaMedidas.addEventListener("change", actualizar);
+                    document.getElementById("metrosVenda").addEventListener("input", actualizar);
                     pintarMedidas();
                 })();
             </script>

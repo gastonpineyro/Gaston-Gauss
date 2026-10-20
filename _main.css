@@ -2139,3 +2139,5 @@ svg {
 .selector-modalidad.selector-vertical { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 8px; }
 .selector-modalidad.selector-vertical .opcion-modalidad { text-align: left; }
 @media (max-width: 767.98px) { .selector-modalidad.selector-vertical { justify-content: flex-start; } }
+
+.caja-por-metro { background: #f4f7f9; border: 1px solid #dde4e9; border-radius: 10px; padding: 12px 14px; margin: 12px 0; font-size: 15px; }
