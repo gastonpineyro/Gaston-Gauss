@@ -41,7 +41,7 @@ const PAGOS_ONLINE = false;
    - TITULAR_PAGO y CBU_PAGO son opcionales (dejalos vacíos "" si no querés mostrarlos).
    - QR_PAGO: nombre del archivo con tu QR (ej: "qr-pago.png") subido junto al sitio.
      Si lo dejás vacío, solo se muestra el alias. */
-const PAGO_TRANSFERENCIA = false;
+const PAGO_TRANSFERENCIA = true;
 const TITULAR_PAGO = "";
 const CBU_PAGO = "";
 const QR_PAGO = "";
