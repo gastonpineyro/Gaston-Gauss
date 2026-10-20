@@ -2112,3 +2112,6 @@ svg {
 .chip-buscador.activo { background: #738A9B; border-color: #738A9B; color: #fff; }
 .resultado-buscador { text-align: center; color: #738A9B; font-size: 13px; margin: 8px 0 0; min-height: 18px; }
 .sin-resultados-productos a { color: #D04F5E; }
+
+/* Menús desplegables largos (Ventas): barra de scroll si no entran en pantalla */
+.navbar .dropdown-menu { max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
