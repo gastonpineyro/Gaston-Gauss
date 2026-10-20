@@ -427,18 +427,18 @@
   function refrescarBotonAgregar() {
     var boton = document.querySelector(".bloque-compra .btn-agregar-carrito") || document.querySelector(".btn-agregar-carrito");
     if (!boton) return;
+    if (!boton.hasAttribute("data-html-original")) boton.setAttribute("data-html-original", boton.innerHTML);
     var modalidadName = boton.getAttribute("data-modalidad-name");
     var radioMod = modalidadName ? document.querySelector('input[name="' + modalidadName + '"]:checked') : null;
     var esAlquiler = radioMod ? radioMod.getAttribute("data-alquiler") === "1" : boton.getAttribute("data-alquiler") === "1";
     var bloquear = sinStockProducto && esAlquiler;
     if (bloquear) {
-      if (!boton.hasAttribute("data-texto-original")) boton.setAttribute("data-texto-original", boton.textContent);
       boton.textContent = "Sin stock";
       boton.disabled = true;
       boton.classList.add("sin-stock-boton");
-    } else if (boton.hasAttribute("data-texto-original")) {
-      boton.textContent = boton.getAttribute("data-texto-original");
-      boton.removeAttribute("data-texto-original");
+    } else {
+      // Los alquileres no van al carrito: se reservan en el formulario de "Reservar alquiler".
+      boton.innerHTML = esAlquiler ? "📅 Reservar este equipo" : boton.getAttribute("data-html-original");
       boton.disabled = false;
       boton.classList.remove("sin-stock-boton");
     }
@@ -563,6 +563,16 @@
 
     var detalleFinal = [talleLabel, detalle].filter(Boolean).join(" · ");
 
+    // Alquiler: se reserva en la página "Reservar alquiler" (con el equipo, modelo y duración ya elegidos).
+    if (alquiler && boton.getAttribute("data-id")) {
+      var checkedVariante = document.querySelector("[data-variante]:checked");
+      var destino = "alquileres.html?equipo=" + encodeURIComponent(boton.getAttribute("data-id"));
+      if (checkedVariante) destino += "&variante=" + encodeURIComponent(checkedVariante.getAttribute("data-variante"));
+      if (dias) destino += "&dias=" + dias;
+      window.location.href = destino;
+      return;
+    }
+
     var idBase = boton.getAttribute("data-id");
     var idCarrito = modalidadName || talleName
       ? varianteId + "-" + (alquiler ? "alquiler-" + dias : "venta")
@@ -601,7 +611,8 @@
     });
   }
 
-  function mostrarDatosTransferencia(ids, total) {
+  function mostrarDatosTransferencia(ids, total, opciones) {
+    opciones = opciones || {};
     var previo = document.getElementById("modalTransferencia");
     if (previo) previo.remove();
     var alias = typeof ALIAS_PAGO !== "undefined" ? ALIAS_PAGO : "";
@@ -654,7 +665,7 @@
         error.classList.remove("d-none");
         return;
       }
-      try { localStorage.removeItem(STORAGE_KEY_CARRITO); } catch (err) {}
+      if (opciones.limpiarCarrito !== false) { try { localStorage.removeItem(STORAGE_KEY_CARRITO); } catch (err) {} }
       var caja = modal.querySelector(".caja-transferencia");
       var msg = encodeURIComponent("Hola! Hice un pedido en la web y ya transferí " + formatearPrecio(total) + ". " + (res.url ? "Subí el comprobante en la página." : "Te mando el comprobante por acá."));
       caja.innerHTML = '<div style="font-size:44px;text-align:center;">✅</div><h2 class="text-center">¡Gracias!</h2>' +
@@ -696,6 +707,8 @@
       }
     });
   }
+
+  window.GaussPagoTransferencia = { mostrar: function (ids, total, opciones) { mostrarDatosTransferencia(ids, total, opciones); } };
 
   async function manejarClickFinalizar(evento, online) {
     evento.preventDefault();
@@ -907,6 +920,7 @@
       });
 
       aplicarModoDePagina();
+      refrescarBotonAgregar();
       aplicarPreciosDeVariante();
       agregarLinkFormulario();
       actualizarDisponibilidadProducto();

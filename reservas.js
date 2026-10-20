@@ -359,6 +359,18 @@
     poblarVariantes();
     poblarDuraciones();
 
+    // ?variante=magneto-tubos&dias=15 (lo manda la ficha del producto): dejamos eso elegido
+    var paramsUrl = new URLSearchParams(window.location.search);
+    var varianteDesdeUrl = paramsUrl.get("variante");
+    if (varianteDesdeUrl && selectVariante && Array.prototype.some.call(selectVariante.options, function (o) { return o.value === varianteDesdeUrl; })) {
+      selectVariante.value = varianteDesdeUrl;
+      poblarDuraciones();
+    }
+    var diasDesdeUrl = paramsUrl.get("dias");
+    if (diasDesdeUrl && selectDuracion && Array.prototype.some.call(selectDuracion.options, function (o) { return o.value === diasDesdeUrl; })) {
+      selectDuracion.value = diasDesdeUrl;
+    }
+
     if (fechaDesde) {
       var hoy = hoyISO();
       fechaDesde.min = hoy;
@@ -424,7 +436,19 @@
     });
 
     if (btnReservar) {
-      btnReservar.addEventListener("click", async function () {
+      // Pago por transferencia / QR (opcional, se activa con PAGO_TRANSFERENCIA en supabase-config.js)
+      var btnTransferencia = null;
+      if (!soloFormulario && typeof PAGO_TRANSFERENCIA !== "undefined" && PAGO_TRANSFERENCIA && window.GaussPagoTransferencia) {
+        btnTransferencia = document.createElement("button");
+        btnTransferencia.type = "button";
+        btnTransferencia.className = "btn-pagar-transferencia";
+        btnTransferencia.textContent = "🏦 Reservar y pagar por transferencia o QR";
+        btnReservar.insertAdjacentElement("afterend", btnTransferencia);
+        btnTransferencia.addEventListener("click", function () { procesarReserva("transferencia"); });
+      }
+      btnReservar.addEventListener("click", function () { procesarReserva("whatsapp"); });
+
+      async function procesarReserva(modo) {
         var validacion = validarDatosReserva();
         if (validacion.elemento) {
           if (aviso) {
@@ -502,10 +526,20 @@
             }
             return;
           }
+
+          if (modo === "transferencia") {
+            if (guardado && guardado.ok) {
+              GaussPagoTransferencia.mostrar([guardado.pedido.id], duracion.precio, { limpiarCarrito: false });
+            } else if (aviso) {
+              aviso.textContent = "No pudimos guardar tu reserva. Probá de nuevo o escribinos por WhatsApp.";
+              aviso.classList.remove("d-none");
+            }
+            return;
+          }
         }
 
         window.open(construirMensajeReserva(), "_blank");
-      });
+      }
     }
   });
 })();
