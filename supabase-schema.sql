@@ -418,3 +418,26 @@ drop trigger if exists trg_limpiar_pago_pedido_nuevo on pedidos;
 create trigger trg_limpiar_pago_pedido_nuevo
   before insert on pedidos
   for each row execute function limpiar_pago_en_pedido_nuevo();
+
+-- ============ 10. TRANSFERENCIA / QR ============
+-- Pago por transferencia / QR desde la web.
+-- El cliente avisa que transfirió (con o sin foto del comprobante) y vos lo confirmás en el panel.
+create or replace function avisar_transferencia(pedido_ids uuid[], url text default null)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    update pedidos
+    set pago_online_estado = 'transferencia',
+        pago_online_metodo = 'transferencia',
+        comprobante_url = url,
+        comprobante_subido_en = now()
+    where id = any(pedido_ids)
+      and creado_en > now() - interval '3 hours'
+      and (pago_online_estado is null or pago_online_estado in ('pendiente', 'transferencia', 'rechazado'));
+end;
+$$;
+
+grant execute on function avisar_transferencia(uuid[], text) to anon, authenticated;

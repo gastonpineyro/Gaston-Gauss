@@ -250,6 +250,27 @@ var GaussDB = (function () {
     }
   }
 
+  // El cliente avisa que pagó por transferencia/QR. El comprobante (foto) es opcional.
+  async function avisarTransferencia(ids, archivo) {
+    var db = obtenerCliente();
+    if (!db) return { ok: false, motivo: "sin-configurar" };
+    try {
+      var url = null;
+      if (archivo) {
+        var extension = (archivo.name && archivo.name.split(".").pop()) || "jpg";
+        var ruta = ids[0] + "/" + Date.now() + "." + extension;
+        var subida = await db.storage.from("comprobantes").upload(ruta, archivo, { cacheControl: "3600", upsert: false });
+        if (subida.error) return { ok: false, motivo: subida.error.message };
+        url = db.storage.from("comprobantes").getPublicUrl(ruta).data.publicUrl;
+      }
+      var rpc = await db.rpc("avisar_transferencia", { pedido_ids: ids, url: url });
+      if (rpc.error) return { ok: false, motivo: rpc.error.message };
+      return { ok: true, url: url };
+    } catch (e) {
+      return { ok: false, motivo: String(e) };
+    }
+  }
+
   // Pide a la función del servidor el link de pago de Mercado Pago para estos pedidos.
   async function iniciarPagoOnline(ids) {
     var db = obtenerCliente();
@@ -267,6 +288,7 @@ var GaussDB = (function () {
 
   return {
     iniciarPagoOnline: iniciarPagoOnline,
+    avisarTransferencia: avisarTransferencia,
     configurado: configurado,
     crearPedido: crearPedido,
     chequearDisponibilidad: chequearDisponibilidad,

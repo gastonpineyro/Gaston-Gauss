@@ -35,3 +35,13 @@ const LINK_FORMULARIO = "";
    LEEME-PAGOS.md (crear las 2 funciones en Supabase y cargar tu token).
    Cuando esté todo listo, cambialo a true. */
 const PAGOS_ONLINE = false;
+
+/* Pago por transferencia / QR desde el carrito (sin comisiones).
+   Antes de ponerlo en true, corré el SQL 10-transferencia en Supabase.
+   - TITULAR_PAGO y CBU_PAGO son opcionales (dejalos vacíos "" si no querés mostrarlos).
+   - QR_PAGO: nombre del archivo con tu QR (ej: "qr-pago.png") subido junto al sitio.
+     Si lo dejás vacío, solo se muestra el alias. */
+const PAGO_TRANSFERENCIA = false;
+const TITULAR_PAGO = "";
+const CBU_PAGO = "";
+const QR_PAGO = "";

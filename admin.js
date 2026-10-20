@@ -521,6 +521,7 @@
         return e.en_reparacion;
       }).length;
 
+      var transferenciasPendientes = pedidosCache.filter(function (p) { return p.pago_online_estado === "transferencia"; }).length;
       var trabajosAbiertos = plantillasCache.filter(function (t) {
         return t.estado === "en_fabricacion" || t.estado === "lista";
       });
@@ -540,6 +541,7 @@
         { titulo: "Esperando entrega", valor: esperandoEntrega, nota: "confirmados, aún sin entregar", tab: "pedidos", estado: "confirmado" },
         { titulo: "Alquileres activos", valor: activosAhora, nota: "en la calle ahora mismo", tab: "activos" },
         { titulo: "Vencidos sin devolver", valor: vencidosSinDevolver, nota: "necesitan seguimiento", tab: "vencidos", alerta: vencidosSinDevolver > 0 },
+        { titulo: "Transferencias a verificar", valor: transferenciasPendientes, nota: "pagos que dicen haber hecho", tab: "pedidos", alerta: transferenciasPendientes > 0 },
         { titulo: "Comprobantes pendientes", valor: pendientesRevision, nota: "esperando tu revisión", tab: "comprobantes", alerta: pendientesRevision > 0 },
         { titulo: "Equipos en reparación", valor: enReparacionTotal, nota: "no se pueden alquilar", tab: "equipos", alerta: enReparacionTotal > 0 },
       ];
@@ -1210,6 +1212,25 @@
         };
       }
       return { ok: true };
+    }
+
+    // Confirma la transferencia. Si el cliente pagó varios productos juntos (mismo comprobante), se confirman todos.
+    async function confirmarTransferencia(id) {
+      var pedido = pedidosCache.find(function (p) { return p.id === id; });
+      if (!pedido) return;
+      var grupo = pedidosCache.filter(function (p) {
+        return p.id === id || (pedido.comprobante_url && p.comprobante_url === pedido.comprobante_url && p.pago_online_estado === "transferencia");
+      });
+      var suma = grupo.reduce(function (a, p) { return a + (p.total || 0); }, 0);
+      if (!confirm("¿Confirmás que te llegaron " + formatearPrecio(suma) + " de " + [pedido.nombre, pedido.apellido].filter(Boolean).join(" ") + "?")) return;
+      for (var i = 0; i < grupo.length; i++) {
+        var cambios = { pago_online_estado: "aprobado", pago_online_monto: grupo[i].total, pagado_en: new Date().toISOString() };
+        var r = await actualizarPedido(grupo[i].id, cambios);
+        if (!r.ok) { alert("No se pudo confirmar: " + r.motivo); break; }
+        Object.assign(grupo[i], cambios);
+      }
+      renderizarTabla();
+      renderizarResumen();
     }
 
     async function avisarRetiro(id) {
@@ -2383,6 +2404,7 @@
       }
       var id = evento.target.getAttribute("data-id");
       if (!id) return;
+      if (evento.target.classList.contains("btn-confirmar-transferencia")) confirmarTransferencia(id);
       if (evento.target.classList.contains("btn-avisar-retiro")) avisarRetiro(id);
       if (evento.target.classList.contains("btn-activar-alquiler")) activarAlquiler(id);
       if (evento.target.classList.contains("btn-dar-de-baja")) darDeBaja(id);
@@ -2767,6 +2789,11 @@
       var fecha = p.pagado_en ? " el " + fechaHoraPedido(p.pagado_en) : "";
       if (e === "aprobado") return '<br><span class="etiqueta-pago-online ok">💳 Pagado online ' + monto + fecha + "</span>";
       if (e === "revisar_monto") return '<br><span class="etiqueta-pago-online alerta">⚠️ Pagó ' + monto + " pero el pedido es de " + formatearPrecio(p.total) + " (revisar)</span>";
+      if (e === "transferencia") {
+        return '<br><span class="etiqueta-pago-online alerta">🏦 Dice que transfirió ' + formatearPrecio(p.total) +
+          (p.comprobante_url ? ' · <a class="link-comprobante-pedido" href="' + p.comprobante_url + '" target="_blank" rel="noopener">ver comprobante</a>' : " (sin comprobante)") +
+          '</span><br><button type="button" class="btn-accion-admin activar btn-confirmar-transferencia" data-id="' + p.id + '">✅ Confirmar que llegó</button>';
+      }
       if (e === "pendiente") return '<br><span class="etiqueta-pago-online">💳 Inició el pago online (todavía no se acreditó)</span>';
       if (e === "rechazado") return '<br><span class="etiqueta-pago-online alerta">💳 Pago online rechazado</span>';
       if (e === "devuelto") return '<br><span class="etiqueta-pago-online alerta">💳 Pago online devuelto</span>';

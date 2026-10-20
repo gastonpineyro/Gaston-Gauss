@@ -23,3 +23,17 @@ Cuando paga, el pedido aparece en el panel con "💳 Pagado online $X".
   al del pedido, el panel lo marca en rojo "⚠️ Pagó $X pero el pedido es de $Y (revisar)".
 - Los pedidos no se confirman solos: pagar online no reemplaza que vos confirmes la disponibilidad.
 - Máximo 6 productos distintos por pago online.
+
+---
+
+# Pago por transferencia / QR (sin comisiones)
+
+El cliente toca "🏦 Pagar por transferencia o QR": se registra el pedido y le muestra el total, tu alias (con botón
+copiar), tu QR y un lugar para subir el comprobante. Cuando toca "Ya transferí", en el panel aparece
+"🏦 Dice que transfirió $X" con el comprobante y el botón **✅ Confirmar que llegó**.
+
+## Pasos
+1. Supabase → SQL Editor: corré `10-transferencia.sql`.
+2. (Opcional) Subí la imagen de tu QR al repositorio (ej: `qr-pago.png`).
+3. En `supabase-config.js` completá `QR_PAGO = "qr-pago.png"`, `TITULAR_PAGO` y `CBU_PAGO` (si querés mostrarlos)
+   y cambiá `PAGO_TRANSFERENCIA` a `true`.

@@ -593,6 +593,78 @@
     return idCarrito.replace(/-alquiler-\d+$/, "").replace(/-venta$/, "");
   }
 
+  /* ---------------------- Pago por transferencia / QR ---------------------- */
+
+  function escaparTexto(t) {
+    return String(t == null ? "" : t).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function mostrarDatosTransferencia(ids, total) {
+    var previo = document.getElementById("modalTransferencia");
+    if (previo) previo.remove();
+    var alias = typeof ALIAS_PAGO !== "undefined" ? ALIAS_PAGO : "";
+    var titular = typeof TITULAR_PAGO !== "undefined" ? TITULAR_PAGO : "";
+    var cbu = typeof CBU_PAGO !== "undefined" ? CBU_PAGO : "";
+    var qr = typeof QR_PAGO !== "undefined" ? QR_PAGO : "";
+
+    var modal = document.createElement("div");
+    modal.id = "modalTransferencia";
+    modal.className = "modal-transferencia";
+    modal.innerHTML =
+      '<div class="caja-transferencia" role="dialog" aria-modal="true">' +
+      '<h2>Pagá por transferencia o QR</h2>' +
+      '<p class="monto-transferencia">Total a pagar: <strong>' + formatearPrecio(total) + "</strong></p>" +
+      (qr ? '<img class="qr-transferencia" src="' + escaparTexto(qr) + '" alt="QR para pagar">' : "") +
+      '<p class="mb-1">Alias: <strong id="textoAlias">' + escaparTexto(alias) + '</strong> <button type="button" class="btn-copiar" data-copiar="' + escaparTexto(alias) + '">Copiar</button></p>' +
+      (cbu ? '<p class="mb-1">CBU/CVU: <strong>' + escaparTexto(cbu) + '</strong> <button type="button" class="btn-copiar" data-copiar="' + escaparTexto(cbu) + '">Copiar</button></p>' : "") +
+      (titular ? '<p class="mb-1">Titular: <strong>' + escaparTexto(titular) + "</strong></p>" : "") +
+      '<hr><label for="archivoComprobante" class="d-block mb-1">Subí la foto del comprobante (opcional):</label>' +
+      '<input type="file" id="archivoComprobante" accept="image/*,application/pdf" class="form-control form-control-sm mb-2">' +
+      '<p class="text-danger d-none" id="errorTransferencia" style="font-size:13px;"></p>' +
+      '<button type="button" class="btn-pagar-online" id="btnYaTransferi">✅ Ya transferí</button>' +
+      '<button type="button" class="btn-vaciar-carrito" id="btnCerrarTransferencia">Cerrar</button>' +
+      '<p class="nota-pago-online">Tu pedido ya quedó registrado. Verificamos la transferencia y te confirmamos por WhatsApp.</p>' +
+      "</div>";
+    document.body.appendChild(modal);
+
+    modal.addEventListener("click", function (e) {
+      var copiar = e.target.getAttribute && e.target.getAttribute("data-copiar");
+      if (copiar) {
+        if (navigator.clipboard) navigator.clipboard.writeText(copiar).catch(function () {});
+        e.target.textContent = "¡Copiado!";
+        return;
+      }
+      if (e.target.id === "btnCerrarTransferencia" || e.target === modal) modal.remove();
+    });
+
+    document.getElementById("btnYaTransferi").addEventListener("click", async function (e) {
+      var btn = e.currentTarget;
+      var error = document.getElementById("errorTransferencia");
+      var archivo = document.getElementById("archivoComprobante").files[0] || null;
+      error.classList.add("d-none");
+      btn.classList.add("deshabilitado");
+      btn.textContent = "Enviando...";
+      var res = await GaussDB.avisarTransferencia(ids, archivo);
+      if (!res.ok) {
+        btn.classList.remove("deshabilitado");
+        btn.textContent = "✅ Ya transferí";
+        error.textContent = "No pudimos registrar el aviso. Probá de nuevo o mandanos el comprobante por WhatsApp.";
+        error.classList.remove("d-none");
+        return;
+      }
+      try { localStorage.removeItem(STORAGE_KEY_CARRITO); } catch (err) {}
+      var caja = modal.querySelector(".caja-transferencia");
+      var msg = encodeURIComponent("Hola! Hice un pedido en la web y ya transferí " + formatearPrecio(total) + ". " + (res.url ? "Subí el comprobante en la página." : "Te mando el comprobante por acá."));
+      caja.innerHTML = '<div style="font-size:44px;text-align:center;">✅</div><h2 class="text-center">¡Gracias!</h2>' +
+        '<p class="text-center">Recibimos tu aviso. Verificamos el pago y te escribimos por WhatsApp entre 24 y 48 hs para coordinar.</p>' +
+        '<a class="btn-finalizar-carrito" target="_blank" rel="noopener" href="https://wa.me/' + NUMERO_WHATSAPP + '?text=' + msg + '">Escribirnos por WhatsApp</a>' +
+        '<button type="button" class="btn-vaciar-carrito" id="btnFinTransferencia">Cerrar</button>';
+      document.getElementById("btnFinTransferencia").addEventListener("click", function () { window.location.reload(); });
+    });
+  }
+
   async function manejarClickFinalizar(evento, online) {
     evento.preventDefault();
     var pedidosCreados = [];
@@ -685,6 +757,22 @@
       }
     }
 
+    if (online === "transferencia") {
+      if (pedidosCreados.length !== carrito.length) {
+        boton.textContent = textoOriginal;
+        boton.classList.remove("deshabilitado");
+        var avisoT = document.getElementById("avisoDisponibilidad");
+        if (avisoT) {
+          avisoT.textContent = "No pudimos registrar el pedido. Probá de nuevo o finalizá por WhatsApp.";
+          avisoT.classList.remove("d-none");
+        }
+        return;
+      }
+      boton.textContent = textoOriginal;
+      mostrarDatosTransferencia(pedidosCreados, calcularTotal(carrito));
+      return;
+    }
+
     if (online) {
       var aviso = document.getElementById("avisoDisponibilidad");
       var falla = function (texto) {
@@ -734,6 +822,17 @@
     if (cuerpo) cuerpo.addEventListener("click", manejarClickEnCuerpo);
     if (datosAlquiler) datosAlquiler.addEventListener("input", guardarCampoAlquiler);
     if (btnFinalizar) btnFinalizar.addEventListener("click", function (e) { manejarClickFinalizar(e, false); });
+
+    // Botón opcional de transferencia / QR (solo si PAGO_TRANSFERENCIA = true en supabase-config.js)
+    if (btnFinalizar && typeof PAGO_TRANSFERENCIA !== "undefined" && PAGO_TRANSFERENCIA) {
+      var btnTransf = document.createElement("button");
+      btnTransf.type = "button";
+      btnTransf.className = "btn-pagar-transferencia";
+      btnTransf.id = "btnPagarTransferencia";
+      btnTransf.textContent = "🏦 Pagar por transferencia o QR";
+      btnFinalizar.insertAdjacentElement("afterend", btnTransf);
+      btnTransf.addEventListener("click", function (e) { manejarClickFinalizar(e, "transferencia"); });
+    }
 
     // Botón opcional de pago online (se muestra solo si PAGOS_ONLINE = true en supabase-config.js)
     if (btnFinalizar && typeof PAGOS_ONLINE !== "undefined" && PAGOS_ONLINE) {
