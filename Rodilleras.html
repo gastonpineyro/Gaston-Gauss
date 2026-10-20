@@ -71,7 +71,7 @@
     <div class="row g-5 align-items-center mb-5">
         <div class="col-12 col-md-6">
             <div class="contenedor-foto-producto">
-                <img src="ph-rodilleras.svg" alt="Rodilleras" class="img-fluid rounded shadow-sm">
+                <img src="ph-rodilleras.svg" id="imagenModelo" alt="Rodilleras" class="img-fluid rounded shadow-sm">
             </div>
         </div>
 
@@ -90,7 +90,7 @@
                     <span>Rodillera de neoprene con abrojos</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene con abrojos y ballenas laterales">
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene con abrojos y ballenas laterales" data-imagen="rodillera-abrojos-ballenas.jpg">
                     <span>Rodillera de neoprene con abrojos y ballenas laterales</span>
                 </label>
                 <label class="opcion-modalidad">
@@ -114,6 +114,8 @@
                         var sel = document.querySelector('input[name="tipo-rodillera"]:checked');
                         var texto = "Hola! Quería consultar el precio y la disponibilidad de: " + (sel ? sel.value : "Rodilleras");
                         boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent(texto);
+                        var foto = document.getElementById("imagenModelo");
+                        if (foto) foto.src = (sel && sel.getAttribute("data-imagen")) || "ph-rodilleras.svg";
                     }
                     radios.forEach(function (r) { r.addEventListener("change", actualizar); });
                     actualizar();
