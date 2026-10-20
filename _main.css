@@ -2083,3 +2083,32 @@ svg {
 .caja-buscador-productos .form-control { padding: 12px 16px; border-radius: 999px; border: 1px solid #c9d2d9; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
 .caja-buscador-productos .form-control:focus { border-color: #738A9B; box-shadow: 0 0 0 3px rgba(115,138,155,.2); }
 .sin-resultados-productos { text-align: center; color: #6c757d; margin: 14px 0 0; }
+
+/* --- Buscador de productos (versión mejorada) --- */
+.caja-buscador-productos { max-width: 560px; margin: 0 auto 28px; }
+.campo-buscador {
+  position: relative; display: flex; align-items: center; background: #fff;
+  border: 1.5px solid #d3dbe1; border-radius: 999px; box-shadow: 0 4px 14px rgba(40, 60, 80, .08);
+  transition: border-color .2s, box-shadow .2s;
+}
+.campo-buscador:focus-within { border-color: #D04F5E; box-shadow: 0 4px 18px rgba(208, 79, 94, .18); }
+.campo-buscador .icono-buscador { position: absolute; left: 18px; color: #738A9B; pointer-events: none; }
+.campo-buscador input {
+  flex: 1; width: 100%; border: 0; background: transparent; outline: 0;
+  padding: 15px 48px 15px 50px; font-size: 16px; color: #2b3a45; border-radius: 999px;
+}
+.campo-buscador input::placeholder { color: #8796a2; }
+.borrar-buscador {
+  position: absolute; right: 10px; width: 30px; height: 30px; border: 0; border-radius: 50%;
+  background: #eef1f4; color: #5c6b77; font-size: 13px; cursor: pointer; line-height: 1;
+}
+.borrar-buscador:hover { background: #dde3e8; }
+.chips-buscador { display: flex; justify-content: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.chip-buscador {
+  border: 1.5px solid #d3dbe1; background: #fff; color: #4a5c69; border-radius: 999px;
+  padding: 6px 16px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.chip-buscador:hover { border-color: #738A9B; }
+.chip-buscador.activo { background: #738A9B; border-color: #738A9B; color: #fff; }
+.resultado-buscador { text-align: center; color: #738A9B; font-size: 13px; margin: 8px 0 0; min-height: 18px; }
+.sin-resultados-productos a { color: #D04F5E; }
