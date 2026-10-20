@@ -25,7 +25,7 @@
     caja.innerHTML =
       '<div class="campo-buscador">' +
       '<svg class="icono-buscador" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
-      '<input type="text" id="buscadorProductos" placeholder="¿Qué producto buscás?" aria-label="Buscar producto" autocomplete="off" enterkeyhint="search">' +
+      '<input type="text" id="buscadorProductos" placeholder="Producto o zona (ej: hombro, tobillo)" aria-label="Buscar producto" autocomplete="off" enterkeyhint="search">' +
       '<button type="button" class="borrar-buscador d-none" id="borrarBuscador" aria-label="Borrar búsqueda">✕</button>' +
       '<ul class="sugerencias-buscador d-none" id="sugerenciasBuscador" role="listbox"></ul>' +
       "</div>" +
@@ -41,7 +41,7 @@
 
     var textos = tarjetas.map(function (t) {
       var img = t.querySelector("img");
-      return normalizar(t.textContent + " " + (img ? img.alt : ""));
+      return normalizar(t.textContent + " " + (img ? img.alt : "") + " " + (t.getAttribute("data-busqueda") || ""));
     });
     var input = document.getElementById("buscadorProductos");
     var borrar = document.getElementById("borrarBuscador");
