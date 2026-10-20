@@ -574,7 +574,7 @@
 
       var tarjetas = [
         { titulo: "Sin responder +24 hs", valor: sinResponder, nota: sinResponder > 0 ? "pendientes que esperan tu respuesta" : "todo al día 🎉", tab: "pedidos", estado: "pendiente", alerta: sinResponder > 0 },
-        { modo: "venta", titulo: "Plantillas en curso", valor: trabajosAbiertos.length, nota: trabajosEnFab + " en fabricación · " + trabajosListos + " listas" + (trabajosPorVencer ? " · " + trabajosPorVencer + " vencen en 3 días o menos" : "") + (trabajosAtrasados ? " · " + trabajosAtrasados + " atrasadas" : ""), tab: "plantillas", alerta: trabajosAtrasados > 0 || trabajosPorVencer > 0 },
+        { titulo: "Plantillas en curso", valor: trabajosAbiertos.length, nota: trabajosEnFab + " en fabricación · " + trabajosListos + " listas" + (trabajosPorVencer ? " · " + trabajosPorVencer + " vencen en 3 días o menos" : "") + (trabajosAtrasados ? " · " + trabajosAtrasados + " atrasadas" : ""), tab: "plantillas", alerta: trabajosAtrasados > 0 || trabajosPorVencer > 0 },
         { titulo: "Pedidos este mes", valor: pedidosDelMes.length, nota: ventasMes + " ventas · " + alquileresMes + " alquileres", tab: "pedidos" },
         { titulo: (modoAdmin === "alquiler" ? "Alquileres del mes" : "Ventas del mes"), valor: formatearPrecio(ventasDelMesMonto), nota: "sin contar los cancelados", tab: "pedidos" },
         { titulo: "Para facturar", valor: paraFacturar.length, nota: formatearPrecio(montoParaFacturar) + " sin facturar", tab: "facturar", alerta: paraFacturar.length > 0 },
