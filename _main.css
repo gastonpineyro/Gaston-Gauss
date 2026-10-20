@@ -2115,3 +2115,22 @@ svg {
 
 /* Menús desplegables largos (Ventas): barra de scroll si no entran en pantalla */
 .navbar .dropdown-menu { max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+
+/* --- Sugerencias del buscador --- */
+.caja-buscador-productos { position: relative; }
+.sugerencias-buscador {
+  position: absolute; left: 0; right: 0; top: 58px; z-index: 50; margin: 0; padding: 6px; list-style: none;
+  background: #fff; border: 1px solid #d3dbe1; border-radius: 16px; box-shadow: 0 12px 28px rgba(40, 60, 80, .18);
+  max-height: 340px; overflow-y: auto; text-align: left;
+}
+.sugerencias-buscador a {
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 10px;
+  text-decoration: none; color: #2b3a45;
+}
+.sugerencias-buscador a:hover, .sugerencias-buscador a.activa { background: #f0f4f7; }
+.sugerencias-buscador img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; flex: none; background: #e3e5e8; }
+.nombre-sugerencia { flex: 1; font-weight: 600; font-size: 15px; }
+.etiqueta-sugerencia {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #4a5c69;
+  background: #e8edf1; border-radius: 999px; padding: 3px 10px; flex: none;
+}
