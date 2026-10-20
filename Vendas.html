@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vendas - Gauss Ortopedia</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <meta name="description" content="Vendas elásticas y de contención para uso ortopédico. Consultanos por tipos, medidas y disponibilidad.">
+    <meta name="description" content="Vendas: coban, elástica deportiva, elástica y tapping. Consultanos por medidas y disponibilidad.">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Gauss Ortopedia">
     <meta property="og:title" content="Vendas - Gauss Ortopedia">
-    <meta property="og:description" content="Vendas elásticas y de contención para uso ortopédico. Consultanos por tipos, medidas y disponibilidad.">
+    <meta property="og:description" content="Vendas: coban, elástica deportiva, elástica y tapping. Consultanos por medidas y disponibilidad.">
     <meta property="og:image" content="https://gastonpineyro.github.io/Gaston-Gauss/og-gauss.png">
     <meta property="og:url" content="https://gastonpineyro.github.io/Gaston-Gauss/Vendas.html">
     <meta name="twitter:card" content="summary_large_image">
@@ -78,11 +78,63 @@
         <div class="col-12 col-md-6">
             <span class="badge-categoria">Venta</span>
             <h1 class="nombre-producto mt-2">Vendas</h1>
-            <p class="mt-3">Vendas elásticas y de contención para uso ortopédico. Consultanos por tipos, medidas y disponibilidad.</p>
-            <p class="text-secondary">Precio y talles: consultanos y te respondemos a la brevedad.</p>
-            <div class="acciones-producto">
-                <a href="https://wa.me/543415641488?text=Hola%21%20Quer%C3%ADa%20consultar%20el%20precio%20y%20la%20disponibilidad%20de%3A%20Vendas" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio por WhatsApp</a>
+            <p class="mt-3">Vendas: coban, elástica deportiva, elástica y tapping. Consultanos por medidas y disponibilidad.</p>
+            <h2 class="h6 mt-4 mb-2">Elegí el tipo</h2>
+            <div class="selector-modalidad selector-vertical" role="radiogroup" aria-label="Tipo de venda">
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-venda" value="Venda coban" data-medidas="5 cm|7 cm|10 cm" checked>
+                    <span>Venda coban</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-venda" value="Venda elástica deportiva" data-medidas="5 cm|7,5 cm|10 cm">
+                    <span>Venda elástica deportiva</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-venda" value="Venda elástica 10 cm" data-medidas="">
+                    <span>Venda elástica 10 cm</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-venda" value="Tapping" data-medidas="">
+                    <span>Tapping</span>
+                </label>
             </div>
+            <div id="bloqueMedidas">
+                <h2 class="h6 mt-3 mb-2">Elegí la medida</h2>
+                <div class="selector-modalidad" id="listaMedidas" role="radiogroup" aria-label="Medida"></div>
+            </div>
+            <p class="text-secondary">Precio y disponibilidad: consultanos y te respondemos a la brevedad.</p>
+            <div class="acciones-producto">
+                <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio</a>
+            </div>
+            <script>
+                (function () {
+                    var tipos = document.querySelectorAll('input[name="tipo-venda"]');
+                    var bloque = document.getElementById("bloqueMedidas");
+                    var listaMedidas = document.getElementById("listaMedidas");
+                    var boton = document.getElementById("btnConsultarModelo");
+                    function elegida(name) {
+                        var r = document.querySelector('input[name="' + name + '"]:checked');
+                        return r ? r.value : "";
+                    }
+                    function pintarMedidas() {
+                        var tipo = document.querySelector('input[name="tipo-venda"]:checked');
+                        var medidas = tipo && tipo.getAttribute("data-medidas") ? tipo.getAttribute("data-medidas").split("|") : [];
+                        bloque.classList.toggle("d-none", medidas.length === 0);
+                        listaMedidas.innerHTML = medidas.map(function (m, i) {
+                            return '<label class="opcion-modalidad"><input type="radio" name="medida-venda" value="' + m + '"' + (i === 0 ? " checked" : "") + "><span>" + m + "</span></label>";
+                        }).join("");
+                        actualizar();
+                    }
+                    function actualizar() {
+                        var nombre = elegida("tipo-venda") + (elegida("medida-venda") && !bloque.classList.contains("d-none") ? " " + elegida("medida-venda") : "");
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería consultar el precio y la disponibilidad de: " + (nombre || "Vendas"));
+                        boton.textContent = "Consultar precio: " + (nombre || "Vendas");
+                    }
+                    tipos.forEach(function (r) { r.addEventListener("change", pintarMedidas); });
+                    listaMedidas.addEventListener("change", actualizar);
+                    pintarMedidas();
+                })();
+            </script>
         </div>
     </div>
 
