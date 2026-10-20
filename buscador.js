@@ -63,6 +63,16 @@
       resultado.textContent = q || tipoActivo ? (visibles > 0 ? visibles + (visibles === 1 ? " producto" : " productos") : "") : "";
     }
 
+    // Los productos que se venden Y se alquilan abren la página mostrando solo la modalidad elegida
+    var hrefs = tarjetas.map(function (t) { return t.getAttribute("href"); });
+    function actualizarLinks() {
+      tarjetas.forEach(function (t, i) {
+        var ambos = tipos[i].indexOf("venta") !== -1 && tipos[i].indexOf("alquiler") !== -1;
+        var base = hrefs[i].split("?")[0];
+        t.setAttribute("href", ambos && tipoActivo ? base + "?modo=" + tipoActivo : base);
+      });
+    }
+
     input.addEventListener("input", filtrar);
     input.addEventListener("keydown", function (e) {
       if (e.key === "Escape") { input.value = ""; filtrar(); }
@@ -78,6 +88,14 @@
       tipoActivo = chip.getAttribute("data-tipo") || "";
       caja.querySelectorAll(".chip-buscador").forEach(function (c) { c.classList.toggle("activo", c === chip); });
       filtrar();
+      actualizarLinks();
     });
+
+    // Si llegan con ?tipo=venta o ?tipo=alquiler, ese botón queda elegido
+    var pedido = new URLSearchParams(window.location.search).get("tipo");
+    if (conChips && (pedido === "venta" || pedido === "alquiler")) {
+      var chipPedido = caja.querySelector('.chip-buscador[data-tipo="' + pedido + '"]');
+      if (chipPedido) chipPedido.click();
+    }
   });
 })();
