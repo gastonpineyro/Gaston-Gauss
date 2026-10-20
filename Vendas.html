@@ -107,6 +107,18 @@
                 <label for="metrosVenda" class="me-2">¿Cuántos metros?</label>
                 <input type="number" id="metrosVenda" min="1" step="1" value="1" class="form-control form-control-sm d-inline-block" style="width:90px;">
                 <span class="ms-2">Total: <strong id="totalPorMetro">$3.000</strong></span>
+                <div class="mt-3">
+                    <div class="mb-1">¿Cómo lo querés?</div>
+                    <div class="selector-modalidad mb-1">
+                        <label class="opcion-modalidad"><input type="radio" name="forma-rollo" value="uno" checked><span>Todo en un solo rollo</span></label>
+                        <label class="opcion-modalidad"><input type="radio" name="forma-rollo" value="varios"><span>Dividido en varios rollos</span></label>
+                    </div>
+                    <div id="cajaRollos" class="d-none">
+                        <label for="cantRollos" class="me-2">¿En cuántos rollos?</label>
+                        <input type="number" id="cantRollos" min="2" step="1" value="2" class="form-control form-control-sm d-inline-block" style="width:90px;">
+                        <small class="text-secondary ms-2" id="avisoRollos"></small>
+                    </div>
+                </div>
             </div>
             <p class="text-secondary">Precio y disponibilidad: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
@@ -143,7 +155,17 @@
                         cajaPM.classList.toggle("d-none", isNaN(precioMetro));
                         if (!isNaN(precioMetro)) document.getElementById("totalPorMetro").textContent = fmt(metros * precioMetro);
                         var nombre = elegida("tipo-venda") + (elegida("medida-venda") && !bloque.classList.contains("d-none") ? " " + elegida("medida-venda") : "");
-                        var extra = !isNaN(precioMetro) ? " — " + metros + (metros === 1 ? " metro" : " metros") + " (" + fmt(metros * precioMetro) + ")" : "";
+                        var varios = document.querySelector('input[name="forma-rollo"]:checked').value === "varios";
+                        var rollos = 1;
+                        var cajaRollos = document.getElementById("cajaRollos");
+                        cajaRollos.classList.toggle("d-none", !varios || isNaN(precioMetro));
+                        if (varios) {
+                            rollos = Math.max(parseInt(document.getElementById("cantRollos").value, 10) || 2, 2);
+                            if (rollos > metros) rollos = Math.max(metros, 1);
+                            document.getElementById("avisoRollos").textContent = metros < 2 ? "Con 1 metro no se puede dividir" : "Máximo " + metros + " rollos (1 metro cada uno)";
+                        }
+                        var textoRollos = rollos > 1 ? ", dividido en " + rollos + " rollos" : ", en un solo rollo";
+                        var extra = !isNaN(precioMetro) ? " — " + metros + (metros === 1 ? " metro" : " metros") + " (" + fmt(metros * precioMetro) + ")" + textoRollos : "";
                         boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent((!isNaN(precioMetro) ? "Hola! Quería comprar: " : "Hola! Quería consultar el precio y la disponibilidad de: ") + (nombre || "Vendas") + extra);
                         boton.textContent = (!isNaN(precioMetro) ? "Pedir por WhatsApp: " : "Consultar precio: ") + (nombre || "Vendas") + extra;
                         var tipoSel = document.querySelector('input[name="tipo-venda"]:checked');
@@ -153,6 +175,8 @@
                     tipos.forEach(function (r) { r.addEventListener("change", pintarMedidas); });
                     listaMedidas.addEventListener("change", actualizar);
                     document.getElementById("metrosVenda").addEventListener("input", actualizar);
+                    document.getElementById("cantRollos").addEventListener("input", actualizar);
+                    document.querySelectorAll('input[name="forma-rollo"]').forEach(function (x) { x.addEventListener("change", actualizar); });
                     pintarMedidas();
                 })();
             </script>
