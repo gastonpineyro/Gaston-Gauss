@@ -82,15 +82,16 @@
             <h2 class="h6 mt-4 mb-2">Elegí el modelo</h2>
             <div class="selector-modalidad" role="radiogroup" aria-label="Modelo de muñequera">
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-munequera" value="Muñequera sin dedo" data-imagen="munequera-sin-dedo.jpg" checked>
+                    <input type="radio" name="tipo-munequera" value="Muñequera sin dedo" data-precio="19000" data-imagen="munequera-sin-dedo.jpg" checked>
                     <span>Sin dedo</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-munequera" value="Muñequera con dedo" data-imagen="munequera-con-dedo.jpg">
+                    <input type="radio" name="tipo-munequera" value="Muñequera con dedo" data-precio="20000" data-imagen="munequera-con-dedo.jpg">
                     <span>Con dedo</span>
                 </label>
             </div>
-            <p class="text-secondary">Precio y talles: consultanos y te respondemos a la brevedad.</p>
+            <p class="precio-producto my-3" id="precioModelo"></p>
+            <p class="text-secondary">Talles y disponibilidad: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
                 <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio de este modelo</a>
             </div>
@@ -100,9 +101,13 @@
                     var boton = document.getElementById("btnConsultarModelo");
                     function actualizar() {
                         var sel = document.querySelector('input[name="tipo-munequera"]:checked');
-                        var texto = "Hola! Quería consultar el precio y la disponibilidad de: " + (sel ? sel.value : "Muñequera");
+                        var precio = sel ? parseInt(sel.getAttribute("data-precio"), 10) : NaN;
+                        var precioTxt = isNaN(precio) ? "" : "$" + precio.toLocaleString("es-AR");
+                        var nombre = sel ? sel.value : "Muñequera";
+                        document.getElementById("precioModelo").textContent = precioTxt;
+                        var texto = "Hola! Quería comprar: " + nombre + (precioTxt ? " (" + precioTxt + ")" : "") + ". ¿Qué talles tienen disponibles?";
                         boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent(texto);
-                        boton.textContent = "Consultar precio: " + (sel ? sel.value : "Muñequera");
+                        boton.textContent = "Pedir por WhatsApp: " + nombre;
                         var foto = document.getElementById("imagenModelo");
                         if (foto && sel) foto.src = sel.getAttribute("data-imagen");
                     }
