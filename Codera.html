@@ -71,7 +71,7 @@
     <div class="row g-5 align-items-center mb-5">
         <div class="col-12 col-md-6">
             <div class="contenedor-foto-producto">
-                <img src="ph-codera.svg" alt="Codera" class="img-fluid rounded shadow-sm">
+                <img src="codera-corta.jpg" id="imagenModelo" alt="Codera" class="img-fluid rounded shadow-sm">
             </div>
         </div>
 
@@ -79,10 +79,37 @@
             <span class="badge-categoria">Venta</span>
             <h1 class="nombre-producto mt-2">Codera</h1>
             <p class="mt-3">Codera para soporte y compresión del codo. Consultanos por talles y modelos.</p>
+            <h2 class="h6 mt-4 mb-2">Elegí el modelo</h2>
+            <div class="selector-modalidad" role="radiogroup" aria-label="Modelo de codera">
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-codera" value="Codera corta" data-imagen="codera-corta.jpg" checked>
+                    <span>Codera corta</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-codera" value="Codera larga" data-imagen="codera-larga.jpg">
+                    <span>Codera larga</span>
+                </label>
+            </div>
             <p class="text-secondary">Precio y talles: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
-                <a href="https://wa.me/543415641488?text=Hola%21%20Quer%C3%ADa%20consultar%20el%20precio%20y%20la%20disponibilidad%20de%3A%20Codera" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio por WhatsApp</a>
+                <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio de este modelo</a>
             </div>
+            <script>
+                (function () {
+                    var radios = document.querySelectorAll('input[name="tipo-codera"]');
+                    var boton = document.getElementById("btnConsultarModelo");
+                    function actualizar() {
+                        var sel = document.querySelector('input[name="tipo-codera"]:checked');
+                        var nombre = sel ? sel.value : "Codera";
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería consultar el precio y la disponibilidad de: " + nombre);
+                        boton.textContent = "Consultar precio: " + nombre;
+                        var foto = document.getElementById("imagenModelo");
+                        if (foto && sel) foto.src = sel.getAttribute("data-imagen");
+                    }
+                    radios.forEach(function (r) { r.addEventListener("change", actualizar); });
+                    actualizar();
+                })();
+            </script>
         </div>
     </div>
 
