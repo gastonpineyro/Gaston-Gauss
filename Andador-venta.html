@@ -71,7 +71,7 @@
     <div class="row g-5 align-items-center mb-5">
         <div class="col-12 col-md-6">
             <div class="contenedor-foto-producto">
-                <img src="andador.webp" alt="Andador" class="img-fluid rounded shadow-sm">
+                <img src="andador-aluminio.jpg" id="imagenModelo" alt="Andador" class="img-fluid rounded shadow-sm">
             </div>
         </div>
 
@@ -79,10 +79,37 @@
             <span class="badge-categoria">Venta</span>
             <h1 class="nombre-producto mt-2">Andador</h1>
             <p class="mt-3">Andador en venta. Consultanos por modelos y disponibilidad. También lo tenemos en alquiler.</p>
-            <p class="text-secondary">Precio y talles: consultanos y te respondemos a la brevedad.</p>
-            <div class="acciones-producto">
-                <a href="https://wa.me/543415641488?text=Hola%21%20Quer%C3%ADa%20consultar%20el%20precio%20y%20la%20disponibilidad%20de%3A%20Andador" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio por WhatsApp</a>
+            <h2 class="h6 mt-4 mb-2">Elegí el modelo</h2>
+            <div class="selector-modalidad selector-vertical" role="radiogroup" aria-label="Modelo de andador">
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-andador" value="Andador con ruedas aluminio" data-imagen="andador-aluminio.jpg" checked>
+                    <span>Andador con ruedas aluminio</span>
+                </label>
+                <label class="opcion-modalidad">
+                    <input type="radio" name="tipo-andador" value="Andador con asiento" data-imagen="andador-asiento.jpg">
+                    <span>Andador con asiento</span>
+                </label>
             </div>
+            <p class="text-secondary">Precio y disponibilidad: consultanos y te respondemos a la brevedad.</p>
+            <div class="acciones-producto">
+                <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio de este modelo</a>
+            </div>
+            <script>
+                (function () {
+                    var radios = document.querySelectorAll('input[name="tipo-andador"]');
+                    var boton = document.getElementById("btnConsultarModelo");
+                    function actualizar() {
+                        var sel = document.querySelector('input[name="tipo-andador"]:checked');
+                        var nombre = sel ? sel.value : "Andador";
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería consultar el precio y la disponibilidad de: " + nombre);
+                        boton.textContent = "Consultar precio: " + nombre;
+                        var foto = document.getElementById("imagenModelo");
+                        if (foto && sel) foto.src = sel.getAttribute("data-imagen");
+                    }
+                    radios.forEach(function (r) { r.addEventListener("change", actualizar); });
+                    actualizar();
+                })();
+            </script>
         </div>
     </div>
 
