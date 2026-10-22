@@ -82,15 +82,16 @@
             <h2 class="h6 mt-4 mb-2">Elegí el modelo</h2>
             <div class="selector-modalidad selector-vertical" role="radiogroup" aria-label="Modelo de inmovilizador de muñeca">
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-inmov-muneca" value="Inmovilizador de muñeca" data-imagen="inmovilizador-muneca.jpg" checked>
+                    <input type="radio" name="tipo-inmov-muneca" value="Inmovilizador de muñeca" data-precio="38000" data-imagen="inmovilizador-muneca.jpg" checked>
                     <span>Inmovilizador de muñeca</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-inmov-muneca" value="Inmovilizador de muñeca y dedo pulgar" data-imagen="inmovilizador-muneca-pulgar.jpg">
+                    <input type="radio" name="tipo-inmov-muneca" value="Inmovilizador de muñeca y dedo pulgar" data-precio="63000" data-imagen="inmovilizador-muneca-pulgar.jpg">
                     <span>Inmovilizador de muñeca y dedo pulgar</span>
                 </label>
             </div>
-            <p class="text-secondary">Precio y talles: consultanos y te respondemos a la brevedad.</p>
+            <p class="precio-producto my-3" id="precioModelo"></p>
+            <p class="text-secondary">Talles y disponibilidad: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
                 <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio de este modelo</a>
             </div>
@@ -101,8 +102,11 @@
                     function actualizar() {
                         var sel = document.querySelector('input[name="tipo-inmov-muneca"]:checked');
                         var nombre = sel ? sel.value : "Inmovilizador de muñeca";
-                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería consultar el precio y la disponibilidad de: " + nombre);
-                        boton.textContent = "Consultar precio: " + nombre;
+                        var precio = sel ? parseInt(sel.getAttribute("data-precio"), 10) : NaN;
+                        var precioTxt = isNaN(precio) ? "" : "$" + precio.toLocaleString("es-AR");
+                        document.getElementById("precioModelo").textContent = precioTxt;
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería comprar: " + nombre + (precioTxt ? " (" + precioTxt + ")" : "") + ". ¿Qué talles tienen disponibles?");
+                        boton.textContent = "Pedir por WhatsApp: " + nombre;
                         var foto = document.getElementById("imagenModelo");
                         if (foto && sel) foto.src = sel.getAttribute("data-imagen");
                     }
