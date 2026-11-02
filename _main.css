@@ -2148,3 +2148,11 @@ svg {
 .btn-reservar-alquiler:hover { background: #b5404e; color: #fff; transform: translateY(-2px); }
 .texto-banda-reservar { color: #6c757d; font-size: 15px; }
 @media (max-width: 576px) { .btn-reservar-alquiler { width: 100%; text-align: center; } .banda-reservar { text-align: center; } }
+
+/* --- Inicio: banda Reservar alquiler (rediseño) --- */
+.banda-reservar { max-width: 760px; margin: 4px auto 26px; padding: 16px 22px; background: #fbeef0; border: 1px solid #f0cdd2; border-left: 5px solid #D04F5E; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; }
+.banda-reservar-texto { display: flex; flex-direction: column; text-align: left; }
+.banda-reservar-texto strong { font-size: 18px; color: #3b3b3b; }
+.banda-reservar-texto span { font-size: 14px; color: #6c757d; }
+.banda-reservar .btn-reservar-alquiler { padding: 11px 24px; font-size: 16px; white-space: nowrap; }
+@media (max-width: 576px) { .banda-reservar { flex-direction: column; text-align: center; } .banda-reservar-texto { text-align: center; } .banda-reservar .btn-reservar-alquiler { width: 100%; } }
