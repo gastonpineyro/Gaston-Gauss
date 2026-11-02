@@ -2141,3 +2141,10 @@ svg {
 @media (max-width: 767.98px) { .selector-modalidad.selector-vertical { justify-content: flex-start; } }
 
 .caja-por-metro { background: #f4f7f9; border: 1px solid #dde4e9; border-radius: 10px; padding: 12px 14px; margin: 12px 0; font-size: 15px; }
+
+/* --- Inicio: botón Reservar un alquiler --- */
+.banda-reservar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 20px; margin: 8px auto 28px; padding: 0 16px; }
+.btn-reservar-alquiler { background: #D04F5E; color: #fff; padding: 14px 32px; font-weight: bold; font-size: 18px; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(208,79,94,.25); transition: all .2s ease-in-out; }
+.btn-reservar-alquiler:hover { background: #b5404e; color: #fff; transform: translateY(-2px); }
+.texto-banda-reservar { color: #6c757d; font-size: 15px; }
+@media (max-width: 576px) { .btn-reservar-alquiler { width: 100%; text-align: center; } .banda-reservar { text-align: center; } }
