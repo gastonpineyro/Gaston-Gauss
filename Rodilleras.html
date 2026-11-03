@@ -82,15 +82,15 @@
             <h2 class="h6 mt-4 mb-2">Elegí el modelo</h2>
             <div class="selector-modalidad selector-vertical" role="radiogroup" aria-label="Modelo de rodillera">
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene" data-imagen="rodillera-neoprene.jpg" checked>
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene" data-precio="36000" data-imagen="rodillera-neoprene.jpg" checked>
                     <span>Rodillera de neoprene</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene con abrojos" data-imagen="rodillera-abrojos.jpg">
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene con abrojos" data-precio="47000" data-imagen="rodillera-abrojos.jpg">
                     <span>Rodillera de neoprene con abrojos</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene con abrojos y ballenas laterales" data-imagen="rodillera-abrojos-ballenas.jpg">
+                    <input type="radio" name="tipo-rodillera" value="Rodillera de neoprene con abrojos y ballenas laterales" data-precio="82000" data-imagen="rodillera-abrojos-ballenas.jpg">
                     <span>Rodillera de neoprene con abrojos y ballenas laterales</span>
                 </label>
                 <label class="opcion-modalidad">
@@ -102,7 +102,8 @@
                     <span>Rodillera de neoprene abierta</span>
                 </label>
             </div>
-            <p class="text-secondary">Precio y talles: consultanos y te respondemos a la brevedad.</p>
+            <p class="precio-producto my-3 d-none" id="precioModelo"></p>
+            <p class="text-secondary">Talles y disponibilidad: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
                 <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio de este modelo</a>
             </div>
@@ -112,8 +113,15 @@
                     var boton = document.getElementById("btnConsultarModelo");
                     function actualizar() {
                         var sel = document.querySelector('input[name="tipo-rodillera"]:checked');
-                        var texto = "Hola! Quería consultar el precio y la disponibilidad de: " + (sel ? sel.value : "Rodilleras");
+                        var nombre = sel ? sel.value : "Rodilleras";
+                        var precio = sel ? parseInt(sel.getAttribute("data-precio"), 10) : NaN;
+                        var precioTxt = isNaN(precio) ? "" : "$" + precio.toLocaleString("es-AR");
+                        var pEl = document.getElementById("precioModelo");
+                        pEl.textContent = precioTxt;
+                        pEl.classList.toggle("d-none", !precioTxt);
+                        var texto = precioTxt ? "Hola! Quería comprar: " + nombre + " (" + precioTxt + "). ¿Qué talles tienen disponibles?" : "Hola! Quería consultar el precio y la disponibilidad de: " + nombre;
                         boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent(texto);
+                        boton.textContent = (precioTxt ? "Pedir por WhatsApp: " : "Consultar precio: ") + nombre;
                         var foto = document.getElementById("imagenModelo");
                         if (foto) foto.src = (sel && sel.getAttribute("data-imagen")) || "ph-rodilleras.svg";
                     }
