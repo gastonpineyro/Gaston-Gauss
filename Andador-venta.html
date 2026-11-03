@@ -82,19 +82,20 @@
             <h2 class="h6 mt-4 mb-2">Elegí el modelo</h2>
             <div class="selector-modalidad selector-vertical" role="radiogroup" aria-label="Modelo de andador">
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-andador" value="Andador con ruedas aluminio" data-imagen="andador-aluminio.jpg" checked>
+                    <input type="radio" name="tipo-andador" value="Andador con ruedas aluminio" data-precio="130000" data-imagen="andador-aluminio.jpg" checked>
                     <span>Andador con ruedas aluminio</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-andador" value="Andador con asiento" data-imagen="andador-asiento.jpg">
+                    <input type="radio" name="tipo-andador" value="Andador con asiento" data-precio="150000" data-imagen="andador-asiento.jpg">
                     <span>Andador con asiento</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-andador" value="Andador con ruedas" data-imagen="andador-ruedas.jpg">
+                    <input type="radio" name="tipo-andador" value="Andador con ruedas" data-precio="110000" data-imagen="andador-ruedas.jpg">
                     <span>Andador con ruedas</span>
                 </label>
             </div>
-            <p class="text-secondary">Precio y disponibilidad: consultanos y te respondemos a la brevedad.</p>
+            <p class="precio-producto my-3" id="precioModelo"></p>
+            <p class="text-secondary">Disponibilidad: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
                 <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio de este modelo</a>
             </div>
@@ -105,8 +106,12 @@
                     function actualizar() {
                         var sel = document.querySelector('input[name="tipo-andador"]:checked');
                         var nombre = sel ? sel.value : "Andador";
-                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería consultar el precio y la disponibilidad de: " + nombre);
-                        boton.textContent = "Consultar precio: " + nombre;
+                        var precio = sel ? parseInt(sel.getAttribute("data-precio"), 10) : NaN;
+                        var precioTxt = isNaN(precio) ? "" : "$" + precio.toLocaleString("es-AR");
+                        document.getElementById("precioModelo").textContent = precioTxt;
+                        var texto = precioTxt ? "Hola! Quería comprar: " + nombre + " (" + precioTxt + "). ¿Tienen disponible?" : "Hola! Quería consultar el precio y la disponibilidad de: " + nombre;
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent(texto);
+                        boton.textContent = (precioTxt ? "Pedir por WhatsApp: " : "Consultar precio: ") + nombre;
                         var foto = document.getElementById("imagenModelo");
                         if (foto && sel) foto.src = sel.getAttribute("data-imagen");
                     }
