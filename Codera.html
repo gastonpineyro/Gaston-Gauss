@@ -82,15 +82,16 @@
             <h2 class="h6 mt-4 mb-2">Elegí el modelo</h2>
             <div class="selector-modalidad" role="radiogroup" aria-label="Modelo de codera">
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-codera" value="Codera corta" data-imagen="codera-corta.jpg" checked>
+                    <input type="radio" name="tipo-codera" value="Codera corta" data-precio="18000" data-imagen="codera-corta.jpg" checked>
                     <span>Codera corta</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-codera" value="Codera larga" data-imagen="codera-larga.jpg">
+                    <input type="radio" name="tipo-codera" value="Codera larga" data-precio="29000" data-imagen="codera-larga.jpg">
                     <span>Codera larga</span>
                 </label>
             </div>
-            <p class="text-secondary">Precio y talles: consultanos y te respondemos a la brevedad.</p>
+            <p class="precio-producto my-3" id="precioModelo"></p>
+            <p class="text-secondary">Talles y disponibilidad: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
                 <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio de este modelo</a>
             </div>
@@ -101,8 +102,12 @@
                     function actualizar() {
                         var sel = document.querySelector('input[name="tipo-codera"]:checked');
                         var nombre = sel ? sel.value : "Codera";
-                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent("Hola! Quería consultar el precio y la disponibilidad de: " + nombre);
-                        boton.textContent = "Consultar precio: " + nombre;
+                        var precio = sel ? parseInt(sel.getAttribute("data-precio"), 10) : NaN;
+                        var precioTxt = isNaN(precio) ? "" : "$" + precio.toLocaleString("es-AR");
+                        document.getElementById("precioModelo").textContent = precioTxt;
+                        var texto = precioTxt ? "Hola! Quería comprar: " + nombre + " (" + precioTxt + "). ¿Qué talles tienen disponibles?" : "Hola! Quería consultar el precio y la disponibilidad de: " + nombre;
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent(texto);
+                        boton.textContent = (precioTxt ? "Pedir por WhatsApp: " : "Consultar precio: ") + nombre;
                         var foto = document.getElementById("imagenModelo");
                         if (foto && sel) foto.src = sel.getAttribute("data-imagen");
                     }
