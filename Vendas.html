@@ -82,11 +82,11 @@
             <h2 class="h6 mt-4 mb-2">Elegí el tipo</h2>
             <div class="selector-modalidad selector-vertical" role="radiogroup" aria-label="Tipo de venda">
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-venda" value="Venda coban" data-imagen="venda-coban.jpg" data-medidas="5 cm|7 cm|10 cm" checked>
+                    <input type="radio" name="tipo-venda" value="Venda coban" data-imagen="venda-coban.jpg" data-medidas="5 cm:2000|7 cm:3000|10 cm:4000" checked>
                     <span>Venda coban</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-venda" value="Venda elástica deportiva" data-imagen="venda-elastica-deportiva.jpg" data-medidas="5 cm|7,5 cm|10 cm">
+                    <input type="radio" name="tipo-venda" value="Venda elástica deportiva" data-imagen="venda-elastica-deportiva.jpg" data-precio="3000" data-medidas="5 cm|7,5 cm|10 cm">
                     <span>Venda elástica deportiva</span>
                 </label>
                 <label class="opcion-modalidad">
@@ -94,7 +94,7 @@
                     <span>Venda elástica 10 cm</span>
                 </label>
                 <label class="opcion-modalidad">
-                    <input type="radio" name="tipo-venda" value="Tapping" data-imagen="tapping.jpg" data-medidas="">
+                    <input type="radio" name="tipo-venda" value="Tapping" data-imagen="tapping.jpg" data-precio="15000" data-medidas="">
                     <span>Tapping</span>
                 </label>
             </div>
@@ -120,7 +120,8 @@
                     </div>
                 </div>
             </div>
-            <p class="text-secondary">Precio y disponibilidad: consultanos y te respondemos a la brevedad.</p>
+            <p class="precio-producto my-3 d-none" id="precioVenda"></p>
+            <p class="text-secondary">Disponibilidad: consultanos y te respondemos a la brevedad.</p>
             <div class="acciones-producto">
                 <a href="#" id="btnConsultarModelo" target="_blank" rel="noopener" class="btn-gauss-whatsapp-contacto">Consultar precio</a>
             </div>
@@ -138,8 +139,11 @@
                         var tipo = document.querySelector('input[name="tipo-venda"]:checked');
                         var medidas = tipo && tipo.getAttribute("data-medidas") ? tipo.getAttribute("data-medidas").split("|") : [];
                         bloque.classList.toggle("d-none", medidas.length === 0);
-                        listaMedidas.innerHTML = medidas.map(function (m, i) {
-                            return '<label class="opcion-modalidad"><input type="radio" name="medida-venda" value="' + m + '"' + (i === 0 ? " checked" : "") + "><span>" + m + "</span></label>";
+                        listaMedidas.innerHTML = medidas.map(function (item, i) {
+                            var partes = item.split(":");
+                            var m = partes[0];
+                            var p = partes[1] ? ' data-precio="' + partes[1] + '"' : "";
+                            return '<label class="opcion-modalidad"><input type="radio" name="medida-venda" value="' + m + '"' + p + (i === 0 ? " checked" : "") + "><span>" + m + "</span></label>";
                         }).join("");
                         actualizar();
                     }
@@ -166,8 +170,19 @@
                         }
                         var textoRollos = rollos > 1 ? ", dividido en " + rollos + " rollos" : ", en un solo rollo";
                         var extra = !isNaN(precioMetro) ? " — " + metros + (metros === 1 ? " metro" : " metros") + " (" + fmt(metros * precioMetro) + ")" + textoRollos : "";
-                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent((!isNaN(precioMetro) ? "Hola! Quería comprar: " : "Hola! Quería consultar el precio y la disponibilidad de: ") + (nombre || "Vendas") + extra);
-                        boton.textContent = (!isNaN(precioMetro) ? "Pedir por WhatsApp: " : "Consultar precio: ") + (nombre || "Vendas") + extra;
+                        var medSel = document.querySelector('input[name="medida-venda"]:checked');
+                        var precioUnit = NaN;
+                        if (isNaN(precioMetro)) {
+                            if (medSel && !bloque.classList.contains("d-none") && medSel.getAttribute("data-precio")) precioUnit = parseInt(medSel.getAttribute("data-precio"), 10);
+                            else if (tipoPM && tipoPM.getAttribute("data-precio")) precioUnit = parseInt(tipoPM.getAttribute("data-precio"), 10);
+                        }
+                        var pEl = document.getElementById("precioVenda");
+                        pEl.textContent = isNaN(precioUnit) ? "" : fmt(precioUnit);
+                        pEl.classList.toggle("d-none", isNaN(precioUnit));
+                        if (!isNaN(precioUnit)) extra = " (" + fmt(precioUnit) + ")";
+                        var conPrecio = !isNaN(precioMetro) || !isNaN(precioUnit);
+                        boton.href = "https://wa.me/543415641488?text=" + encodeURIComponent((conPrecio ? "Hola! Quería comprar: " : "Hola! Quería consultar el precio y la disponibilidad de: ") + (nombre || "Vendas") + extra);
+                        boton.textContent = (conPrecio ? "Pedir por WhatsApp: " : "Consultar precio: ") + (nombre || "Vendas") + extra;
                         var tipoSel = document.querySelector('input[name="tipo-venda"]:checked');
                         var foto = document.getElementById("imagenModelo");
                         if (foto) foto.src = (tipoSel && tipoSel.getAttribute("data-imagen")) || "ph-vendas.svg";
