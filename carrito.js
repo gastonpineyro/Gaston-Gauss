@@ -705,7 +705,7 @@
       '<p class="text-danger d-none" id="errorTransferencia" style="font-size:13px;"></p>' +
       '<button type="button" class="btn-pagar-online" id="btnYaTransferi">✅ Ya transferí</button>' +
       '<button type="button" class="btn-vaciar-carrito" id="btnCerrarTransferencia">Cerrar</button>' +
-      '<p class="nota-pago-online">Tu pedido ya quedó registrado. Verificamos la transferencia y te confirmamos por WhatsApp.</p>' +
+      '<p class="nota-pago-online">Tu pedido ya quedó registrado. Verificamos la transferencia y te confirmamos por WhatsApp.' + (opciones.envio ? " El envío a domicilio (solo dentro de Rosario) lo coordinamos por ahí una vez verificado el pago." : "") + "</p>" +
       "</div>";
     document.body.appendChild(modal);
 
@@ -736,10 +736,14 @@
       }
       if (opciones.limpiarCarrito !== false) { try { localStorage.removeItem(STORAGE_KEY_CARRITO); } catch (err) {} }
       var caja = modal.querySelector(".caja-transferencia");
-      var msg = encodeURIComponent("Hola! Hice un pedido en la web y ya transferí " + formatearPrecio(total) + ". " + (res.url ? "Subí el comprobante en la página." : "Te mando el comprobante por acá."));
+      var dirEnvio = (leerDatosAlquiler().campoDireccion || "").trim();
+      var msg = encodeURIComponent("Hola! Hice un pedido en la web y ya transferí " + formatearPrecio(total) + ". " + (res.url ? "Subí el comprobante en la página." : "Te mando el comprobante por acá.") + (opciones.envio ? " Quiero coordinar el envío a domicilio" + (dirEnvio ? " a: " + dirEnvio : "") + "." : ""));
       caja.innerHTML = '<div style="font-size:44px;text-align:center;">✅</div><h2 class="text-center">¡Gracias!</h2>' +
         '<p class="text-center">Recibimos tu aviso. Verificamos el pago y te escribimos por WhatsApp entre 24 y 48 hs para coordinar.</p>' +
-        '<a class="btn-finalizar-carrito" target="_blank" rel="noopener" href="https://wa.me/' + NUMERO_WHATSAPP + '?text=' + msg + '">Escribirnos por WhatsApp</a>' +
+        (opciones.envio
+          ? '<p class="text-center"><strong>🚚 Envío a domicilio (solo dentro de Rosario):</strong> lo coordinamos por WhatsApp una vez verificado el pago. Si querés adelantarlo, escribinos con tu dirección y el día y horario que te quede cómodo.</p>'
+          : '<p class="text-center"><strong>🏬 Retiro por el local:</strong> te avisamos por WhatsApp cuando esté listo.</p>') +
+        '<a class="btn-finalizar-carrito" target="_blank" rel="noopener" href="https://wa.me/' + NUMERO_WHATSAPP + '?text=' + msg + '">' + (opciones.envio ? "Coordinar envío por WhatsApp" : "Escribirnos por WhatsApp") + '</a>' +
         '<button type="button" class="btn-vaciar-carrito" id="btnFinTransferencia">Cerrar</button>';
       document.getElementById("btnFinTransferencia").addEventListener("click", function () { window.location.reload(); });
     });
@@ -886,7 +890,7 @@
         return;
       }
       boton.textContent = textoOriginal;
-      mostrarDatosTransferencia(pedidosCreados, calcularTotalFinal(carrito));
+      mostrarDatosTransferencia(pedidosCreados, calcularTotalFinal(carrito), { envio: envioActivo(carrito) });
       return;
     }
 
