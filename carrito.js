@@ -23,6 +23,8 @@
     { id: "campoLesion", etiqueta: "Lesión / motivo de uso" },
   ];
 
+  var CAMPOS_SOLO_ALQUILER = ["campoFechaDesde", "campoDireccion", "campoLesion"];
+
   /* ---------------------- Utilidades ---------------------- */
 
   function leerCarrito() {
@@ -244,6 +246,12 @@
       CAMPOS_ALQUILER.forEach(function (campo) {
         mensaje += "\n" + campo.etiqueta + ": " + (datos[campo.id] || "-");
       });
+    } else {
+      mensaje += "\n\nMis datos:";
+      CAMPOS_ALQUILER.forEach(function (campo) {
+        if (CAMPOS_SOLO_ALQUILER.indexOf(campo.id) !== -1) return;
+        mensaje += "\n" + campo.etiqueta + ": " + (datos[campo.id] || "-");
+      });
     }
 
     return "https://wa.me/" + NUMERO_WHATSAPP + "?text=" + encodeURIComponent(mensaje);
@@ -281,7 +289,17 @@
 
     var datosAlquiler = document.getElementById("datosAlquiler");
     if (datosAlquiler) {
-      datosAlquiler.classList.toggle("d-none", !hayAlquilerEnCarrito(carrito));
+      var esAlquiler = hayAlquilerEnCarrito(carrito);
+      datosAlquiler.classList.remove("d-none");
+      CAMPOS_SOLO_ALQUILER.forEach(function (id) {
+        var el = document.getElementById(id);
+        var grupo = el && el.closest ? el.closest(".mb-2") : null;
+        if (grupo) grupo.classList.toggle("d-none", !esAlquiler);
+      });
+      var tituloDatos = datosAlquiler.querySelector(".titulo-datos-alquiler");
+      var textoDatos = datosAlquiler.querySelector(".texto-datos-alquiler");
+      if (tituloDatos) tituloDatos.textContent = esAlquiler ? "Datos para el alquiler" : "Tus datos para el pedido";
+      if (textoDatos) textoDatos.textContent = esAlquiler ? "Completá estos datos para poder reservar el equipo." : "Completá estos datos para registrar tu compra.";
     }
 
     var enlaceWsp = document.getElementById("btnFinalizarCarrito");
@@ -336,11 +354,14 @@
     return /[a-zA-ZÀ-ÿ]/.test(texto) && /\d/.test(texto);
   }
 
-  function validarDatosAlquiler() {
+  function validarDatosAlquiler(soloCompra) {
     var faltante = null;
-    var mensaje = "Completá la fecha de retiro, nombre, apellido, DNI, dirección y lesión para continuar.";
+    var mensaje = soloCompra
+      ? "Completá nombre, apellido, DNI y teléfono para continuar."
+      : "Completá la fecha de retiro, nombre, apellido, DNI, dirección y lesión para continuar.";
 
     CAMPOS_ALQUILER.forEach(function (campo) {
+      if (soloCompra && CAMPOS_SOLO_ALQUILER.indexOf(campo.id) !== -1) return;
       var el = document.getElementById(campo.id);
       if (!el) return;
       var invalido = false;
@@ -720,18 +741,16 @@
     var avisoDisp = document.getElementById("avisoDisponibilidad");
     if (avisoDisp) avisoDisp.classList.add("d-none");
 
-    if (hayAlquilerEnCarrito(carrito)) {
-      var validacion = validarDatosAlquiler();
-      if (validacion.elemento) {
-        if (avisoDatos) {
-          avisoDatos.textContent = validacion.mensaje;
-          avisoDatos.classList.remove("d-none");
-        }
-        validacion.elemento.focus();
-        return;
+    var validacion = validarDatosAlquiler(!hayAlquilerEnCarrito(carrito));
+    if (validacion.elemento) {
+      if (avisoDatos) {
+        avisoDatos.textContent = validacion.mensaje;
+        avisoDatos.classList.remove("d-none");
       }
-      if (avisoDatos) avisoDatos.classList.add("d-none");
+      validacion.elemento.focus();
+      return;
     }
+    if (avisoDatos) avisoDatos.classList.add("d-none");
 
     var boton = evento.currentTarget;
     var textoOriginal = boton.textContent;
@@ -797,6 +816,10 @@
           cantidad: lineaVenta.cantidad,
           precioUnitario: lineaVenta.precio,
           total: lineaVenta.precio * lineaVenta.cantidad,
+          nombre: datos.campoNombre,
+          apellido: datos.campoApellido,
+          telefono: datos.campoTelefono,
+          dni: datos.campoDni,
         });
         if (guardadoVenta && guardadoVenta.ok) pedidosCreados.push(guardadoVenta.pedido.id);
       }
