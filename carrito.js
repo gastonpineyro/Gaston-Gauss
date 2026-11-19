@@ -24,6 +24,8 @@
   ];
 
   var CAMPOS_SOLO_ALQUILER = ["campoFechaDesde", "campoLesion"];
+  var COSTO_ENVIO = 6000;
+  var STORAGE_KEY_ENVIO = "gauss-quiere-envio";
 
   /* ---------------------- Utilidades ---------------------- */
 
@@ -78,6 +80,15 @@
     return carrito.reduce(function (acc, item) {
       return acc + item.precio * item.cantidad;
     }, 0);
+  }
+
+  function envioActivo(carrito) {
+    if (hayAlquilerEnCarrito(carrito)) return false;
+    try { return localStorage.getItem(STORAGE_KEY_ENVIO) === "1"; } catch (e) { return false; }
+  }
+
+  function calcularTotalFinal(carrito) {
+    return calcularTotal(carrito) + (envioActivo(carrito) ? COSTO_ENVIO : 0);
   }
 
   function hayAlquilerEnCarrito(carrito) {
@@ -210,7 +221,7 @@
   }
 
   function construirMensajeWhatsApp(carrito) {
-    var total = calcularTotal(carrito);
+    var total = calcularTotalFinal(carrito);
     var datos = leerDatosAlquiler();
     var lineas = carrito.map(function (item) {
       var periodo = "";
@@ -238,6 +249,7 @@
     var mensaje =
       "Hola! Quiero consultar por este pedido de Gauss Ortopedia:\n" +
       lineas.join("\n") +
+      (envioActivo(carrito) ? "\nEnvío a domicilio: " + formatearPrecio(COSTO_ENVIO) : "") +
       "\nTotal estimado: " +
       formatearPrecio(total);
 
@@ -250,6 +262,7 @@
       mensaje += "\n\nMis datos:";
       CAMPOS_ALQUILER.forEach(function (campo) {
         if (CAMPOS_SOLO_ALQUILER.indexOf(campo.id) !== -1) return;
+        if (campo.id === "campoDireccion" && !envioActivo(carrito)) return;
         mensaje += "\n" + campo.etiqueta + ": " + (datos[campo.id] || "-");
       });
     }
@@ -283,9 +296,20 @@
     if (acciones) acciones.classList.remove("d-none");
     cuerpo.innerHTML = carrito.map(crearLineaHTML).join("");
 
-    var total = calcularTotal(carrito);
+    var total = calcularTotalFinal(carrito);
     var totalEl = document.getElementById("totalCarrito");
     if (totalEl) totalEl.textContent = formatearPrecio(total);
+    if (totalEl && totalEl.parentNode) {
+      var det = document.getElementById("detalleEnvio");
+      if (!det) {
+        det = document.createElement("small");
+        det.id = "detalleEnvio";
+        det.className = "texto-datos-alquiler d-block";
+        totalEl.parentNode.parentNode.insertBefore(det, totalEl.parentNode.nextSibling);
+      }
+      det.textContent = envioActivo(carrito) ? "Incluye envío a domicilio: " + formatearPrecio(COSTO_ENVIO) : "";
+      det.classList.toggle("d-none", !envioActivo(carrito));
+    }
 
     var datosAlquiler = document.getElementById("datosAlquiler");
     if (datosAlquiler) {
@@ -296,6 +320,29 @@
         var grupo = el && el.closest ? el.closest(".mb-2") : null;
         if (grupo) grupo.classList.toggle("d-none", !esAlquiler);
       });
+      var grupoDir = document.getElementById("campoDireccion");
+      grupoDir = grupoDir && grupoDir.closest ? grupoDir.closest(".mb-2") : null;
+      var grupoEnvio = document.getElementById("grupoEnvio");
+      if (!grupoEnvio && grupoDir) {
+        grupoEnvio = document.createElement("div");
+        grupoEnvio.id = "grupoEnvio";
+        grupoEnvio.className = "mb-2";
+        grupoEnvio.innerHTML =
+          '<label class="etiqueta-campo-alquiler" style="cursor:pointer;">' +
+          '<input type="checkbox" id="campoQuiereEnvio" style="margin-right:8px;"> 🚚 Quiero envío a domicilio (+' + formatearPrecio(COSTO_ENVIO) + ")</label>" +
+          '<small class="texto-datos-alquiler d-block">Si preferís retirar por el local, dejalo sin marcar.</small>';
+        grupoDir.parentNode.insertBefore(grupoEnvio, grupoDir);
+        grupoEnvio.querySelector("input").addEventListener("change", function (ev) {
+          try { localStorage.setItem(STORAGE_KEY_ENVIO, ev.target.checked ? "1" : "0"); } catch (e) {}
+          renderizarCarrito();
+        });
+      }
+      if (grupoEnvio) {
+        grupoEnvio.classList.toggle("d-none", esAlquiler);
+        var chk = grupoEnvio.querySelector("input");
+        if (chk) chk.checked = envioActivo(carrito);
+      }
+      if (grupoDir) grupoDir.classList.toggle("d-none", !esAlquiler && !envioActivo(carrito));
       var tituloDatos = datosAlquiler.querySelector(".titulo-datos-alquiler");
       var textoDatos = datosAlquiler.querySelector(".texto-datos-alquiler");
       if (tituloDatos) tituloDatos.textContent = esAlquiler ? "Datos para el alquiler" : "Tus datos para el pedido";
@@ -357,11 +404,12 @@
   function validarDatosAlquiler(soloCompra) {
     var faltante = null;
     var mensaje = soloCompra
-      ? "Completá nombre, apellido, DNI, teléfono y dirección para continuar."
+      ? "Completá nombre, apellido, DNI y teléfono (y la dirección si pedís envío) para continuar."
       : "Completá la fecha de retiro, nombre, apellido, DNI, dirección y lesión para continuar.";
 
     CAMPOS_ALQUILER.forEach(function (campo) {
       if (soloCompra && CAMPOS_SOLO_ALQUILER.indexOf(campo.id) !== -1) return;
+      if (soloCompra && campo.id === "campoDireccion" && !envioActivo(leerCarrito())) return;
       var el = document.getElementById(campo.id);
       if (!el) return;
       var invalido = false;
@@ -820,14 +868,30 @@
           apellido: datos.campoApellido,
           telefono: datos.campoTelefono,
           dni: datos.campoDni,
-          direccion: datos.campoDireccion,
+          direccion: envioActivo(carrito) ? datos.campoDireccion : null,
         });
         if (guardadoVenta && guardadoVenta.ok) pedidosCreados.push(guardadoVenta.pedido.id);
+      }
+      if (envioActivo(carrito)) {
+        var guardadoEnvio = await GaussDB.crearPedido({
+          tipo: "venta",
+          productoId: "envio",
+          productoNombre: "Envío a domicilio",
+          cantidad: 1,
+          precioUnitario: COSTO_ENVIO,
+          total: COSTO_ENVIO,
+          nombre: datos.campoNombre,
+          apellido: datos.campoApellido,
+          telefono: datos.campoTelefono,
+          dni: datos.campoDni,
+          direccion: datos.campoDireccion,
+        });
+        if (guardadoEnvio && guardadoEnvio.ok) pedidosCreados.push(guardadoEnvio.pedido.id);
       }
     }
 
     if (online === "transferencia") {
-      if (pedidosCreados.length !== carrito.length) {
+      if (pedidosCreados.length !== carrito.length + (envioActivo(carrito) ? 1 : 0)) {
         boton.textContent = textoOriginal;
         boton.classList.remove("deshabilitado");
         var avisoT = document.getElementById("avisoDisponibilidad");
@@ -838,7 +902,7 @@
         return;
       }
       boton.textContent = textoOriginal;
-      mostrarDatosTransferencia(pedidosCreados, calcularTotal(carrito));
+      mostrarDatosTransferencia(pedidosCreados, calcularTotalFinal(carrito));
       return;
     }
 
@@ -852,7 +916,7 @@
           aviso.classList.remove("d-none");
         }
       };
-      if (pedidosCreados.length !== carrito.length) {
+      if (pedidosCreados.length !== carrito.length + (envioActivo(carrito) ? 1 : 0)) {
         return falla("No pudimos registrar el pedido. Probá de nuevo o finalizá por WhatsApp.");
       }
       boton.textContent = "Abriendo Mercado Pago...";
