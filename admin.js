@@ -489,6 +489,15 @@
       // La tabla de pedidos sigue el modo (y el filtro "Tipo" se bloquea mientras tanto)
       selectFiltroTipo.value = modoAdmin === "todo" ? "todos" : modoAdmin;
       selectFiltroTipo.disabled = modoAdmin !== "todo";
+      // En la vista Ventas el filtro de estado solo muestra los 3 estados de una venta.
+      var filtroEst = document.getElementById("filtroEstado");
+      Array.prototype.forEach.call(filtroEst.options, function (o) {
+        var ocultar = (modoAdmin === "venta" && (o.value === "activo" || o.value === "devuelto")) ||
+                      (modoAdmin === "alquiler" && o.value === "entregado");
+        o.hidden = ocultar;
+        o.disabled = ocultar;
+      });
+      if (filtroEst.selectedOptions[0] && filtroEst.selectedOptions[0].disabled) filtroEst.value = "todos";
       var activa = document.querySelector(".tab-admin.activo");
       if (activa && activa.offsetParent === null) irATab("resumen");
     }
@@ -645,6 +654,14 @@
 
     /* ---------------------- Tabla de pedidos ---------------------- */
 
+    // Ventas: solo "pendiente → confirmado → entregado". Alquileres: el circuito completo.
+    function estadosParaPedido(p) {
+      if (p.tipo !== "venta") return ["pendiente", "confirmado", "activo", "devuelto", "cancelado"];
+      var lista = ["pendiente", "confirmado", "entregado"];
+      if (lista.indexOf(p.estado) === -1) lista.push(p.estado); // estados viejos no se pierden
+      return lista;
+    }
+
     function renderizarTabla() {
       actualizarContadorSinResponder();
       var estadoFiltro = selectFiltroEstado.value;
@@ -743,9 +760,9 @@
             '<td data-label="Dirección / Lesión">' + (p.direccion || "-") + (p.lesion ? "<br><small class='text-muted'>" + p.lesion + "</small>" : "") + "</td>" +
             '<td data-label="Total">' + formatearPrecio(p.total) + "</td>" +
             '<td data-label="Estado"><select class="form-select form-select-sm selector-estado" data-id="' + p.id + '">' +
-            ["pendiente", "confirmado", "activo", "devuelto", "cancelado"]
+            estadosParaPedido(p)
               .map(function (e) {
-                return '<option value="' + e + '"' + (e === p.estado ? " selected" : "") + ">" + e + "</option>";
+                return '<option value="' + e + '"' + (e === p.estado ? " selected" : "") + ">" + (p.tipo === "venta" ? e.charAt(0).toUpperCase() + e.slice(1) : e) + "</option>";
               })
               .join("") +
             "</select></td>" +
@@ -3132,7 +3149,8 @@
       if (nuevoEstado === "activo") Object.assign(cambiosEstado, fechasSiFaltan(pedido));
       var resultado = await actualizarPedido(id, cambiosEstado);
       if (!resultado.ok) {
-        alert("No se pudo cambiar el estado: " + resultado.motivo);
+        alert("No se pudo cambiar el estado: " + resultado.motivo +
+          (String(resultado.motivo).indexOf("pedidos_estado_check") !== -1 ? "\n\nFalta correr el SQL 11 (estado Entregado) en Supabase." : ""));
         cargarPedidos();
         return;
       }

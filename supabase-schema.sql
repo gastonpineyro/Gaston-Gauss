@@ -78,7 +78,7 @@ begin
 end $$;
 
 alter table pedidos add constraint pedidos_estado_check
-    check (estado in ('pendiente', 'confirmado', 'activo', 'devuelto', 'cancelado'));
+    check (estado in ('pendiente', 'confirmado', 'activo', 'devuelto', 'cancelado', 'entregado'));
 
 create index if not exists idx_pedidos_disponibilidad
     on pedidos (producto_id, tipo, estado, fecha_desde, fecha_hasta);
