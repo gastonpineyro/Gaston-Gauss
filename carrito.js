@@ -249,7 +249,7 @@
     var mensaje =
       "Hola! Quiero consultar por este pedido de Gauss Ortopedia:\n" +
       lineas.join("\n") +
-      (envioActivo(carrito) ? "\nEnvío a domicilio: " + formatearPrecio(COSTO_ENVIO) : "") +
+      (envioActivo(carrito) ? "\nEnvío a domicilio (dentro de Rosario): " + formatearPrecio(COSTO_ENVIO) : "") +
       "\nTotal estimado: " +
       formatearPrecio(total);
 
@@ -307,7 +307,7 @@
         det.className = "texto-datos-alquiler d-block";
         totalEl.parentNode.parentNode.insertBefore(det, totalEl.parentNode.nextSibling);
       }
-      det.textContent = envioActivo(carrito) ? "Incluye envío a domicilio: " + formatearPrecio(COSTO_ENVIO) : "";
+      det.textContent = envioActivo(carrito) ? "Incluye envío a domicilio dentro de Rosario: " + formatearPrecio(COSTO_ENVIO) : "";
       det.classList.toggle("d-none", !envioActivo(carrito));
     }
 
@@ -330,7 +330,7 @@
         grupoEnvio.innerHTML =
           '<label class="etiqueta-campo-alquiler" style="cursor:pointer;">' +
           '<input type="checkbox" id="campoQuiereEnvio" style="margin-right:8px;"> 🚚 Quiero envío a domicilio (+' + formatearPrecio(COSTO_ENVIO) + ")</label>" +
-          '<small class="texto-datos-alquiler d-block">Si preferís retirar por el local, dejalo sin marcar.</small>';
+          '<small class="texto-datos-alquiler d-block">El envío es solo dentro de Rosario. Si preferís retirar por el local, dejalo sin marcar.</small>';
         grupoDir.parentNode.insertBefore(grupoEnvio, grupoDir);
         grupoEnvio.querySelector("input").addEventListener("change", function (ev) {
           try { localStorage.setItem(STORAGE_KEY_ENVIO, ev.target.checked ? "1" : "0"); } catch (e) {}
@@ -860,10 +860,10 @@
         var guardadoVenta = await GaussDB.crearPedido({
           tipo: "venta",
           productoId: lineaVenta.varianteId || idProductoBase(lineaVenta.id),
-          productoNombre: lineaVenta.nombre,
+          productoNombre: lineaVenta.nombre + (k === 0 && envioActivo(carrito) ? " (+ envío a domicilio $" + COSTO_ENVIO.toLocaleString("es-AR") + ")" : ""),
           cantidad: lineaVenta.cantidad,
           precioUnitario: lineaVenta.precio,
-          total: lineaVenta.precio * lineaVenta.cantidad,
+          total: lineaVenta.precio * lineaVenta.cantidad + (k === 0 && envioActivo(carrito) ? COSTO_ENVIO : 0),
           nombre: datos.campoNombre,
           apellido: datos.campoApellido,
           telefono: datos.campoTelefono,
@@ -872,26 +872,10 @@
         });
         if (guardadoVenta && guardadoVenta.ok) pedidosCreados.push(guardadoVenta.pedido.id);
       }
-      if (envioActivo(carrito)) {
-        var guardadoEnvio = await GaussDB.crearPedido({
-          tipo: "venta",
-          productoId: "envio",
-          productoNombre: "Envío a domicilio",
-          cantidad: 1,
-          precioUnitario: COSTO_ENVIO,
-          total: COSTO_ENVIO,
-          nombre: datos.campoNombre,
-          apellido: datos.campoApellido,
-          telefono: datos.campoTelefono,
-          dni: datos.campoDni,
-          direccion: datos.campoDireccion,
-        });
-        if (guardadoEnvio && guardadoEnvio.ok) pedidosCreados.push(guardadoEnvio.pedido.id);
-      }
     }
 
     if (online === "transferencia") {
-      if (pedidosCreados.length !== carrito.length + (envioActivo(carrito) ? 1 : 0)) {
+      if (pedidosCreados.length !== carrito.length) {
         boton.textContent = textoOriginal;
         boton.classList.remove("deshabilitado");
         var avisoT = document.getElementById("avisoDisponibilidad");
@@ -916,7 +900,7 @@
           aviso.classList.remove("d-none");
         }
       };
-      if (pedidosCreados.length !== carrito.length + (envioActivo(carrito) ? 1 : 0)) {
+      if (pedidosCreados.length !== carrito.length) {
         return falla("No pudimos registrar el pedido. Probá de nuevo o finalizá por WhatsApp.");
       }
       boton.textContent = "Abriendo Mercado Pago...";
