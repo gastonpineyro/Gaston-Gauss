@@ -5,13 +5,145 @@
    carguen ANTES que este archivo.
    ============================================================ */
 
+
+/* ============================================================
+   CLIENTE DEL SERVIDOR PROPIO
+   Imita lo justo de Supabase (from/select/insert/update/delete,
+   rpc, storage, functions y auth) para que el resto del sitio
+   funcione igual con el backend propio. Se usa solo si en
+   supabase-config.js está completa la constante BACKEND_URL.
+   ============================================================ */
+var GaussClienteAPI = (function () {
+  "use strict";
+  var CLAVE_SESION = "gauss-sesion";
+
+  function leerSesion() {
+    try {
+      var s = JSON.parse(localStorage.getItem(CLAVE_SESION));
+      if (s && s.access_token && s.expires_at * 1000 > Date.now()) return s;
+    } catch (e) {}
+    return null;
+  }
+  function guardarSesion(s) {
+    try { if (s) localStorage.setItem(CLAVE_SESION, JSON.stringify(s)); else localStorage.removeItem(CLAVE_SESION); } catch (e) {}
+  }
+
+  function crear(urlBase) {
+    var base = String(urlBase).replace(/\/$/, "");
+    var urlsSubidas = {};
+
+    function cabeceras(conJson) {
+      var h = {};
+      if (conJson) h["Content-Type"] = "application/json";
+      var s = leerSesion();
+      if (s) h.Authorization = "Bearer " + s.access_token;
+      return h;
+    }
+
+    async function llamar(ruta, cuerpo) {
+      try {
+        var r = await fetch(base + ruta, { method: "POST", headers: cabeceras(true), body: JSON.stringify(cuerpo || {}) });
+        var j = null;
+        try { j = await r.json(); } catch (e) {}
+        if (!r.ok) {
+          var msg = (j && j.error && (j.error.message || j.error)) || "Error " + r.status;
+          return { data: null, error: { message: String(msg), code: (j && j.error && j.error.code) || "", status: r.status } };
+        }
+        return { data: j && "data" in j ? j.data : j, error: null };
+      } catch (e) {
+        return { data: null, error: { message: "No se pudo conectar con el servidor." } };
+      }
+    }
+
+    function Consulta(tabla) {
+      this.q = { tabla: tabla, op: "select", columnas: "*", filtros: [], orden: [] };
+    }
+    var P = Consulta.prototype;
+    P.select = function (columnas) {
+      if (this.q.op === "select") this.q.columnas = columnas || "*";
+      else this.q.devolver = true;
+      return this;
+    };
+    P.insert = function (valores) { this.q.op = "insert"; this.q.valores = valores; return this; };
+    P.update = function (valores) { this.q.op = "update"; this.q.valores = valores; return this; };
+    P.delete = function () { this.q.op = "delete"; return this; };
+    ["eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike"].forEach(function (op) {
+      P[op] = function (col, val) { this.q.filtros.push({ col: col, op: op, val: val }); return this; };
+    });
+    P.in = function (col, val) { this.q.filtros.push({ col: col, op: "in", val: val }); return this; };
+    P.is = function (col, val) { this.q.filtros.push({ col: col, op: "is", val: val }); return this; };
+    P.not = function (col, op, val) { this.q.filtros.push({ col: col, op: op, val: val, not: true }); return this; };
+    P.match = function (obj) {
+      var self = this;
+      Object.keys(obj).forEach(function (k) { self.q.filtros.push({ col: k, op: "eq", val: obj[k] }); });
+      return this;
+    };
+    P.order = function (col, opts) { this.q.orden.push({ col: col, asc: !(opts && opts.ascending === false) }); return this; };
+    P.range = function (desde, hasta) { this.q.rango = [desde, hasta]; return this; };
+    P.limit = function (n) { this.q.limite = n; return this; };
+    P.single = function () { this.q.unico = "single"; return this; };
+    P.maybeSingle = function () { this.q.unico = "quizas"; return this; };
+    P.then = function (ok, fallo) { return llamar("/api/rest", this.q).then(ok, fallo); };
+
+    return {
+      from: function (tabla) { return new Consulta(tabla); },
+      rpc: function (nombre, params) { return llamar("/api/rpc/" + nombre, params); },
+      functions: {
+        invoke: async function (nombre, opciones) {
+          var r = await llamar("/api/functions/" + nombre, (opciones && opciones.body) || {});
+          // Estas funciones devuelven {url} o {error} directamente.
+          return r;
+        },
+      },
+      storage: {
+        from: function (bucket) {
+          return {
+            upload: async function (ruta, archivo) {
+              try {
+                var f = new FormData();
+                f.append("carpeta", String(ruta).split("/")[0]);
+                f.append("archivo", archivo);
+                var r = await fetch(base + "/api/files/" + bucket, { method: "POST", body: f });
+                var j = await r.json().catch(function () { return null; });
+                if (!r.ok) return { data: null, error: { message: (j && j.error && j.error.message) || "Error " + r.status } };
+                urlsSubidas[ruta] = j.data.publicUrl;
+                return { data: { path: j.data.path }, error: null };
+              } catch (e) {
+                return { data: null, error: { message: "No se pudo conectar con el servidor." } };
+              }
+            },
+            getPublicUrl: function (ruta) { return { data: { publicUrl: urlsSubidas[ruta] || base + "/files/" + bucket + "/" + ruta } }; },
+          };
+        },
+      },
+      auth: {
+        signInWithPassword: async function (cred) {
+          var r = await llamar("/api/auth/login", { email: cred.email, password: cred.password });
+          if (r.error) return { data: { session: null, user: null }, error: r.error };
+          guardarSesion(r.data.session);
+          return { data: { session: r.data.session, user: r.data.session.user }, error: null };
+        },
+        getSession: async function () { return { data: { session: leerSesion() }, error: null }; },
+        signOut: async function () { guardarSesion(null); return { error: null }; },
+        onAuthStateChange: function () { return { data: { subscription: { unsubscribe: function () {} } } }; },
+      },
+    };
+  }
+  return { crear: crear };
+})();
+
 var GaussDB = (function () {
   "use strict";
 
   var listo = false;
   var cliente = null;
 
+  function usaBackendPropio() {
+    return typeof BACKEND_URL !== "undefined" && typeof BACKEND_URL === "string" && BACKEND_URL.trim() !== "";
+  }
+
   function configurado() {
+    if (usaBackendPropio()) return true;
     return (
       typeof SUPABASE_URL !== "undefined" &&
       typeof SUPABASE_ANON_KEY !== "undefined" &&
@@ -22,7 +154,10 @@ var GaussDB = (function () {
 
   function obtenerCliente() {
     if (!configurado()) return null;
-    if (!cliente && typeof supabase !== "undefined") {
+    if (!cliente && usaBackendPropio()) {
+      cliente = GaussClienteAPI.crear(BACKEND_URL);
+      listo = true;
+    } else if (!cliente && typeof supabase !== "undefined") {
       cliente = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       listo = true;
     }

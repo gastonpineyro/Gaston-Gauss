@@ -19,6 +19,11 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
    Pages). Se usa para armar el link de "subir comprobante" que se le
    manda al cliente por WhatsApp. Actualizala cuando tengas la URL
    definitiva de tu sitio (sin la barra "/" final). */
+/* BACKEND PROPIO (opcional). Si dejás esto vacío, el sitio usa Supabase como hasta ahora.
+   Cuando tengas el servidor propio funcionando, poné acá su dirección (sin "/" al final),
+   por ejemplo: "https://api.tudominio.com.ar". Y listo: el sitio pasa a usar tu servidor. */
+const BACKEND_URL = "";
+
 const SITE_URL = "https://gastonpineyro.github.io/Gaston-Gauss";
 
 /* Alias bancario / de Mercado Pago que se le manda al cliente para

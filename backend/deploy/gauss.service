@@ -1,0 +1,23 @@
+[Unit]
+Description=Backend de Gauss Ortopedia
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=gauss
+Group=gauss
+WorkingDirectory=/opt/gauss/backend
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+# Seguridad: el servicio solo puede escribir en su carpeta de archivos
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/gauss
+
+[Install]
+WantedBy=multi-user.target
