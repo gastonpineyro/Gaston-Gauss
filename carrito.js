@@ -23,7 +23,7 @@
     { id: "campoLesion", etiqueta: "Lesión / motivo de uso" },
   ];
 
-  var CAMPOS_SOLO_ALQUILER = ["campoFechaDesde", "campoDireccion", "campoLesion"];
+  var CAMPOS_SOLO_ALQUILER = ["campoFechaDesde", "campoLesion"];
 
   /* ---------------------- Utilidades ---------------------- */
 
@@ -357,7 +357,7 @@
   function validarDatosAlquiler(soloCompra) {
     var faltante = null;
     var mensaje = soloCompra
-      ? "Completá nombre, apellido, DNI y teléfono para continuar."
+      ? "Completá nombre, apellido, DNI, teléfono y dirección para continuar."
       : "Completá la fecha de retiro, nombre, apellido, DNI, dirección y lesión para continuar.";
 
     CAMPOS_ALQUILER.forEach(function (campo) {
@@ -820,6 +820,7 @@
           apellido: datos.campoApellido,
           telefono: datos.campoTelefono,
           dni: datos.campoDni,
+          direccion: datos.campoDireccion,
         });
         if (guardadoVenta && guardadoVenta.ok) pedidosCreados.push(guardadoVenta.pedido.id);
       }
