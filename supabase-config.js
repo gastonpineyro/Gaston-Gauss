@@ -23,7 +23,7 @@ const SITE_URL = "https://gastonpineyro.github.io/Gaston-Gauss";
 
 /* Alias bancario / de Mercado Pago que se le manda al cliente para
    renovar el alquiler. Cambialo por el tuyo. */
-const ALIAS_PAGO = "Gauss.ortopedia";
+const ALIAS_PAGO = "GAUSS.ORTOPEDIA";
 
 /* Link del formulario de pedido (Google Forms, Typeform, etc.). Pegalo
    entre las comillas. Mientras esté vacío, el botón no se muestra en el
@@ -42,6 +42,6 @@ const PAGOS_ONLINE = false;
    - QR_PAGO: nombre del archivo con tu QR (ej: "qr-pago.png") subido junto al sitio.
      Si lo dejás vacío, solo se muestra el alias. */
 const PAGO_TRANSFERENCIA = true;
-const TITULAR_PAGO = "";
-const CBU_PAGO = "";
-const QR_PAGO = "";
+const TITULAR_PAGO = "GAUSS ORTOPEDIA SAS (CUIT 30-71751203-7) - Banco Macro";
+const CBU_PAGO = "2850826730094208477611";
+const QR_PAGO = "qr-pago.png";
